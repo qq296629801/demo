@@ -267,6 +267,17 @@ private String bookName;
 // 关联字段（不存库）
 @Property(displayName = "书号", related = "booksManage.isbn", store = false)
 private String isbn;
+
+// displayForModel = true：标记该字段为 ManyToOne 关联模型的显示字段
+// 查询时 useDisplayForModel=true，平台用此字段值作为外键 ID 的显示文本
+// 来自 ExampleItemCate.cateName
+@Property(displayName = "分类名称", columnName = "cate_name", length = 60, displayForModel = true)
+private String cateName;
+
+// 对应 ManyToOne 外键：外键 ID 字段 + displayForModel 字段配对使用
+@ManyToOne(displayName = "物料", cascade = CascadeType.DELETE)
+@JoinColumn(name = "item_id", referencedProperty = "id")
+private ExampleItem exampleItem;
 ```
 
 ---
