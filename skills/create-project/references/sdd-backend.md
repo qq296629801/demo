@@ -40,7 +40,7 @@
 | 字段 | Java 类型 | @Property 关键参数 | 必填 | @Validate 校验 | 索引 | 说明 |
 |---|---|---|---|---|---|---|
 | `[fieldName]` | `String/Long/Integer/Boolean/Date` | `displayName="[中文名]"` | 是/否 | `required/length/unique` | 是/否 | [说明] |
-| `[dictField]` | `String` | `displayName="[中文名]", widget="select"` | 是/否 | — | 否 | 配合 `@Selection` 或 `@Dict` |
+| `[dictField]` | `String` / `Integer` | `displayName="[中文名]"` | 是/否 | — | 否 | 配合 `@Selection` 或 `@Dict`；`widget` 仅在需要特定组件（如 `"radio-group"`）时才写，普通下拉不写 widget |
 | `[dateField]` | `Date` | `displayName="[中文名]", dataType=DataType.DateTime, dateFormat="yyyy-MM-dd HH:mm:ss"` | 否 | — | 否 | 日期字段必须指定 dataType 和 dateFormat |
 | `[erField]` | ManyToOne | `@ManyToOne` + `@JoinColumn(name="[col]")` | 是/否 | — | 是 | 同 App ER 关联 |
 
@@ -51,7 +51,7 @@
 > **不得凭记忆或推断填写注解参数**；对照以上文件中的实际代码示例生成，缺参数就补，错参数就改。
 
 模型规则：
-- 模型类使用 `@StaticVar @Getter @Setter @Model`，需要日志时加 `@Slf4j`。
+- 模型类使用 `@StaticVar @Getter @Setter @Model`，需要日志时加 `@Slf4j`。`@StaticVar`/`@Getter`/`@Setter` 是 **IIDP 平台元插件**（`com.sie.meta.plugin.*`），**不是 Lombok**，两者不可混用。
 - 继承 `BaseModel<T>`。
 - 业务字段必须有 `@Property(displayName = "...")`。
 - 选项、字典、关联字段用 `@Selection`、`@Dict` 或 ORM 注解。
@@ -269,12 +269,13 @@ List<?> related = meta.get("[model]").find(Filter.in("id", ids), ...)
 
 - 种子数据和字典：
 
-> **生成 `data/*.json` 前必须先读取 `skills/backend/references/core/seed-data.md`**，获取业务种子数据（`data` 字段）、字典数据（`dicts` 字段）的完整 JSON 格式、`policy` 枚举值、`@ref`/`@fileId`/`@fileUrl` 引用语法和完整示例。不使用本文内联结构提示（避免格式漂移）。
+> **生成 `data/*.json` 前必须先读取 `skills/backend/references/core/seed-data.md`**，获取业务种子数据（零节：字典 `base_dict_type`/`base_dict_value`；一节：普通业务数据审计字段、树形 parentId 写法）、`policy` 枚举值、`@ref`/`@fileId`/`@fileUrl` 引用语法和完整示例。不使用本文内联结构提示（避免格式漂移）。
 >
-> 速查：业务种子文件为 `data/{model_name}.json`；字典文件为 `data/{model_name}_dict.json` 或独立 `data/dict.json`。**实际 JSON 结构以 `seed-data.md` 为准**。
+> - **字典种子格式**：使用 `base_dict_type` + `base_dict_value` 两条记录，均置于顶层 `"data"` 对象下。**不存在 `"dicts"` 顶层 key**，与 `seed-data.md` 零节对齐。
+> - **速查**：业务种子文件为 `data/{model_name}.json`；字典文件为 `data/yes_no.json` 等独立文件或 `data/{type}_dict.json`。**实际 JSON 结构以 `seed-data.md` 为准**。
 - 附件：
-  - 文件索引：`data/file/{file_key}.json`；实际文件：`file/document/{path}`
-  - 种子引用：`{ "@fileId": "{file_key}" }` / `{ "@fileUrl": "{file_key}" }`
+  - 文件索引：`file/{file_key}.json`（`"file"` 顶层 key）；实际文件：`file/document/{path}`
+  - 种子引用（字符串形式，非对象）：`"@fileId({file_key})"` / `"@fileUrl({file_key})"` / `"@filePath({file_key})"`
 - **权限码汇总**（从 §4 服务设计表的 `权限` 列聚合，格式 `{model_name}:{action}`）：
   - 菜单权限：`{model_name}:read`
   - 按钮/服务权限：`{model_name}:create` / `{model_name}:update` / `{model_name}:delete` / `[自定义 auth]`
