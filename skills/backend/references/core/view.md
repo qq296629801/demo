@@ -265,6 +265,82 @@
 }
 ```
 
+启用/禁用按钮（带图标、args 传参、bind_disabled 勾选控制）：
+
+```json
+{
+  "name": "启用",
+  "action": "enable",
+  "auth": "enable",
+  "model": "example_item",
+  "service": "enableDisable",
+  "actionAfter": "refreshTable",
+  "options": {
+    "icon": "el-icon-open"
+  },
+  "args": {
+    "bind_ids": "$ds.checkedDataIds",
+    "statusFlag": "1"
+  },
+  "bind_disabled": "${$ds.checkedDataList.length === 0}"
+}
+```
+
+导出选中行（`source: "selected"` 仅导出勾选数据）：
+
+```json
+{
+  "name": "导出",
+  "action": "export",
+  "source": "selected",
+  "model": "example_item",
+  "service": "excelExport"
+}
+```
+
+行级操作按钮启用条件（`enableCondition` 函数）：
+
+```json
+{
+  "name": "编辑",
+  "action": "updateEr",
+  "auth": "update",
+  "enableCondition": "(row) => {return row[0].isEnable !== true;}"
+}
+```
+
+表格内联行编辑（`gridEditMode`，来自工程 example_class_view.json / example_item_view.json）：
+
+```json
+{
+  "gridEditMode": {
+    "mode": "multipleRow",
+    "rowBtns": ["update", "add", "delete"],
+    "defaultCancelEdit": true
+  },
+  "columns": [
+    {
+      "name": "classCode",
+      "displayName": "班级编码",
+      "sortable": true,
+      "rowEditable": true
+    },
+    {
+      "name": "className",
+      "displayName": "班级名称",
+      "rowEditable": true
+    }
+  ]
+}
+```
+
+| `gridEditMode` 字段 | 说明 |
+|---|---|
+| `mode` | 固定 `"multipleRow"` — 多行同时编辑 |
+| `rowBtns` | 行内操作按钮，可含 `"update"` / `"add"` / `"delete"` |
+| `defaultCancelEdit` | `true` — 点击空白处自动取消编辑 |
+| `rowEditable` | 列级配置，`true` 表示该列可内联编辑 |
+
 ---
 
 ## Form 视图
@@ -295,23 +371,85 @@
 | `row` / `span` | 行和栅格宽度 | `1`、`12` |
 | `groupConf` | 表单分组 | `{ "id": "base", "name": "基础信息" }` |
 
-子表 tabs：
+子表 tabs（来自工程 example_class_view.json / example_item_view.json）：
 
 ```json
 {
-  "header": "附件",
+  "header": "物料属性列表",
+  "isAloneSave": true,
   "tbar": [
-    { "name": "添加", "action": "addEr", "auth": "update" },
-    { "name": "删除", "action": "deleteEr", "auth": "delete" }
+    { "name": "新增", "action": "createEr", "auth": "createEr" },
+    { "name": "删除", "action": "deleteEr", "auth": "deleteEr" }
   ],
   "body": {
-    "type": "grid,form,search",
-    "field": "attachmentList",
-    "columns": ["fileName", "fileSize"],
-    "buttons": ["@defaultsEr"]
+    "type": "grid,form",
+    "model": "example_item_attribute",
+    "field": "itemAttributeList",
+    "hideRelForm": "(vm, val) => { if (val.itemCode == '123') return true; }",
+    "gridEditMode": {
+      "mode": "multipleRow",
+      "rowBtns": ["update", "add", "delete"],
+      "defaultCancelEdit": true
+    },
+    "beforeEditMethod": "({ row, rowIndex, column, columnIndex }) => { if (row.color == 123 && column.field == 'price') { return false; } return true; }",
+    "mainTableColumns": [
+      {
+        "name": "code",
+        "custom": true,
+        "disabled": true,
+        "readonly": true
+      }
+    ],
+    "columns": [
+      { "name": "color", "rowEditable": true },
+      { "name": "price", "rowEditable": true },
+      "weight",
+      "itemAttributeType"
+    ]
   }
 }
 ```
+
+子表 tab 关键属性：
+
+| 属性 | 位置 | 说明 |
+|---|---|---|
+| `isAloneSave` | tab 级 | `true` — 该子表有独立保存按钮，不随主表单一起提交 |
+| `hideRelForm` | body 级 | 函数，返回 `true` 则隐藏该 tab 的关联表单面板；`val` 为主表单当前数据 |
+| `gridEditMode` | body 级 | 内联行编辑，见 Grid 章节 |
+| `beforeEditMethod` | body 级 | 函数，返回 `false` 则禁止该单元格编辑；参数 `{ row, rowIndex, column, columnIndex }` |
+| `mainTableColumns` | body 级 | 从主表单注入字段到子表 grid；`custom: true` + `disabled/readonly` 通常用于只读回显 |
+
+基础子表 tab（无内联编辑，仅 addEr/deleteEr）：
+
+```json
+{
+  "header": "学生",
+  "isAloneSave": true,
+  "tbar": [
+    { "name": "添加", "action": "addEr", "auth": "update" },
+    { "name": "删除", "action": "deleteEr", "auth": "deleteEr" }
+  ],
+  "body": {
+    "model": "example_student",
+    "type": "demo_example_student_grid,demo_example_student_grid_search",
+    "field": "studentList",
+    "buttons": [
+      { "action": "preview", "auth": "read", "name": "详情" },
+      {
+        "name": "编辑",
+        "action": "updateEr",
+        "auth": "update",
+        "enableCondition": "(row) => {return row[0].isEnable !== true;}"
+      }
+    ],
+    "pagin": { "limit": 0, "display": false, "unPaging": true },
+    "columns": ["name"]
+  }
+}
+```
+
+> `"type": "demo_example_student_grid,demo_example_student_grid_search"` — 引用已注册的视图 key 组合，替代内联 `type: "grid,search"`。
 
 表单级常用属性：
 
