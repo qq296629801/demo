@@ -295,6 +295,9 @@ List<?> related = meta.get("[model]").find(Filter.in("id", ids), ...)
 - [ ] §8.1–8.4 规格-产物对照表已填写，无空行、无 ❌ 项
 - [ ] §8.5 自定义服务实现核查已填写，所有 @MethodService 均有对应核查组，无 ❌ 项
 
+> 完成 §8 对照表后，按 `skills/create-project/references/sdd-validation.md` 执行 AC → TC 提取，将测试用例写入当前 feature 的 `validation.md`，并满足 Phase 完成门控（所有 TC-BE/TC-FE 无 ⬜ 待执行）。
+> 交付前静态自检见 `skills/backend/references/core/validation-checklist.md`。
+
 ## 8. 规格-产物对照表（生成后必填）
 
 > **填写规则**：生成完所有产物后逐行填写。"一致"列填 ✅（一致）或 ❌（不一致，需立即修正），不得留空或标"待确认"。发现 ❌ 必须在提交前修正并重新填 ✅。
