@@ -1,0 +1,300 @@
+{
+  "views": {
+    "demo_example_item_grid_search": {
+      "mode": "primary",
+      "name": "Example-物料-搜索",
+      "model": "example_item",
+      "type": "search",
+      "body": {
+        "columns": [
+          "itemName",
+          {
+            "name": "unitId",
+            "defaultSelected": true
+          }
+        ],
+        "type": "search"
+      }
+    },
+    "demo_example_item_grid": {
+      "mode": "primary",
+      "model": "item_item",
+      "name": "Example-物料-列表",
+      "type": "grid",
+      "body": {
+        "checkbox": "multiple_2",
+        "typeView": "subTable",
+        "buttons": [
+          {
+            "action": "preview",
+            "auth": "read",
+            "name": "详情"
+          },
+          {
+            "action": "edit",
+            "auth": "update",
+            "name": "编辑"
+          }
+        ],
+        "headerSortRemote": true,
+        "sortMultiple": true,
+        "columns": [
+          "itemCode",
+          "itemName",
+          "unitId",
+          "isEnable",
+          "create_user",
+          "create_date",
+          "update_user",
+          "update_date"
+        ],
+        "tbar": [
+          {
+            "action": "create",
+            "auth": "create",
+            "name": "新增"
+          },
+          {
+            "action": "delete",
+            "auth": "delete",
+            "name": "删除"
+          },
+          {
+            "name": "导出",
+            "action": "export",
+            "source": "selected",
+            "model": "example_item",
+            "service": "excelExport"
+          },
+          {
+            "name": "启用",
+            "action": "enable",
+            "auth": "enable",
+            "model": "example_item",
+            "service": "enableDisable",
+            "actionAfter": "refreshTable",
+            "options": {
+              "icon": "el-icon-open"
+            },
+            "args": {
+              "bind_ids": "$ds.checkedDataIds",
+              "statusFlag": "1"
+            },
+            "bind_disabled": "${$ds.checkedDataList.length === 0}"
+          },
+          {
+            "name": "禁用",
+            "action": "disable",
+            "auth": "disable",
+            "model": "example_item",
+            "service": "enableDisable",
+            "actionAfter": "refreshTable",
+            "options": {
+              "icon": "el-icon-turn-off"
+            },
+            "args": {
+              "bind_ids": "$ds.checkedDataIds",
+              "statusFlag": "0"
+            },
+            "bind_disabled": "${$ds.checkedDataList.length === 0}"
+          }
+        ],
+        "type": "grid"
+      }
+    },
+    "demo_example_item_grid_param_form": {
+      "mode": "primary",
+      "name": "Example-物料-表单",
+      "model": "example_item",
+      "type": "form",
+      "body": {
+        "buttons": [
+          "@defaults"
+        ],
+        "columns": [
+          "itemCode",
+          "itemName",
+          "unitId"
+        ],
+        "tbar": [
+          "@defaults"
+        ],
+        "type": "form",
+        "tabs": [
+          {
+            "header": "物料属性列表",
+            "isAloneSave": true,
+            "tbar": [
+              {
+                "name": "新增",
+                "action": "createEr",
+                "auth": "createEr"
+              },
+              {
+                "name": "删除",
+                "action": "deleteEr",
+                "auth": "deleteEr"
+              }
+            ],
+            "body": {
+              "type": "grid,form",
+              "model": "example_item_attribute",
+              "field": "itemAttributeList",
+              "hideRelForm": "(vm, val) => {if (val.itemCode == '123') return true;}",
+              "gridEditMode": {
+                "mode": "multipleRow",
+                "rowBtns": ["update", "add", "delete"],
+                "defaultCancelEdit": true
+              },
+              "beforeEditMethod": "({ row, rowIndex, column, columnIndex }) => {if (row.color == 123 && column.field == 'price') { return false;}return true;}",
+              "mainTableColumns": [
+                {
+                  "name": "code",
+                  "custom": true,
+                  "disabled": true,
+                  "readonly": true
+                }
+              ],
+              "columns": [
+                {
+                  "name": "color",
+                  "rowEditable": true
+                },
+                {
+                  "name": "price",
+                  "rowEditable": true
+                },
+                "weight",
+                "itemAttributeType"
+              ]
+            }
+          },
+          {
+            "header": "基本资料",
+            "isAloneSave": true,
+            "tbar": [
+              {
+                "name": "新增",
+                "action": "createEr",
+                "auth": "createEr"
+              },
+              {
+                "name": "删除",
+                "action": "deleteEr",
+                "auth": "deleteEr"
+              }
+            ],
+            "body": {
+              "type": "grid,form",
+              "model": "example_item_basic_data",
+              "field": "itemBasicDataList",
+              "mainTableColumns": [
+                {
+                  "name": "code",
+                  "custom": true,
+                  "disabled": true,
+                  "readonly": true
+                }
+              ],
+              "pagin": {
+                "limit": 0,
+                "display": false,
+                "unPaging": true
+              },
+              "columns": [
+                "desc",
+                {
+                  "name": "englishDesc",
+                  "hideRelForm": "(vm, val) => { if (val.itemCode == '1234') return true;}"
+                },
+                "itemShort",
+                "unitAccuracy",
+                "basicCode",
+                "machineType",
+                "drawingNo"
+              ]
+            }
+          },
+          {
+            "header": "分类维护",
+            "isAloneSave": true,
+            "tbar": [
+              {
+                "name": "新增",
+                "action": "createEr",
+                "auth": "createEr"
+              },
+              {
+                "name": "删除",
+                "action": "deleteEr",
+                "auth": "deleteEr"
+              }
+            ],
+            "body": {
+              "type": "grid,form",
+              "model": "example_item_cate",
+              "field": "itemCateList",
+              "mainTableColumns": [
+                {
+                  "name": "code",
+                  "custom": true,
+                  "disabled": true,
+                  "readonly": true
+                }
+              ],
+              "pagin": {
+                "limit": 0,
+                "display": false,
+                "unPaging": true
+              },
+              "columns": [
+                "cateType",
+                "cateCode",
+                "cateName"
+              ]
+            }
+          },
+          {
+            "header": "打印设置",
+            "isAloneSave": true,
+            "tbar": [
+              {
+                "name": "新增",
+                "action": "createEr",
+                "auth": "createEr"
+              },
+              {
+                "name": "删除",
+                "action": "deleteEr",
+                "auth": "deleteEr"
+              }
+            ],
+            "body": {
+              "type": "grid,form",
+              "model": "example_item_print_config",
+              "field": "itemPrintConfigList",
+              "mainTableColumns": [
+                {
+                  "name": "code",
+                  "custom": true,
+                  "disabled": true,
+                  "readonly": true
+                }
+              ],
+              "pagin": {
+                "limit": 0,
+                "display": false,
+                "unPaging": true
+              },
+              "columns": [
+                "barcodeRuleId",
+                "labelTemplateId",
+                "packingTemplateId"
+              ]
+            }
+          }
+        ]
+      }
+    }
+  }
+}

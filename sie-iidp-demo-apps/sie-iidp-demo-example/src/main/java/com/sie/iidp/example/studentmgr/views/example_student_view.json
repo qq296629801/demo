@@ -1,0 +1,609 @@
+{
+  "views": {
+    "demo_example_student_grid_search": {
+      "mode": "primary",
+      "name": "Example-学生-搜索",
+      "model": "example_student",
+      "type": "search",
+      "body": {
+        "columns": [
+          "name",
+          "birthDay",
+          {
+            "name": "classId",
+            "placeholder": "请选择班级",
+            "useCustomClick": true,
+            "view": {
+              "customClick": {
+                "customSelect": {
+                  "showType": "dialog",
+                  "useOpenView": {
+                    "preId": "demo_example_student_form_model_search_",
+                    "model": "example_class",
+                    "type": "demo_example_class_grid,demo_example_class_grid_search",
+                    "setFormValues": "",
+                    "getTableValues": "",
+                    "checkbox": "single",
+                    "valueField": "id",
+                    "labelField": "name",
+                    "onlyReturnValue": false,
+                    "api": {
+                      "grid": {
+                        "search": {
+                          "params": {
+                            "app": "sie-iidp-demo-example"
+                          }
+                        },
+                        "count": {
+                          "params": {
+                            "app": "sie-iidp-demo-example"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "custom": true
+          }
+        ],
+        "type": "search"
+      }
+    },
+    "demo_example_student_grid": {
+      "mode": "primary",
+      "model": "example_student",
+      "name": "Example-学生-列表",
+      "type": "grid",
+      "body": {
+        "checkbox": "multiple_2",
+        "typeView": "subTable",
+        "buttons": [
+          {
+            "action": "preview",
+            "auth": "read",
+            "name": "详情"
+          },
+          {
+            "action": "edit",
+            "auth": "update",
+            "name": "编辑"
+          }
+
+        ],
+        "columns": [
+          "isEnable",
+          "stuCode",
+          "name",
+          "sex",
+          "classCode",
+          "className",
+          "studentLevel",
+          "birthDay",
+          "isFourLevel",
+          "isHaveFile",
+          "create_user",
+          "create_date",
+          "update_user",
+          "update_date"
+        ],
+        "tbar": [
+          {
+            "action": "create",
+            "auth": "create",
+            "name": "新增"
+          },
+          {
+            "action": "delete",
+            "auth": "delete",
+            "name": "删除"
+          },
+          {
+            "name": "导出",
+            "action": "export",
+            "source": "selected",
+            "model": "example_student",
+            "service": "excelExport"
+          },
+          {
+            "name": "启用",
+            "action": "enable",
+            "auth": "enable",
+            "model": "example_student",
+            "service": "enableDisable",
+            "actionAfter": "refreshTable",
+            "options": {
+              "icon": "el-icon-open"
+            },
+            "args": {
+              "bind_ids": "$ds.checkedDataIds",
+              "statusFlag": "1"
+            },
+            "bind_disabled": "${$ds.checkedDataList.length === 0}"
+          },
+          {
+            "name": "禁用",
+            "action": "disable",
+            "auth": "disable",
+            "model": "example_student",
+            "service": "enableDisable",
+            "actionAfter": "refreshTable",
+            "options": {
+              "icon": "el-icon-turn-off"
+            },
+            "args": {
+              "bind_ids": "$ds.checkedDataIds",
+              "statusFlag": "0"
+            },
+            "bind_disabled": "${$ds.checkedDataList.length === 0}"
+          },
+          {
+            "name": "自定义SQL",
+            "action": "customSqlStudentDtl",
+            "model": "example_student",
+            "service": "customSqlStudentDtl",
+            "options": {
+              "icon": "el-icon-circle-check"
+            },
+            "args": {
+              "bind_ids": "$ds.checkedDataIds"
+            }
+          },
+          {
+            "name": "获取配置中心值",
+            "action": "configCenter",
+            "model": "example_student",
+            "service": "getConfigCenterValue"
+          },
+          {
+            "name": "redis锁测试",
+            "action": "redisTestLock",
+            "model": "example_student",
+            "service": "redisTestLock",
+            "group": {
+              "groupName": "Redis测试",
+              "id": "2"
+            },
+            "options": {
+              "icon": "el-icon-lock"
+            },
+            "args": {
+              "bind_ids": "$ds.checkedDataIds"
+            }
+          },
+          {
+            "name": "redis存取值",
+            "action": "redisTestTwo",
+            "model": "example_student",
+            "service": "redisTestTwo",
+            "group": {
+              "groupName": "Redis测试",
+              "id": "2"
+            },
+            "options": {
+              "icon": "el-icon-circle-check"
+            },
+            "args": {
+              "bind_ids": "$ds.checkedDataIds"
+            }
+          },
+          {
+            "name": "设为一级学生",
+            "action": "setOneLevel",
+            "auth": "setOneLevel",
+            "model": "example_student",
+            "service": "updateStudentLevel",
+            "actionAfter": "refreshTable",
+            "bind_disabled": "${$ds.checkedDataList.length === 0}",
+            "group": {
+              "groupName": "设置学生等级",
+              "id": "3"
+            },
+            "options": {
+              "icon": "el-icon-setting"
+            },
+            "args": {
+              "bind_ids": "$ds.checkedDataIds",
+              "flag": 1
+            }
+          },
+          {
+            "name": "设为二级学生",
+            "action": "setOneLevel",
+            "auth": "setOneLevel",
+            "model": "example_student",
+            "service": "updateStudentLevel",
+            "actionAfter": "refreshTable",
+            "bind_disabled": "${$ds.checkedDataList.length === 0}",
+            "group": {
+              "groupName": "设置学生等级",
+              "id": "3"
+            },
+            "options": {
+              "icon": "el-icon-setting"
+            },
+            "args": {
+              "bind_ids": "$ds.checkedDataIds",
+              "flag": 2
+            }
+          },
+          {
+            "name": "设为三级学生",
+            "action": "setOneLevel",
+            "auth": "setOneLevel",
+            "model": "example_student",
+            "service": "updateStudentLevel",
+            "actionAfter": "refreshTable",
+            "bind_disabled": "${$ds.checkedDataList.length === 0}",
+            "group": {
+              "groupName": "设置学生等级",
+              "id": "3"
+            },
+            "options": {
+              "icon": "el-icon-setting"
+            },
+            "args": {
+              "bind_ids": "$ds.checkedDataIds",
+              "flag": 3
+            }
+          },
+          {
+            "name": "设为四级学生",
+            "action": "setFourLevel",
+            "auth": "setFourLevel",
+            "model": "example_student",
+            "service": "updateStudentLevel",
+            "actionAfter": "refreshTable",
+            "bind_disabled": "${$ds.checkedDataList.length === 0}",
+            "group": {
+              "groupName": "设置学生等级",
+              "id": "3"
+            },
+            "options": {
+              "icon": "el-icon-setting"
+            },
+            "args": {
+              "bind_ids": "$ds.checkedDataIds",
+              "flag": 4
+            }
+          },
+          {
+            "name": "同步到档案表",
+            "action": "syncStudentProfile",
+            "auth": "syncStudentProfile",
+            "model": "example_student",
+            "service": "callRpc",
+            "actionAfter": "refreshTable",
+            "options": {
+              "icon": "el-icon-circle-check"
+            },
+            "args": {
+              "bind_ids": "$ds.checkedDataIds"
+            }
+          },
+          {
+            "name": "同步到读者管理",
+            "action": "syncReader",
+            "auth": "syncReader",
+            "model": "example_student",
+            "service": "syncReader",
+            "actionAfter": "refreshTable",
+            "options": {
+              "icon": "el-icon-circle-check"
+            },
+            "args": {
+              "bind_ids": "$ds.checkedDataIds"
+            }
+          },
+          {
+            "name": "测试单模块事务",
+            "action": "test1",
+            "auth": "test1",
+            "model": "example_student",
+            "service": "testTransactional",
+            "actionAfter": "refreshTable",
+            "group": {
+              "groupName": "事物测试",
+              "id": "4"
+            },
+            "options": {
+              "icon": "el-icon-circle-check"
+            },
+            "args": {
+              "bind_ids": "$ds.checkedDataIds"
+            }
+          },
+          {
+            "name": "测试多模块事务",
+            "action": "test",
+            "auth": "test",
+            "model": "example_student",
+            "service": "testTransactionalRpc",
+            "actionAfter": "refreshTable",
+            "group": {
+              "groupName": "事物测试",
+              "id": "4"
+            },
+            "options": {
+              "icon": "el-icon-circle-check"
+            },
+            "args": {
+              "bind_ids": "$ds.checkedDataIds"
+            }
+          },
+          {
+            "name": "测试单模块手动提交事务",
+            "action": "subCommit",
+            "auth": "subCommit",
+            "model": "example_student",
+            "service": "testTransactionalSubCommit",
+            "actionAfter": "refreshTable",
+            "group": {
+              "groupName": "事物测试",
+              "id": "4"
+            },
+            "options": {
+              "icon": "el-icon-circle-check"
+            },
+            "args": {
+              "bind_ids": "$ds.checkedDataIds"
+            }
+          },
+          {
+            "name": "测试多模块手动提交事务",
+            "action": "allCommit",
+            "auth": "allCommit",
+            "model": "example_student",
+            "service": "testTransactionalSubRpc",
+            "actionAfter": "refreshTable",
+            "group": {
+              "groupName": "事物测试",
+              "id": "4"
+            },
+            "options": {
+              "icon": "el-icon-circle-check"
+            },
+            "args": {
+              "bind_ids": "$ds.checkedDataIds"
+            }
+          },
+          {
+            "name": "测试手动控制嵌套事务",
+            "action": "testNestingTransactional",
+            "auth": "testNestingTransactional",
+            "model": "example_student",
+            "service": "testNestingTransactional",
+            "actionAfter": "refreshTable",
+            "group": {
+              "groupName": "事物测试",
+              "id": "4"
+            },
+            "options": {
+              "icon": "el-icon-circle-check"
+            },
+            "args": {
+              "bind_ids": "$ds.checkedDataIds"
+            }
+          }
+        ],
+        "type": "grid"
+      }
+    },
+    "demo_example_student_grid_param_form": {
+      "mode": "primary",
+      "name": "Example-学生-表单",
+      "model": "demo_example",
+      "type": "form",
+      "body": {
+        "buttons": [
+          "@defaults"
+        ],
+        "columns": [
+          {
+            "type": "switch",
+            "text": "启用状态",
+            "activeValue": "1",
+            "inactiveValue": "0",
+            "defaultValue": "1",
+            "displayName": "是否可用",
+            "name": "isEnable",
+            "custom": true
+          },
+          {
+            "label": "学号",
+            "name": "stuCode",
+            "disabled": true,
+            "ds_config": {
+              "type": "meta",
+              "name": "stuCode",
+              "autoRequest": true,
+              "options": {
+                "params": {
+                  "args": {},
+                  "service": "genStuCode",
+                  "model": "example_student"
+                }
+              },
+              "reqAfter": "(vm, res,params) => {if(vm.$ds.clickType == 'add'){let newRes = res.data;vm.$select('demo_example_student_menu_form_main_detail_top_common').$ds.form.stuCode=newRes; }}"
+            }
+          },
+          "name",
+          "sex",
+          {
+            "text": "班级编码",
+            "name": "classCode",
+            "bind_on_changeHandler": "(params) => {if(!!params && !!params.__row){params.self.$ds.form.className=params.__row.name;params.self.$ds.form.classId=params.__row.id;}}"
+          },
+          {
+            "name": "className",
+            "disabled": true
+          },
+          {
+            "name": "birthDay",
+            "defaultValueFn": "return new Date()"
+          },
+          "studentLevel",
+          {
+            "name": "isHaveFile",
+            "disabled": true
+          },
+          {
+            "name": "areaCode",
+            "text": "所在地区",
+            "custom": true,
+            "type": "mbm-address-linkage",
+            "otherOptionValues": {
+              "name": "area"
+            }
+          },
+          "dtlAddress",
+          {
+            "name": "isEnable",
+            "text": "是否可用",
+            "custom": true,
+            "type": "switch-custom"
+          }
+        ],
+        "tbar": [
+          "@defaults"
+        ],
+        "type": "form",
+        "tabs": [
+          {
+            "header": "课程",
+            "isAloneSave": true,
+            "tbar": [
+              {
+                "name": "添加",
+                "action": "addEr",
+                "auth": "update"
+              },
+              {
+                "name": "删除",
+                "action": "deleteEr",
+                "auth": "deleteEr"
+              }
+            ],
+            "body": {
+              "model": "example_course",
+              "type": "demo_example_course_grid,demo_example_course_grid_search",
+              "field": "courseList",
+              "buttons": [
+                {
+                  "action": "preview",
+                  "auth": "read",
+                  "name": "详情"
+                },
+                {
+                  "name": "编辑",
+                  "action": "updateEr",
+                  "auth": "update",
+                  "enableCondition": "(row) => {return row[0].isEnable !== true;}"
+                }
+              ],
+              "pagin": {
+                "limit": 0,
+                "display": false,
+                "unPaging": true
+              },
+              "columns": [
+                "courseName",
+                "create_user",
+                "create_date",
+                "update_user",
+                "update_date"
+              ],
+              "tbar": [
+                {
+                  "action": "create",
+                  "auth": "create",
+                  "name": "新增"
+                },
+                {
+                  "action": "delete",
+                  "auth": "delete",
+                  "name": "删除"
+                }
+              ]
+            }
+          },
+          {
+            "header": "附件",
+            "isAloneSave": true,
+            "tbar": [
+              {
+                "name": "上传",
+                "action": "import",
+                "auth": "import",
+                "model": "example_student_attachment",
+                "service": "fileUpload",
+                "options": {
+                  "icon": "el-icon-upload2"
+                },
+                "fileLimit": {
+                  "ext": ".doc,.docx,.pdf,.xls,.xlsx,.mp4,.avi,.wmv,.png,.jpg,.jpeg,.gif,.bmp",
+                  "maxSize": "2048"
+                },
+                "args": {
+                  "bind_studentId": "$ds.mainTableRowData.id"
+                }
+              },
+              {
+                "name": "下载",
+                "action": "custom",
+                "auth": "custom"
+              },
+              {
+                "name": "删除",
+                "action": "deleteEr",
+                "auth": "deleteEr",
+                "options": {
+                  "bind_disabled": {
+                    "path": "dataSource.mainTableRowData.isEnable",
+                    "selector": "demo_example_student_menu_table_main_table",
+                    "transform": "(params)=>{if(params.self.$ds.isDetail && params.self.$ds.clickType == 'add'){return false;}else{ return params.value === '1'?true:false;} return false;}"
+                  }
+                }
+              }
+            ],
+            "body": {
+              "type": "grid",
+              "model": "example_student_attachment",
+              "field": "attachmentList",
+              "buttons": [
+                {
+                  "name": "编辑",
+                  "action": "updateEr",
+                  "auth": "update",
+                  "enableCondition": "(row) => {return row[0].isEnable !== true;}"
+                }
+              ],
+              "pagin": {
+                "limit": 0,
+                "display": false,
+                "unPaging": true
+              },
+              "columns": [
+                "isEnable",
+                {
+                  "displayName": "文件Id",
+                  "name": "fileId",
+                  "hidden": true
+                },
+                "fileName",
+                "fileExtName",
+                "fileSize",
+                "remark",
+                "create_user",
+                "create_date",
+                "update_user",
+                "update_date"
+              ]
+            }
+          }
+        ]
+      }
+    }
+  }
+}

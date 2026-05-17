@@ -1,0 +1,67 @@
+{
+	"views": {
+		"inv_search3": {
+			"body": {
+				"columns": [
+					{
+						"displayName": "物料编码",
+						"name": "invCode"
+					},
+					{
+						"displayName": "物料名称",
+						"name": "invName"
+					}
+				],
+				"type": "search"
+			},
+			"mode": "primary",
+			"model": "demo_material_inventory",
+			"name": "物料库存-搜索",
+			"type": "search"
+		},
+		"inv_grid3": {
+			"body": {
+				"buttons": [
+                  "@defaults"
+				],
+              "columns": [
+                "invCode",
+                "invName",
+                "unit",
+                "initCount",
+                "inCount",
+                "outCount",
+                "stockCount"
+              ],
+				"tbar": [
+                  "@defaults"
+				],
+				"type": "grid"
+			},
+			"mode": "primary",
+			"model": "demo_material_inventory",
+			"name": "物料库存-表格",
+			"type": "grid"
+		},
+        "inv_form3": {
+          "body": {
+            "buttons": [
+              "@defaults"
+            ],
+            "columns": [
+              "invCode",
+              "invName",
+              "unit",
+              "initCount",
+              "inCount",
+              "outCount"
+            ],
+            "type": "form"
+          },
+          "mode": "primary",
+          "model": "demo_material_inventory",
+          "name": "物料库存-表单",
+          "type": "form"
+        }
+	}
+}

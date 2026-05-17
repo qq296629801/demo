@@ -1,0 +1,134 @@
+{
+  "views": {
+    "demo_example_student_profile_grid_search": {
+      "mode": "primary",
+      "name": "Example-档案-搜索",
+      "model": "example_student_profile",
+      "type": "search",
+      "body": {
+        "columns": [
+          "content"
+        ],
+        "type": "search"
+      }
+    },
+    "demo_example_student_profile_grid": {
+      "body": {
+        "checkbox": "multiple_2",
+        "buttons": [
+          {
+            "action": "preview",
+            "auth": "read",
+            "name": "详情"
+          },
+          {
+            "action": "edit",
+            "auth": "update",
+            "name": "编辑"
+          }
+        ],
+        "columns": [
+          "studentName",
+          "content",
+          "create_user",
+          "create_date",
+          "update_user",
+          "update_date"
+        ],
+        "tbar": [
+          {
+            "action": "create",
+            "auth": "create",
+            "name": "新增"
+          },
+          {
+            "action": "delete",
+            "auth": "delete",
+            "name": "删除"
+          }
+        ],
+        "type": "grid"
+      },
+      "mode": "primary",
+      "model": "example_student_profile",
+      "name": "Example-档案-列表",
+      "type": "grid"
+    },
+    "demo_example_student_profile_grid_param_form": {
+      "mode": "primary",
+      "name": "Example-档案-表单",
+      "model": "example_student_profile",
+      "type": "form",
+      "body": {
+        "buttons": [
+          "@defaults"
+        ],
+        "columns": [
+          {
+            "type": "select",
+            "displayName": "学生",
+            "name": "studentId",
+            "custom": true,
+            "bind_options": "$ds.studentData",
+            "ds_config": {
+              "type": "meta",
+              "name": "studentData",
+              "autoRequest": true,
+              "options": {
+                "params": {
+                  "args": {
+                    "filter": [],
+                    "properties": [
+                      "id",
+                      "name"
+                    ],
+                    "limit": 0,
+                    "offset": 0,
+                    "order": "id"
+                  },
+                  "service": "callStudentListRpc",
+                  "model": "example_student_profile"
+                }
+              },
+              "reqAfter": "(vm, res) => {console.log(res);let newRes = res.data.map(item => {return {text: item.name,value: item.id}}); return newRes;}"
+            }
+          },
+          {
+            "type": "select",
+            "displayName": "班级",
+            "name": "classId",
+            "custom": true,
+            "bind_options": "$ds.classData",
+            "ds_config": {
+              "type": "meta",
+              "name": "classData",
+              "doWhenChange": "reload",
+              "options": {
+                "params": {
+                  "args": {
+                    "bind_filter": "${[['studentId','=','$ds.form.studentId']]}",
+                    "properties": [
+                      "id",
+                      "className"
+                    ],
+                    "limit": 0,
+                    "offset": 0,
+                    "order": "id"
+                  },
+                  "service": "callClassListRpc",
+                  "model": "example_student_profile"
+                }
+              },
+              "reqAfter": "(vm, res) => {let newRes = res.data.map(item => {return {text: item.className,value: item.id}}); return newRes;}"
+            }
+          },
+          "content"
+        ],
+        "tbar": [
+          "@defaults"
+        ],
+        "type": "form"
+      }
+    }
+  }
+}

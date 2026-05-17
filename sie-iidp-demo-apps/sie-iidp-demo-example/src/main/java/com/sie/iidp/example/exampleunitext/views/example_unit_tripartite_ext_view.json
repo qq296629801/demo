@@ -1,0 +1,147 @@
+{
+  "views": {
+    "demo_example_unit_tripartite_ext_grid_search": {
+      "mode": "primary",
+      "name": "Example-单位-第三方-扩展",
+      "model": "example_unit_tripartite_ext",
+      "type": "search",
+      "body": {
+        "columns": [
+          "unitName",
+          "unitType",
+          "isEnable",
+          {
+            "displayName": "时间范围",
+            "name": "timeRange",
+            "type": "datepicker",
+            "custom": true,
+            "pickerType": "daterange",
+            "isRange": true,
+            "startPlaceholder": "请选择开始时间",
+            "endPlaceholder":"请选择结束使劲按",
+            "readonly": false,
+            "bind_on_changeHandler": "(data) => {console.log(data); }"
+          }
+        ],
+        "type": "search"
+      }
+    },
+    "demo_example_unit_tripartite_ext_grid": {
+      "body": {
+        "checkbox": "multiple_2",
+        "buttons": [
+          {
+            "action": "preview",
+            "auth": "read",
+            "name": "详情"
+          },
+          {
+            "action": "edit",
+            "auth": "update",
+            "name": "编辑"
+          }
+        ],
+        "headerSortRemote": true,
+        "sortMultiple": true,
+        "columns": [
+          "unitCode",
+          "unitName",
+          "unitType",
+          "isEnable",
+          "effectDay",
+          "create_user",
+          "create_date",
+          "update_user",
+          "update_date"
+        ],
+        "tbar": [
+          {
+            "action": "create",
+            "auth": "create",
+            "name": "新增"
+          },
+          {
+            "action": "delete",
+            "auth": "delete",
+            "name": "删除"
+          },
+          {
+            "name": "启用",
+            "action": "enable",
+            "auth": "enable",
+            "model": "example_unit_time_range_ext",
+            "service": "enableDisable",
+            "actionAfter": "refreshTable",
+            "options": {
+              "icon": "el-icon-open"
+            },
+            "args": {
+              "bind_ids": "$ds.checkedDataIds",
+              "statusFlag": "1"
+            },
+            "bind_disabled": "${$ds.checkedDataList.length === 0}"
+          },
+          {
+            "name": "禁用",
+            "action": "disable",
+            "auth": "disable",
+            "model": "example_unit_time_range_ext",
+            "service": "enableDisable",
+            "actionAfter": "refreshTable",
+            "options": {
+              "icon": "el-icon-turn-off"
+            },
+            "args": {
+              "bind_ids": "$ds.checkedDataIds",
+              "statusFlag": "0"
+            },
+            "bind_disabled": "${$ds.checkedDataList.length === 0}"
+          },
+          {
+            "name": "导出",
+            "action": "export",
+            "source": "selected",
+            "model": "example_unit_time_range_ext",
+            "service": "excelExport"
+          }
+        ],
+        "type": "grid"
+      },
+      "mode": "primary",
+      "model": "example_unit_tripartite_ext",
+      "name": "Example-单位-第三方-扩展-列表",
+      "type": "grid"
+    },
+    "demo_example_unit_tripartite_ext_grid_param_form": {
+      "mode": "primary",
+      "name": "Example-单位-第三方-扩展-表单",
+      "model": "example_unit_tripartite_ext",
+      "type": "form",
+      "body": {
+        "buttons": [
+          "@defaults"
+        ],
+        "columns": [
+          "unitCode",
+          "unitName",
+          {
+            "displayName": "状态",
+            "name": "isEnable",
+            "custom": true,
+            "type": "input"
+          },
+          "unitAddress",
+          {
+            "displayName": "生效日期",
+            "name": "effectDay",
+            "defaultValueFn": "return new Date()"
+          }
+        ],
+        "tbar": [
+          "@defaults"
+        ],
+        "type": "form"
+      }
+    }
+  }
+}

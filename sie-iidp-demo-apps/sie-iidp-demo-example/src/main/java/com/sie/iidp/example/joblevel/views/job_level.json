@@ -1,0 +1,69 @@
+{
+  "views": {
+    "demo_job_level_grid": {
+      "body": {
+        "buttons": [
+        ],
+        "columns": [
+          {"name": "id", "treeNode": true},
+          "jobTitle",
+          "parentId",
+          "parentJobTitle",
+          "description",
+          "create_user",
+          "create_date"
+        ],
+        "tbar": [
+        ],
+        "type": "grid",
+        "gridOptions": {
+          "treeConfig": {
+            "expandAll": true,
+            "transform": true,
+            "rowField": "id",
+            "parentField": "parentId"
+          },
+          "checkboxConfig": {
+            "checkStrictly": true,
+            "showHeader": true
+          }
+        }
+      },
+      "mode": "primary",
+      "model": "job_level",
+      "name": "职位管理-列表",
+      "type": "grid"
+    },
+    "demo_job_level_grid_search": {
+      "mode": "primary",
+      "name": "职位管理-搜索",
+      "model": "job_level",
+      "type": "search",
+      "body": {
+        "columns": [
+          "jobTitle"
+        ],
+        "type": "search"
+      }
+    },
+    "demo_job_level_grid_param_form": {
+      "mode": "primary",
+      "name": "职位管理-表单",
+      "model": "job_level",
+      "type": "form",
+      "body": {
+        "buttons": [
+          "@defaults"
+        ],
+        "columns": [
+          "jobTitle",
+          "parentJobTitle",
+          "description"
+        ],
+        "tbar": [
+        ],
+        "type": "form"
+      }
+    }
+  }
+}

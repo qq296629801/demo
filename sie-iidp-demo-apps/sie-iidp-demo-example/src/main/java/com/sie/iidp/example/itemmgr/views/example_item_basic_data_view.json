@@ -1,0 +1,93 @@
+{
+  "views": {
+    "demo_example_item_basic_data_grid_search": {
+      "mode": "primary",
+      "name": "Example-物料基本资料-搜索",
+      "model": "example_item_basic_data",
+      "type": "search",
+      "body": {
+        "columns": [
+        ],
+        "type": "search"
+      }
+    },
+    "demo_example_item_basic_data_grid": {
+      "body": {
+        "checkbox": "multiple_2",
+        "typeView": "subTable",
+        "buttons": [
+          {
+            "action": "preview",
+            "auth": "read",
+            "name": "详情"
+          },
+          {
+            "action": "edit",
+            "auth": "update",
+            "name": "编辑"
+          }
+        ],
+        "columns": [
+          "desc",
+          "englishDesc",
+          "itemShort",
+          "unitAccuracy",
+          "basicCode",
+          "machineType",
+          "drawingNo",
+          "create_user",
+          "create_date",
+          "update_user",
+          "update_date"
+        ],
+        "tbar": [
+          {
+            "action": "create",
+            "auth": "create",
+            "name": "新增"
+          },
+          {
+            "action": "delete",
+            "auth": "delete",
+            "name": "删除"
+          }
+        ],
+        "type": "grid"
+      },
+      "mode": "primary",
+      "model": "example_item_basic_data",
+      "name": "Example-物料基础资料-列表",
+      "type": "grid"
+    },
+    "demo_example_item_basic_data_grid_param_form": {
+      "mode": "primary",
+      "name": "Example-物料基础资料-表单",
+      "model": "example_item_basic_data",
+      "type": "form",
+      "body": {
+        "buttons": [
+          "@defaults"
+        ],
+        "columns": [
+          "desc",
+          "englishDesc",
+          "itemShort",
+          {
+            "displayName": "单位精度",
+            "name": "unitAccuracy",
+            "type": "number",
+            "width": "547px",
+            "custom": true
+          },
+          "basicCode",
+          "machineType",
+          "drawingNo"
+        ],
+        "tbar": [
+          "@defaults"
+        ],
+        "type": "form"
+      }
+    }
+  }
+}

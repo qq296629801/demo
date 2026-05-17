@@ -1,0 +1,74 @@
+{
+  "data": {
+    "example_unit_1": {
+      "model": "example_unit",
+      "properties": {
+        "unitCode": "1111",
+        "unitName": "百万",
+        "unitType": 1,
+        "effectDay": "2024-05-20 09:00:00",
+        "isEnable": 1,
+        "create_user": "rbac_user_admin",
+        "create_date": "2024-05-20 09:00:00",
+        "update_user": "rbac_user_admin",
+        "update_date": "2024-05-20 09:00:00"
+      }
+    },
+    "example_unit_2": {
+      "model": "example_unit",
+      "properties": {
+        "unitCode": "2222",
+        "unitName": "千万",
+        "unitType": 1,
+        "effectDay": "2024-05-20 09:00:00",
+        "isEnable": 1,
+        "create_user": "rbac_user_admin",
+        "create_date": "2024-05-20 09:00:00",
+        "update_user": "rbac_user_admin",
+        "update_date": "2024-05-20 09:00:00"
+      }
+    },
+    "example_unit_3": {
+      "model": "example_unit",
+      "properties": {
+        "unitCode": "3333",
+        "unitName": "亿",
+        "unitType": 1,
+        "effectDay": "2024-05-20 09:00:00",
+        "isEnable": 1,
+        "create_user": "rbac_user_admin",
+        "create_date": "2024-05-20 09:00:00",
+        "update_user": "rbac_user_admin",
+        "update_date": "2024-05-20 09:00:00"
+      }
+    },
+    "example_unit_4": {
+      "model": "example_unit",
+      "properties": {
+        "unitCode": "4444",
+        "unitName": "十万",
+        "unitType": 1,
+        "effectDay": "2024-05-20 09:00:00",
+        "isEnable": 1,
+        "create_user": "rbac_user_admin",
+        "create_date": "2024-05-20 09:00:00",
+        "update_user": "rbac_user_admin",
+        "update_date": "2024-05-20 09:00:00"
+      }
+    },
+    "example_unit_5": {
+      "model": "example_unit",
+      "properties": {
+        "unitCode": "5555",
+        "unitName": "万",
+        "unitType": 1,
+        "effectDay": "2024-05-20 09:00:00",
+        "isEnable": 1,
+        "create_user": "rbac_user_admin",
+        "create_date": "2024-05-20 09:00:00",
+        "update_user": "rbac_user_admin",
+        "update_date": "2024-05-20 09:00:00"
+      }
+    }
+  }
+}

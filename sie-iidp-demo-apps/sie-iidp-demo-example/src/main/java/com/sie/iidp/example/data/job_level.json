@@ -1,0 +1,64 @@
+{
+  "data": {
+    "demo_job_level_example_ceo": {
+      "model": "job_level",
+      "properties": {
+        "jobTitle": "CEO",
+        "parentId": null,
+        "description": "公司总裁",
+        "create_user": "rbac_user_admin",
+        "create_date": "2024-06-24 09:00:00",
+        "update_user": "rbac_user_admin",
+        "update_date": "2024-06-24 09:00:00"
+      }
+    },
+    "demo_job_level_example_hr_manager": {
+      "model": "job_level",
+      "properties": {
+        "jobTitle": "HR经理",
+        "parentId": "demo_job_level_example_ceo",
+        "description": "公司HR经理",
+        "create_user": "rbac_user_admin",
+        "create_date": "2024-06-24 09:00:00",
+        "update_user": "rbac_user_admin",
+        "update_date": "2024-06-24 09:00:00"
+      }
+    },
+    "demo_job_level_example_product_manager": {
+      "model": "job_level",
+      "properties": {
+        "jobTitle": "产品经理主管",
+        "parentId": "demo_job_level_example_ceo",
+        "description": "公司产品经理主管",
+        "create_user": "rbac_user_admin",
+        "create_date": "2024-06-24 09:00:00",
+        "update_user": "rbac_user_admin",
+        "update_date": "2024-06-24 09:00:00"
+      }
+    },
+    "demo_job_level_example_product_manager_leader1": {
+      "model": "job_level",
+      "properties": {
+        "jobTitle": "高级产品经理",
+        "parentId": "demo_job_level_example_product_manager",
+        "description": "高级产品经理",
+        "create_user": "rbac_user_admin",
+        "create_date": "2024-06-24 09:00:00",
+        "update_user": "rbac_user_admin",
+        "update_date": "2024-06-24 09:00:00"
+      }
+    },
+    "demo_job_level_example_product_manager_leader2": {
+      "model": "job_level",
+      "properties": {
+        "jobTitle": "中级产品经理",
+        "parentId": "demo_job_level_example_product_manager",
+        "description": "中级产品经理",
+        "create_user": "rbac_user_admin",
+        "create_date": "2024-06-24 09:00:00",
+        "update_user": "rbac_user_admin",
+        "update_date": "2024-06-24 09:00:00"
+      }
+    }
+  }
+}

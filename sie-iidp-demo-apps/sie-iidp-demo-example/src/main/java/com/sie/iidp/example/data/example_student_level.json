@@ -1,0 +1,32 @@
+{
+  "data": {
+    "example_student_level": {
+      "model": "base_dict_type",
+      "properties": {
+        "dictName": "学生等级",
+        "dictType": "studentLevel",
+        "status": 0
+      }
+    },
+    "example_student_one_level": {
+      "model": "base_dict_value",
+      "properties": {
+        "dictLabel": "一级",
+        "dictValue": "1",
+        "dictType": "studentLevel",
+        "status": 0,
+        "dictSort": 1
+      }
+    },
+    "example_student_two_level": {
+      "model": "base_dict_value",
+      "properties": {
+        "dictLabel": "二级",
+        "dictValue": "2",
+        "dictType": "studentLevel",
+        "status": 0,
+        "dictSort": 2
+      }
+    }
+  }
+}

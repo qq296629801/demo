@@ -1,0 +1,112 @@
+{
+  "views": {
+    "demo_example_validate_grid": {
+      "body": {
+        "checkbox": "multiple_2",
+        "buttons": [
+          {
+            "action": "preview",
+            "auth": "read",
+            "name": "详情"
+          },
+          {
+            "action": "edit",
+            "auth": "update",
+            "name": "编辑"
+          }
+        ],
+        "columns": [
+          "code",
+          "name",
+          "qty",
+          "itemName",
+          "unitName",
+          "enumerate",
+          "date",
+          "create_user",
+          "create_date",
+          "update_user",
+          "update_date"
+        ],
+        "tbar": [
+          {
+            "action": "create",
+            "auth": "create",
+            "name": "新增"
+          },
+          {
+            "action": "delete",
+            "auth": "delete",
+            "name": "删除"
+          },
+          {
+            "name": "导出",
+            "action": "export",
+            "source": "selected",
+            "model": "example_validate",
+            "service": "excelExport"
+          }
+        ],
+        "type": "grid"
+      },
+      "mode": "primary",
+      "model": "example_validate",
+      "name": "Example-Name属性查询验证-列表",
+      "type": "grid"
+    },
+    "demo_example_validate_grid_search": {
+      "mode": "primary",
+      "name": "Example-Name属性查询验证-搜索",
+      "model": "example_validate",
+      "type": "search",
+      "body": {
+        "columns": [
+          "code",
+          "name",
+          "date"
+        ],
+        "type": "search"
+      }
+    },
+    "demo_example_validate_grid_param_form": {
+      "mode": "primary",
+      "name": "Example-Name属性查询验证-表单",
+      "model": "example_validate",
+      "type": "form",
+      "body": {
+        "buttons": [
+          "@defaults"
+        ],
+        "columns": [
+          "code",
+          "name",
+          {
+            "displayName": "数量",
+            "type": "number",
+            "name": "qty",
+            "custom": true
+          },
+          {
+            "text": "物料",
+            "name": "itemName",
+            "bind_on_changeHandler": "(params) => {console.log(params);if(!!params && !!params.__row){params.self.$ds.form.itemName=params.__row.itemName;}else{params.self.$ds.form.itemName=''}}"
+          },
+          {
+            "text": "单位",
+            "name": "unitName",
+            "bind_on_changeHandler": "(params) => {console.log(params);if(!!params && !!params.__row){params.self.$ds.form.unitName=params.__row.unitName;}else{params.self.$ds.form.unitName=''}}"
+          },
+          "enumerate",
+          {
+            "name": "date",
+            "disabled": true
+          }
+        ],
+        "tbar": [
+          "@defaults"
+        ],
+        "type": "form"
+      }
+    }
+  }
+}

@@ -1,0 +1,126 @@
+{
+  "views": {
+    "demo_example_org_level_tree": {
+      "name": "Example-企业层级(树形菜单)-树形",
+      "model": "example_org_level",
+      "type": "tree",
+      "mode": "primary",
+      "body": {
+        "model": "example_org_level",
+        "type": "tree",
+        "columns": [
+          "orgCateName",
+          "hlOrgCateIdp",
+          "children",
+          "code",
+          "name",
+          "orgCateId",
+          "hlOrgCateId"
+        ],
+        "searchConfig": {
+          "model": "example_org_level",
+          "service": "search",
+          "args": {
+            "useDisplayForModel": false
+          }
+        },
+        "props": {
+          "id": "orgCateId",
+          "expandOnClickNode": false,
+          "showSubView":true,
+          "isUpdateTree": true,
+          "children": "children",
+          "parent": "hlOrgCateId",
+          "label": "orgCateName",
+          "subApp": "base",
+          "subModel": "example_org_level",
+          "subViewType": "demo_example_org_level_grid,demo_example_org_level_form,demo_example_org_level_search",
+          "subViewFormInitValues": [
+            {
+              "treeName": "orgCateId",
+              "subformName": "hlOrgCateId"
+            }
+          ],
+          "subViewFilter": "hlOrgCateId",
+          "hasIcon": false,
+          "searchOneLayer": true
+        },
+        "tbar": [],
+        "search": {}
+      }
+    },
+    "demo_example_org_level_form": {
+      "body": {
+        "columns": [
+          {
+            "displayName": "类型名称",
+            "name": "orgCateId",
+            "disable_update": "edit"
+          },
+          "hlOrgCateId",
+          "create_user",
+          "create_date",
+          "update_user",
+          "update_date",
+          "remark"
+        ],
+        "tabs": [],
+        "type": "form"
+      },
+      "mode": "primary",
+      "model": "example_org_level",
+      "name": "Example-企业层级(树形菜单)-表单",
+      "type": "form"
+    },
+    "demo_example_org_level_grid": {
+      "body": {
+        "buttons": [
+          {
+            "action": "preview",
+            "auth": "read",
+            "name": "详情"
+          }
+        ],
+        "columns": [
+          "orgCateId",
+          "hlOrgCateId",
+          "create_user",
+          "create_date",
+          "update_user",
+          "update_date",
+          "remark"
+        ],
+        "tbar": [
+          {
+            "action": "create",
+            "auth": "create",
+            "name": "新增"
+          },
+          {
+            "action": "delete",
+            "auth": "delete",
+            "name": "删除"
+          }
+        ],
+        "type": "grid"
+      },
+      "mode": "primary",
+      "model": "example_org_level",
+      "name": "Example-企业层级(树形菜单)-列表",
+      "type": "grid"
+    },
+    "demo_example_org_level_search": {
+      "body": {
+        "columns": [
+          "orgCateId",
+          "hlOrgCateId"
+        ],
+        "type": "search"
+      },
+      "mode": "primary",
+      "model": "example_org_level",
+      "name": "Example-企业层级(树形菜单)-搜索",
+      "type": "search"
+    }
+  }
+}

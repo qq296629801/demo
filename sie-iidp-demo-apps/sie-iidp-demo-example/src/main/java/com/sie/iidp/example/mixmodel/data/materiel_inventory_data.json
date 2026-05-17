@@ -1,0 +1,28 @@
+{
+	"data": {
+		"10000": {
+			"model": "demo_material_inventory",
+			"properties": {
+              "id": "base",
+              "invCode": "10000",
+              "invName": "hhh",
+              "unit": "个",
+              "initCount": 1,
+              "inCount": 1,
+              "outCount": 1
+			}
+		},
+		"10001": {
+			"model": "demo_material_inventory",
+			"properties": {
+              "id": "base2",
+              "invCode": "10001",
+              "invName": "kkk",
+              "unit": "箱",
+              "initCount": 2,
+              "inCount": 3,
+              "outCount": 3
+			}
+		}
+	}
+}

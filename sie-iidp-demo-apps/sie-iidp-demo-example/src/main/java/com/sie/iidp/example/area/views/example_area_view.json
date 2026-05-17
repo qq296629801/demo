@@ -1,0 +1,169 @@
+{
+  "views": {
+    "demo_example_area_grid_search": {
+      "mode": "primary",
+      "name": "Example-区域-搜索",
+      "model": "example_area",
+      "type": "search",
+      "body": {
+        "columns": [
+          "areaCode",
+          "areaName",
+          "effectDay"
+        ],
+        "type": "search"
+      }
+    },
+    "demo_example_area_grid": {
+      "body": {
+        "checkbox": "multiple_2",
+        "buttons": [
+          {
+            "action": "preview",
+            "auth": "read",
+            "name": "详情"
+          },
+          {
+            "action": "edit",
+            "auth": "update",
+            "name": "编辑"
+          }
+        ],
+        "headerSortRemote": true,
+        "sortMultiple": true,
+        "columns": [
+          "parentCode",
+          "areaCode",
+          "areaName",
+          "areaType",
+          "effectDay",
+          "isEnable",
+          "create_user",
+          "create_date",
+          "update_user",
+          "update_date"
+        ],
+        "tbar": [
+          {
+            "action": "create",
+            "auth": "create",
+            "name": "新增"
+          },
+          {
+            "action": "delete",
+            "auth": "delete",
+            "name": "删除"
+          },
+          {
+            "name": "导出1",
+            "action": "export",
+            "source": "selected",
+            "model": "example_area",
+            "service": "excelExport"
+          },
+          {
+            "name": "启用",
+            "action": "enable",
+            "auth": "enable",
+            "model": "example_area",
+            "service": "enableDisable",
+            "actionAfter": "refreshTable",
+            "options": {
+              "icon": "el-icon-open"
+            },
+            "args": {
+              "bind_ids": "$ds.checkedDataIds",
+              "statusFlag": "1"
+            },
+            "bind_disabled": "${$ds.checkedDataList.length === 0}"
+          },
+          {
+            "name": "禁用",
+            "action": "disable",
+            "auth": "disable",
+            "model": "example_area",
+            "service": "enableDisable",
+            "actionAfter": "refreshTable",
+            "options": {
+              "icon": "el-icon-turn-off"
+            },
+            "args": {
+              "bind_ids": "$ds.checkedDataIds",
+              "statusFlag": "0"
+            },
+            "bind_disabled": "${$ds.checkedDataList.length === 0}"
+          },
+          {
+            "name": "导入",
+            "statement": "_fullImport",
+            "modelName": "example_area",
+            "templateName": "下载模板-区域",
+            "fileName": "@filePath(unit_import_template)",
+            "buttonList": [
+              {
+                "text": "下载模板",
+                "action": "downloadTemplate",
+                "icon": "el-icon-document"
+              },
+              {
+                "text": "准确性校验",
+                "action": "importValidate"
+              },
+              {
+                "text": "强制导入",
+                "action": "forceImport"
+              },
+              {
+                "text": "确认导入",
+                "action": "confirmImport"
+              }
+            ]
+          },
+          {
+            "name": "导出",
+            "statement": "_fullExport",
+            "modelName":"example_area"
+          }
+        ],
+        "type": "grid"
+      },
+      "mode": "primary",
+      "model": "example_area",
+      "name": "Example-区域-列表",
+      "type": "grid"
+    },
+    "demo_example_area_grid_param_form": {
+      "mode": "primary",
+      "name": "Example-区域-表单",
+      "model": "example_area",
+      "type": "form",
+      "body": {
+        "buttons": [
+          "@defaults"
+        ],
+        "columns": [
+          "parentCode",
+          "areaCode",
+          {
+            "displayName": "名称",
+            "name": "areaName",
+            "custom": true,
+            "type": "input"
+          },
+          "areaType",
+          {
+            "displayName": "生效日期",
+            "name": "effectDay",
+            "custom": true,
+            "type": "datepicker",
+            "defaultValueFn": "return new Date()"
+          }
+        ],
+        "tbar": [
+          "@defaults"
+        ],
+        "type": "form"
+      }
+    }
+  }
+}

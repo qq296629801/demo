@@ -1,0 +1,80 @@
+{
+  "views": {
+    "demo_example_student_attachment_grid_search": {
+      "mode": "primary",
+      "name": "Example-学生附件-搜索",
+      "model": "example_student_attachment",
+      "type": "search",
+      "body": {
+        "columns": [
+          "fileId"
+        ],
+        "type": "search"
+      }
+    },
+    "demo_example_student_attachment_grid": {
+      "body": {
+        "buttons": [
+          {
+            "action": "preview",
+            "auth": "read",
+            "name": "详情"
+          },
+          {
+            "action": "edit",
+            "auth": "update",
+            "name": "编辑"
+          }
+        ],
+        "columns": [
+          "isEnable",
+          "fileId",
+          "fileName",
+          "fileExtName",
+          "fileSize",
+          "remark",
+          "create_user",
+          "create_date",
+          "update_user",
+          "update_date"
+        ],
+        "tbar": [
+          {
+            "action": "create",
+            "auth": "create",
+            "name": "新增"
+          },
+          {
+            "action": "delete",
+            "auth": "delete",
+            "name": "删除"
+          }
+        ],
+        "type": "grid"
+      },
+      "mode": "primary",
+      "model": "example_student_attachment",
+      "name": "Example-学生附件-列表",
+      "type": "grid"
+    },
+    "demo_example_student_attachment_grid_param_form": {
+      "mode": "primary",
+      "name": "Example-学生附件-表单",
+      "model": "example_student_attachment",
+      "type": "form",
+      "body": {
+        "buttons": [
+          "@defaults"
+        ],
+        "columns": [
+          "fileName",
+          "remark"
+        ],
+        "tbar": [
+          "@defaults"
+        ],
+        "type": "form"
+      }
+    }
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "name": "sie-iidp-demo-example",
+  "displayName": "赛意IIDP Demo Example(示例) APP",
+  "author": "iidp",
+  "company": "sie",
+  "category": "iidp",
+  "product": "SIE-IIDP-DEMO",
+  "productDesc": "SIE-IIDP-DEMO",
+  "categoryDesc": "IIDP",
+  "description": "SIE-IIDP-DEMO-EXAMPLE",
+  "summary": "【EXAMPLE】模块APP,以iidp平台原子能力的粒度开发样例源码，配套开发手册，供新手学习查看；",
+  "type": "SDK",
+  "tag": "master",
+  "resolved": "com.sie.iidp.example",
+  "dependencies": [
+  ],
+  "application": true,
+  "icon": "sie",
+  "license": "LGPL 3.0",
+  "version": "1.0.0",
+  "view": [],
+  "data": [
+    "data/example_student_level.json",
+    "data/yes_no.json",
+    "data/unit_type.json",
+    "data/item_attribute_type.json",
+    "data/example_order.json",
+    "data/job_level.json"
+  ],
+  "events": {}
+}

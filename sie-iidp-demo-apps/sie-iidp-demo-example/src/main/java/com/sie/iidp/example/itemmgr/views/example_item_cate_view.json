@@ -1,0 +1,180 @@
+{
+  "views": {
+    "demo_example_item_cate_grid_search": {
+      "mode": "primary",
+      "name": "Example-物料分类-搜索",
+      "model": "example_item_cate",
+      "type": "search",
+      "body": {
+        "columns": [
+        ],
+        "type": "search"
+      }
+    },
+    "demo_example_item_cate_grid": {
+      "body": {
+        "typeView": "subTable",
+        "buttons": [
+          {
+            "action": "preview",
+            "auth": "read",
+            "name": "详情"
+          },
+          {
+            "action": "edit",
+            "auth": "update",
+            "name": "编辑"
+          }
+        ],
+        "headerSortRemote": true,
+        "sortMultiple": true,
+        "columns": [
+          "cateType",
+          "cateCode",
+          "cateName",
+          "create_user",
+          "create_date",
+          "update_user",
+          "update_date"
+        ],
+        "tbar": [
+          {
+            "action": "create",
+            "auth": "create",
+            "name": "新增"
+          },
+          {
+            "action": "delete",
+            "auth": "delete",
+            "name": "删除"
+          }
+        ],
+        "type": "grid"
+      },
+      "mode": "primary",
+      "model": "example_item_cate",
+      "name": "Example-物料分类-列表",
+      "type": "grid"
+    },
+    "demo_example_item_cate_grid_param_form": {
+      "mode": "primary",
+      "name": "Example-物料分类-表单",
+      "model": "example_item_cate",
+      "type": "form",
+      "body": {
+        "buttons": [
+          "@defaults"
+        ],
+        "columns": [
+          "cateType",
+          "cateCode",
+          "cateName"
+        ],
+        "tbar": [
+          "@defaults"
+        ],
+        "type": "form",
+        "layoutType": "drawerTable",
+        "tabs": [
+          {
+            "header": "物料分类方法",
+            "isAloneSave": true,
+            "tbar": [
+              {
+                "name": "新增",
+                "action": "createEr",
+                "auth": "createEr"
+              },
+              {
+                "name": "删除",
+                "action": "deleteEr",
+                "auth": "deleteEr"
+              }
+            ],
+            "body": {
+              "type": "grid,form",
+              "model": "example_item_cate_method",
+              "field": "itemCateMethods",
+              "mainTableColumns": [
+                {
+                  "name": "cateCode",
+                  "custom": true,
+                  "disabled": true,
+                  "readonly": true
+                }
+              ],
+              "pagin": {
+                "limit": 0,
+                "display": false,
+                "unPaging": true
+              },
+              "columns": [
+                { "name": "name", "rowEditable": true },
+                { "name": "methodType", "rowEditable": true },
+                { "name": "itemCate", "rowEditable": true }
+              ],
+              "gridEditMode": {
+                "mode": "multipleRow",
+                "rowBtns": [
+                  "update",
+                  "add",
+                  "delete"
+                ],
+                "defaultCancelEdit": true
+              }
+           }
+          },
+          {
+            "header": "分类步骤维护",
+            "isAloneSave": true,
+            "tbar": [
+              {
+                "name": "新增",
+                "action": "createEr",
+                "auth": "createEr"
+              },
+              {
+                "name": "删除",
+                "action": "deleteEr",
+                "auth": "deleteEr"
+              }
+            ],
+            "body": {
+              "type": "grid,form",
+              "model": "example_item_cate_step",
+              "field": "itemCateSteps",
+              "mainTableColumns": [
+                {
+                  "name": "cateCode",
+                  "custom": true,
+                  "disabled": true,
+                  "readonly": true
+                }
+              ],
+              "pagin": {
+                "limit": 0,
+                "display": false,
+                "unPaging": true
+              },
+              "columns": [
+                { "name": "des", "rowEditable": true },
+                { "name": "collect", "rowEditable": true },
+                { "name": "standard", "rowEditable": true },
+                { "name": "itemCate", "rowEditable": true }
+              ],
+              "gridEditMode": {
+                "mode": "multipleRow",
+                "rowBtns": [
+                  "update",
+                  "add",
+                  "delete"
+                ],
+                "defaultCancelEdit": true
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}

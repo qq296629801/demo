@@ -1,0 +1,101 @@
+{
+  "views": {
+    "demo_example_vocation_grid": {
+      "body": {
+        "buttons": [
+          {
+            "action": "preview",
+            "auth": "read",
+            "name": "详情"
+          },
+          {
+            "action": "edit",
+            "auth": "update",
+            "name": "编辑"
+          }
+        ],
+        "columns": [
+          "title",
+          "vocationType",
+          "salaryRatio",
+          "startTime",
+          "endTime",
+          "contact",
+          "description",
+          "status",
+          "create_user",
+          "create_date"
+        ],
+        "tbar": [
+          {
+            "action": "create",
+            "auth": "create",
+            "name": "新增"
+          },
+          {
+            "action": "delete",
+            "auth": "delete",
+            "name": "删除"
+          },
+          {
+            "name": "导出",
+            "statement": "_fullExport",
+            "modelName":"example_special_vocation"
+          }
+        ],
+        "type": "grid"
+      },
+      "mode": "primary",
+      "model": "example_special_vocation",
+      "name": "休假管理-列表",
+      "type": "grid"
+    },
+    "demo_example_vocation_grid_search": {
+      "mode": "primary",
+      "name": "休假管理-搜索",
+      "model": "example_special_vocation",
+      "type": "search",
+      "body": {
+        "columns": [
+          "title",
+          "status"
+        ],
+        "type": "search"
+      }
+    },
+    "demo_example_vocation_grid_param_form": {
+      "mode": "primary",
+      "name": "休假管理-表单",
+      "model": "example_special_vocation",
+      "type": "form",
+      "body": {
+        "buttons": [
+          "@defaults"
+        ],
+        "columns": [
+          "title",
+          "vocationType",
+          {
+            "name": "startTime",
+            "dataType": "DateTime",
+            "dateFormat": "yyyy-MM-dd HH: mm:ss",
+            "custom": true
+          },
+          {
+            "name": "endTime",
+            "dataType": "DateTime",
+            "dateFormat": "yyyy-MM-dd HH: mm:ss",
+            "custom": true
+          },
+          "contact",
+          "description",
+          "status"
+        ],
+        "tbar": [
+          "@defaults"
+        ],
+        "type": "form"
+      }
+    }
+  }
+}
