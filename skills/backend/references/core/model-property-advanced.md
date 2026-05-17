@@ -131,6 +131,100 @@ OneToMany：
 - 批量关系变更必须检查主记录权限和子记录存在性。
 - `@eval` 种子关系中的 `[4, @ref(x), 0]` 表示关联已有记录。
 
+### OneToMany 指令集 JSON-RPC 示例
+
+以 `ExampleItem`（主）→ `ExampleItemCate`（子，`@OneToMany itemCateList`）为例：
+
+**新建主记录同时新建子记录 `(0, 0, values)`**
+
+```json
+{
+  "model": "example_item",
+  "service": "create",
+  "args": [{
+    "itemCode": "ITEM-001",
+    "itemName": "测试物料",
+    "isEnable": "1",
+    "itemCateList": [
+      [0, 0, {"cateCode": "C001", "cateName": "分类A", "cateType": "type1"}],
+      [0, 0, {"cateCode": "C002", "cateName": "分类B", "cateType": "type2"}]
+    ]
+  }]
+}
+```
+
+**更新主记录时同时更新/新增/删除子记录**
+
+```json
+{
+  "model": "example_item",
+  "service": "update",
+  "args": {
+    "id": 100,
+    "itemName": "更新后物料名",
+    "itemCateList": [
+      [1, 201, {"cateName": "分类A-修改"}],
+      [0, 0, {"cateCode": "C003", "cateName": "新增分类C", "cateType": "type3"}],
+      [2, 202]
+    ]
+  }
+}
+```
+
+> `[1, 201, {...}]`：更新 id=201 的子记录；`[0, 0, {...}]`：新建子记录；`[2, 202]`：删除 id=202 的子记录。
+
+### ManyToMany 指令集 JSON-RPC 示例
+
+以 `ExampleStudent`（主）↔ `ExampleClass`（`@ManyToMany`）为例：
+
+**新建主记录时建立与已有记录的关系 `(4, id)`**
+
+```json
+{
+  "model": "example_student",
+  "service": "create",
+  "args": [{
+    "name": "张三",
+    "classList": [
+      [4, 10],
+      [4, 11]
+    ]
+  }]
+}
+```
+
+**更新时同时新增关系、断开关系、替换全量关系**
+
+```json
+{
+  "model": "example_student",
+  "service": "update",
+  "args": {
+    "id": 50,
+    "classList": [
+      [4, 12],
+      [3, 10],
+      [6, 0, [11, 12, 13]]
+    ]
+  }
+}
+```
+
+> `[4, 12]`：关联已有 class id=12；`[3, 10]`：断开与 id=10 的关系（不删记录）；`[6, 0, [11,12,13]]`：用 ids 替换全量关系。
+
+**清空所有关系 `(5)`**
+
+```json
+{
+  "model": "example_student",
+  "service": "update",
+  "args": {
+    "id": 50,
+    "classList": [[5]]
+  }
+}
+```
+
 ---
 
 ## @Property 高级参数
