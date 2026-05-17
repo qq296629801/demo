@@ -18,7 +18,8 @@ description: >-
 | `greenfield/SKILL.md` | 从零克隆 IIDP 父工程、首次环境、首包与可选 Compose；与根 Skill 分工见该文件 | 用户明确「全新后端项目」「从零建 IIDP 工程」「先搭 demo 父工程」或工作区无目标聚合工程时 **先于** Step 2 读取并执行 |
 | `references/core/capability-map.md` | IIDP 后端能力域到产物的覆盖矩阵 | Step 0 能力识别；用户要求“补齐 backend”或“覆盖平台全能力”时必须先读 |
 | `references/core/platform-standards.md` | IIDP 平台开发规范：命名、常量、模型与 App 设计、SDK、日志、测试、权限、多租户、国际化、版本、部署、环境与资源打包硬性规范 | Step 0 规范加载；写 Java、POM、资源、服务、测试、部署说明前必须读 |
-| `references/core/pom-structure.md` | 工程目录结构、POM 版本、apps.json、app.json、Dockerfile、docker-compose.yml 与本地部署配置 | Step 2~4、Step 8~9；用户要求 Docker/Compose/环境部署时必须读 |
+| `references/core/pom-structure.md` | 工程目录结构、POM 版本、apps.json、Dockerfile、docker-compose.yml 与本地部署配置 | Step 2~3、Step 8~9；用户要求 Docker/Compose/环境部署时必须读 |
+| `references/core/app-json.md` | app.json 完整字段说明（name/resolved/view/data/events 等）与两类示例 | Step 4 创建 app.json 时必须读 |
 | `references/core/model.md` | @Model/@Property/@Validate/@Selection/ER 关系注解详细参数 | Step 5 编写模型类 |
 | `references/core/model-property-advanced.md` | 模型层高级能力：模型类型、继承扩展、ER 指令集、属性高级参数、日期、视图模型 | Step 5 涉及模型/属性/日期/视图模型高级能力时必须读 |
 | `references/core/method-service.md` | @MethodService 全场景：CRUD重写、业务方法、Excel、RPC、SQL、事务、Redis、DTO 服务分层 | Step 5 需要服务方法时 |
@@ -93,7 +94,7 @@ description: >-
 ### Step 4：创建 app.json
 路径：`src/main/java/com/sie/iidp/{appPkg}/app.json`
 **关键：** 必须放在 `resolved` 字段对应的 Java 包路径下。
-参见 `references/core/pom-structure.md` → "app.json 配置"章节。
+参见 `references/core/app-json.md`（字段定义、view/data 登记规则、events 钩子完整示例）。
 
 ### Step 5：编写 Java 模型类
 

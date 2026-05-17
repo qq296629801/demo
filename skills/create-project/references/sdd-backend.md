@@ -33,7 +33,7 @@
 | `data/menus.json` | 新增/修改 | 菜单 |
 | `apps/apps.json` | 修改 | 登记 jar |
 
-> **生成 `app.json` 时，必须读取 `skills/backend/references/core/pom-structure.md` §app.json 章节获取完整字段定义**，不使用本文内联模板（避免字段漂移）。按 §1 命名表中的 `appName`、`appPkg`、`product`、`productDesc`、`productSequence` 填写对应字段。
+> **生成 `app.json` 时，必须读取 `skills/backend/references/core/app-json.md`** 获取完整字段定义（name/resolved/view/data/events 等）、路径规则与两类示例，不使用本文内联模板（避免字段漂移）。按 §1 命名表中的 `appName`、`appPkg`、`product`、`productDesc`、`productSequence` 填写对应字段。
 
 ## 3. 模型设计
 
