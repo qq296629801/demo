@@ -234,7 +234,7 @@ List<?> related = meta.get("[model]").find(Filter.in("id", ids), ...)
 |---|---|---|
 | `name`（key） | 是 | 全局唯一，建议以 appPkg 开头，如 `{appPkg}_{entity}_menu` |
 | `display_name` | 是 | 菜单显示名 |
-| `sequence` | 是 | 同级排序，数字越小越靠前 |
+| `sequence` | 是 | 同级排序，数字越小越靠前；**写字符串**（`"1"`、`"2"`），不写整数 |
 | `active` | 是 | 是否启用，通常 `true` |
 | `model` | 功能菜单必填 | 与 Java `@Model(name)` 一致 |
 | `view` | 功能菜单必填 | 逗号连接多个视图 key |
