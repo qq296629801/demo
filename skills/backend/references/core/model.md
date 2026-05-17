@@ -344,6 +344,21 @@ private String isOutOfPrint;
 @Property(displayName = "物料属性类型", columnName = "attribute_type", length = 10)
 private Integer attributeType;
 
+// widget：建议前端使用的渲染组件（来自 ExampleDataSource）
+// 常用值："radio-group"（单选按钮组）；省略时平台按字段类型自动选择
+@Property(displayName = "数据源类型", widget = "radio-group")
+@Selection(values = {
+    @Option(label = "DB/SQL", value = "DB", groups = Db.class),
+    @Option(label = "API",    value = "API", groups = Api.class),
+    @Option(label = "Excel",  value = "Excel")
+})
+private String type;
+
+// groups 用于条件渲染：当选中该 Option 时，标记了同 groups 的字段才显示/必填
+// groups 值为自定义 interface，与视图 bind_display 联动
+interface Db {}
+interface Api {}
+
 // 外键 Selection + ManyToOne 配对写法（来自 ExampleStudent，工程中最常见模式）
 // classId：前端选择器绑定字段，存外键 ID
 // exampleClass：ORM 关联对象，提供 related 字段带出
