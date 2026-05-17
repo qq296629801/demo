@@ -65,6 +65,62 @@
 
 ---
 
+## 完整示例（来自工程 example/views/menus.json）
+
+```json
+{
+  "menus": {
+    "demo_example_menu": {
+      "sequence": "1",
+      "name": "demo_example_menu",
+      "display_name": "Example(示例)"
+    },
+    "demo_example_unit_menu": {
+      "name": "demo_example_unit_menu",
+      "display_name": "Example-单位",
+      "sequence": "1",
+      "active": true,
+      "model": "example_unit",
+      "view": "demo_example_unit_grid,demo_example_unit_grid_search,demo_example_unit_grid_param_form",
+      "parent_ids": {
+        "@ref": "demo_example_menu"
+      }
+    },
+    "demo_example_item_menu": {
+      "name": "demo_example_item_menu",
+      "display_name": "Example-物料",
+      "sequence": "2",
+      "active": true,
+      "model": "example_item",
+      "view": "demo_example_item_grid,demo_example_item_grid_search,demo_example_item_grid_param_form",
+      "parent_ids": {
+        "@ref": "demo_example_menu"
+      }
+    },
+    "demo_example_org_level_menu": {
+      "name": "demo_example_org_level_menu",
+      "display_name": "Example-企业层级(树形菜单)",
+      "sequence": "4",
+      "active": true,
+      "model": "example_org_level",
+      "view": "demo_example_org_level_tree,demo_example_org_level_form,demo_example_org_level_grid,demo_example_org_level_search",
+      "parent_ids": {
+        "@ref": "demo_example_menu"
+      }
+    }
+  }
+}
+```
+
+规律说明：
+- `sequence` 在工程中写**字符串**（`"1"`、`"2"`），而非整数。
+- 根菜单（分组菜单）**不写** `model` / `view` / `active`，只有 `name` / `display_name` / `sequence`。
+- 功能菜单 `active: true` 必须写。
+- 树视图菜单的 `view` 通常包含 4 个 key：`tree,form,grid,search`。
+- `view` 中各 key 顺序影响默认打开视图，列表类菜单通常 grid 在最前。
+
+---
+
 ## 菜单复用后端视图
 
 复用页面时，功能菜单的 `model`、`view` 与被复用菜单一致，但菜单自身的 `name`、路径/URL（若有）和 `sequence` 必须唯一。
@@ -242,24 +298,30 @@
 }
 ```
 
-普通初始化数据、附件种子、跨 App `@ref`、ManyToMany `@eval`、`@fileId/@fileUrl/@filePath` 和 `${meta.*}` 变量写法见同目录 `seed-data.md`。`menu.md` 只保留菜单和简单字典示例，生成非菜单种子时以 `seed-data.md` 为准。
+字典种子使用 `base_dict_type` + `base_dict_value` 模型格式（见 `seed-data.md` 零节），**不是** `"dicts"` 格式。
 
-`yes_no.json`：
+`yes_no.json`（正确格式）：
 
 ```json
 {
-  "dicts": {
+  "data": {
     "yes_no": {
-      "typeCode": "yes_no",
-      "typeName": "是否",
-      "items": [
-        { "label": "是", "value": "1", "sequence": 1 },
-        { "label": "否", "value": "0", "sequence": 2 }
-      ]
+      "model": "base_dict_type",
+      "properties": { "dictName": "是否", "dictType": "yes_no", "status": 0 }
+    },
+    "yes_no_yes": {
+      "model": "base_dict_value",
+      "properties": { "dictLabel": "是", "dictValue": "1", "dictType": "yes_no", "status": 0, "dictSort": 1 }
+    },
+    "yes_no_no": {
+      "model": "base_dict_value",
+      "properties": { "dictLabel": "否", "dictValue": "0", "dictType": "yes_no", "status": 0, "dictSort": 2 }
     }
   }
 }
 ```
+
+完整字典写法、普通初始化数据、附件种子、`@ref`、`@eval`、`@fileId/@fileUrl/@filePath` 见同目录 `seed-data.md`。
 
 ---
 
