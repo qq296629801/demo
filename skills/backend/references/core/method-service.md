@@ -58,6 +58,27 @@ public Object update(RecordSet rs, Map<String, Object> values) {
 }
 ```
 
+### 重写 delete（删除前校验）
+
+```java
+@MethodService(description = "delete")
+public Object delete(RecordSet rs) {
+    String[] ids = rs.getIds();
+    // 查出待删除数据，校验是否可删
+    RecordSet records = (RecordSet) rs.callSuper(null, MethodConst.FIND,
+        Filter.in("id", Arrays.asList(ids)), null, null, null);
+    if (records.any()) {
+        // 业务前置校验：如状态检查
+        records.getData().forEach(row -> {
+            if ("LOCKED".equals(row.get("status"))) {
+                throw new ValidationException("已锁定的记录不允许删除");
+            }
+        });
+    }
+    return rs.callSuper(null, MethodConst.DELETE);
+}
+```
+
 ### 重写 search / count（前置过滤）
 
 当模型需要按固定条件隔离数据时（如同一张表区分不同业务类型），在 `search` 和 `count` 中统一注入过滤条件：
@@ -155,6 +176,8 @@ public Boolean isOverdue(Map<String, Object> valMap) {
 
 ### 下拉选项提供方法（配合 @Selection(method="xxx")）
 
+**方式一：返回 `List<Map<String, Object>>`（查数据库）**
+
 ```java
 @MethodService(description = "selectBook")
 public List<Map<String, Object>> selectBook() {
@@ -162,6 +185,29 @@ public List<Map<String, Object>> selectBook() {
     return bookRs.search(new Filter(), Collections.singletonList("*"), 0, 0, "");
 }
 ```
+
+**方式二：返回 `List<Options>`（来自枚举或常量，来自工程 ExampleOrgLevel）**
+
+`Options.of(label, value)` 构建选项，参数 `value` 为 `Object`（接收当前字段值，可为 `null`）：
+
+```java
+@MethodService(description = "分类列表")
+public List<Options> orgCategoryList(Object value) {
+    List<Options> options = new ArrayList<>();
+    for (OrgCategory cate : OrgCategory.values()) {
+        options.add(Options.of(cate.getDesc(), String.valueOf(cate.getId())));
+    }
+    // 若 value 非空，只返回匹配当前值的选项（编辑回显场景）
+    if (value != null && StringUtils.isNotBlank(value.toString())) {
+        return options.stream()
+            .filter(o -> o.getValue().equals(value.toString()))
+            .collect(Collectors.toList());
+    }
+    return options;
+}
+```
+
+> `Options` 来自 `com.sie.snest.engine.utils.Options`。下拉方法的 `Object value` 参数为前端传来的当前字段值，首次打开下拉时为 `null`，编辑回显时为字段存储值。
 
 ---
 
