@@ -334,10 +334,31 @@ private String bookCode;
 @Property(displayName = "标签")
 private List<BooksTag> tagList;
 
-// 字典
+// 字典（String 类型）
 @Dict(typeCode = "yes_no")
 @Property(displayName = "是否绝版")
 private String isOutOfPrint;
+
+// 字典（Integer 类型，来自 ExampleItemAttribute.attributeType）
+@Dict(typeCode = "itemAttributeType")
+@Property(displayName = "物料属性类型", columnName = "attribute_type", length = 10)
+private Integer attributeType;
+
+// 外键 Selection + ManyToOne 配对写法（来自 ExampleStudent，工程中最常见模式）
+// classId：前端选择器绑定字段，存外键 ID
+// exampleClass：ORM 关联对象，提供 related 字段带出
+@Validate.NotBlank(message = "班级不能为空")
+@Selection(model = "example_class", properties = {"id", "className"})
+@Property(displayName = "班级")
+private String classId;
+
+@ManyToOne(displayName = "班级", cascade = CascadeType.DEL_SET_NULL)
+@JoinColumn(name = "class_id", referencedProperty = "id")
+private ExampleClass exampleClass;
+
+// 通过 related 带出关联模型字段（不存库）
+@Property(displayName = "班级名称", related = "exampleClass.className")
+private String className;
 ```
 
 ---
