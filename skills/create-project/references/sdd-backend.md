@@ -33,14 +33,14 @@
 | `data/menus.json` | 新增/修改 | 菜单 |
 | `apps/apps.json` | 修改 | 登记 jar |
 
-> **生成 `app.json` 时，必须读取 `skills/backend/references/core/pom-structure.md` §app.json 章节获取完整字段定义**，不使用本文内联模板（避免字段漂移）。按 §1 命名表中的 `appName`、`appPkg`、`product`、`productDesc`、`productSequence` 填写对应字段。
+> **生成 `app.json` 时，必须读取 `skills/backend/references/core/app-json.md`** 获取完整字段定义（name/resolved/view/data/events 等）、路径规则与两类示例，不使用本文内联模板（避免字段漂移）。按 §1 命名表中的 `appName`、`appPkg`、`product`、`productDesc`、`productSequence` 填写对应字段。
 
 ## 3. 模型设计
 
 | 字段 | Java 类型 | @Property 关键参数 | 必填 | @Validate 校验 | 索引 | 说明 |
 |---|---|---|---|---|---|---|
 | `[fieldName]` | `String/Long/Integer/Boolean/Date` | `displayName="[中文名]"` | 是/否 | `required/length/unique` | 是/否 | [说明] |
-| `[dictField]` | `String` | `displayName="[中文名]", widget="select"` | 是/否 | — | 否 | 配合 `@Selection` 或 `@Dict` |
+| `[dictField]` | `String` / `Integer` | `displayName="[中文名]"` | 是/否 | — | 否 | 配合 `@Selection` 或 `@Dict`；`widget` 仅在需要特定组件（如 `"radio-group"`）时才写，普通下拉不写 widget |
 | `[dateField]` | `Date` | `displayName="[中文名]", dataType=DataType.DateTime, dateFormat="yyyy-MM-dd HH:mm:ss"` | 否 | — | 否 | 日期字段必须指定 dataType 和 dateFormat |
 | `[erField]` | ManyToOne | `@ManyToOne` + `@JoinColumn(name="[col]")` | 是/否 | — | 是 | 同 App ER 关联 |
 
@@ -51,7 +51,7 @@
 > **不得凭记忆或推断填写注解参数**；对照以上文件中的实际代码示例生成，缺参数就补，错参数就改。
 
 模型规则：
-- 模型类使用 `@StaticVar @Getter @Setter @Model`，需要日志时加 `@Slf4j`。
+- 模型类使用 `@StaticVar @Getter @Setter @Model`，需要日志时加 `@Slf4j`。`@StaticVar`/`@Getter`/`@Setter` 是 **IIDP 平台元插件**（`com.sie.meta.plugin.*`），**不是 Lombok**，两者不可混用。
 - 继承 `BaseModel<T>`。
 - 业务字段必须有 `@Property(displayName = "...")`。
 - 选项、字典、关联字段用 `@Selection`、`@Dict` 或 ORM 注解。
@@ -234,7 +234,7 @@ List<?> related = meta.get("[model]").find(Filter.in("id", ids), ...)
 |---|---|---|
 | `name`（key） | 是 | 全局唯一，建议以 appPkg 开头，如 `{appPkg}_{entity}_menu` |
 | `display_name` | 是 | 菜单显示名 |
-| `sequence` | 是 | 同级排序，数字越小越靠前 |
+| `sequence` | 是 | 同级排序，数字越小越靠前；**写字符串**（`"1"`、`"2"`），不写整数 |
 | `active` | 是 | 是否启用，通常 `true` |
 | `model` | 功能菜单必填 | 与 Java `@Model(name)` 一致 |
 | `view` | 功能菜单必填 | 逗号连接多个视图 key |
@@ -269,12 +269,13 @@ List<?> related = meta.get("[model]").find(Filter.in("id", ids), ...)
 
 - 种子数据和字典：
 
-> **生成 `data/*.json` 前必须先读取 `skills/backend/references/core/seed-data.md`**，获取业务种子数据（`data` 字段）、字典数据（`dicts` 字段）的完整 JSON 格式、`policy` 枚举值、`@ref`/`@fileId`/`@fileUrl` 引用语法和完整示例。不使用本文内联结构提示（避免格式漂移）。
+> **生成 `data/*.json` 前必须先读取 `skills/backend/references/core/seed-data.md`**，获取业务种子数据（零节：字典 `base_dict_type`/`base_dict_value`；一节：普通业务数据审计字段、树形 parentId 写法）、`policy` 枚举值、`@ref`/`@fileId`/`@fileUrl` 引用语法和完整示例。不使用本文内联结构提示（避免格式漂移）。
 >
-> 速查：业务种子文件为 `data/{model_name}.json`；字典文件为 `data/{model_name}_dict.json` 或独立 `data/dict.json`。**实际 JSON 结构以 `seed-data.md` 为准**。
+> - **字典种子格式**：使用 `base_dict_type` + `base_dict_value` 两条记录，均置于顶层 `"data"` 对象下。**不存在 `"dicts"` 顶层 key**，与 `seed-data.md` 零节对齐。
+> - **速查**：业务种子文件为 `data/{model_name}.json`；字典文件为 `data/yes_no.json` 等独立文件或 `data/{type}_dict.json`。**实际 JSON 结构以 `seed-data.md` 为准**。
 - 附件：
-  - 文件索引：`data/file/{file_key}.json`；实际文件：`file/document/{path}`
-  - 种子引用：`{ "@fileId": "{file_key}" }` / `{ "@fileUrl": "{file_key}" }`
+  - 文件索引：`file/{file_key}.json`（`"file"` 顶层 key）；实际文件：`file/document/{path}`
+  - 种子引用（字符串形式，非对象）：`"@fileId({file_key})"` / `"@fileUrl({file_key})"` / `"@filePath({file_key})"`
 - **权限码汇总**（从 §4 服务设计表的 `权限` 列聚合，格式 `{model_name}:{action}`）：
   - 菜单权限：`{model_name}:read`
   - 按钮/服务权限：`{model_name}:create` / `{model_name}:update` / `{model_name}:delete` / `[自定义 auth]`
@@ -294,6 +295,9 @@ List<?> related = meta.get("[model]").find(Filter.in("id", ids), ...)
 - [ ] 能编译或已说明无法编译的原因
 - [ ] §8.1–8.4 规格-产物对照表已填写，无空行、无 ❌ 项
 - [ ] §8.5 自定义服务实现核查已填写，所有 @MethodService 均有对应核查组，无 ❌ 项
+
+> 完成 §8 对照表后，按 `skills/create-project/references/sdd-validation.md` 执行 AC → TC 提取，将测试用例写入当前 feature 的 `validation.md`，并满足 Phase 完成门控（所有 TC-BE/TC-FE 无 ⬜ 待执行）。
+> 交付前静态自检见 `skills/backend/references/core/validation-checklist.md`。
 
 ## 8. 规格-产物对照表（生成后必填）
 

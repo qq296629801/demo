@@ -966,6 +966,51 @@ src/main/java/com/sie/iidp/{appPkg}/app.json
 
 5. `app.json.view` 必须登记所有视图文件路径。
 6. `app.json.data` 必须登记 `data/menus.json` 和其它种子数据文件。
+
+**完整 `app.json` 示例**（来自 `sie-iidp-demo-example`，已补充 `view`/`data` 数组）：
+
+```json
+{
+  "name": "sie-iidp-demo-example",
+  "displayName": "赛意IIDP Demo Example APP",
+  "author": "iidp",
+  "company": "sie",
+  "category": "iidp",
+  "product": "sie-iidp-demo",
+  "productDesc": "SIE IIDP Demo",
+  "categoryDesc": "IIDP",
+  "description": "SIE-IIDP-DEMO-EXAMPLE",
+  "summary": "示例模块 APP，以 IIDP 平台原子能力为粒度开发示例源码",
+  "type": "SDK",
+  "tag": "master",
+  "resolved": "com.sie.iidp.example",
+  "dependencies": [],
+  "application": true,
+  "icon": "sie",
+  "license": "LGPL 3.0",
+  "version": "1.0.0",
+  "view": [
+    "classmgr/views/example_class_view.json",
+    "studentmgr/views/example_student_view.json",
+    "studentprofile/views/demo_student_profile_view.json",
+    "itemmgr/views/example_item_view.json"
+  ],
+  "data": [
+    "views/menus.json",
+    "data/yes_no.json",
+    "data/unit_type.json",
+    "data/example_order.json",
+    "data/job_level.json"
+  ],
+  "events": {}
+}
+```
+
+规则：
+- `view` 数组：每项为相对于 `resolved` 包路径的视图 JSON 路径，引擎按此列表加载视图。
+- `data` 数组：每项为相对于 `resolved` 包路径的种子数据路径，`menus.json` 必须在此登记。
+- 两个数组如有遗漏，对应视图或数据在运行时不会被加载，但不会报启动错误，只会静默缺失。
+
 7. 视图 JSON、菜单 JSON 放在 `src/main/java` 下，依赖父 POM 资源配置进入 jar。
 8. 执行 Maven 打包，确认业务 jar 的复制目录（`sie-snest-maven-plugin` 的 `copyDir`）；若要随当前 Dockerfile 部署，须将需加载的 jar 置于 **`iidp-backend-demo-ai/apps/modules/`**（若构建先落在仓库父目录 `modules/apps/`，须同步到此处）。
 9. 在 `iidp-backend-demo-ai/apps/apps.json` 的 `apps.SDK` 中追加新业务 jar **文件名**；仅有物理 jar、未登记 `apps.SDK` 时，引擎不会加载。

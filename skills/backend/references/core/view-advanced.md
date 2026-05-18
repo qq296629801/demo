@@ -251,6 +251,112 @@ Tree 视图常用 `props`：
 
 ---
 
+## ds_config 动态下拉数据源
+
+`ds_config` 用于从自定义 RPC 服务加载 select 字段的下拉选项，代替静态 `@Selection`。适合数据量动态、依赖主表其他字段过滤（级联选择）的场景。
+
+**完整示例（来自工程 demo_student_profile_view.json）：**
+
+```json
+{
+  "type": "select",
+  "displayName": "学生",
+  "name": "studentId",
+  "custom": true,
+  "bind_options": "$ds.studentData",
+  "ds_config": {
+    "type": "meta",
+    "name": "studentData",
+    "autoRequest": true,
+    "options": {
+      "params": {
+        "args": {
+          "filter": [],
+          "properties": ["id", "name"],
+          "limit": 0,
+          "offset": 0,
+          "order": "id"
+        },
+        "service": "callStudentListRpc",
+        "model": "example_student_profile"
+      }
+    },
+    "reqAfter": "(vm, res) => { return res.data.map(item => ({ text: item.name, value: item.id })); }"
+  }
+}
+```
+
+**级联选择（依赖另一字段过滤，`doWhenChange: "reload"` + `bind_filter`）：**
+
+```json
+{
+  "type": "select",
+  "displayName": "班级",
+  "name": "classId",
+  "custom": true,
+  "bind_options": "$ds.classData",
+  "ds_config": {
+    "type": "meta",
+    "name": "classData",
+    "doWhenChange": "reload",
+    "options": {
+      "params": {
+        "args": {
+          "bind_filter": "${[['studentId','=','$ds.form.studentId']]}",
+          "properties": ["id", "className"],
+          "limit": 0,
+          "offset": 0,
+          "order": "id"
+        },
+        "service": "callClassListRpc",
+        "model": "example_student_profile"
+      }
+    },
+    "reqAfter": "(vm, res) => { return res.data.map(item => ({ text: item.className, value: item.id })); }"
+  }
+}
+```
+
+`ds_config` 关键字段：
+
+| 字段 | 说明 |
+|---|---|
+| `type` | 固定 `"meta"` — 调用模型 RPC 服务 |
+| `name` | 数据存储名，`bind_options: "$ds.<name>"` 中使用 |
+| `autoRequest` | `true` — 表单打开时自动加载；`false` — 手动触发 |
+| `doWhenChange` | `"reload"` — 所在字段值变化时重新请求数据（级联场景必须加） |
+| `options.params.service` | 调用的后端 `@MethodService` 方法名 |
+| `options.params.model` | 调用的模型名 |
+| `options.params.args` | 透传给服务方法的参数；`bind_filter` 支持绑定表单当前字段值 |
+| `reqAfter` | 函数，转换 RPC 响应为 `[{ text, value }]` 格式供 select 使用 |
+
+**`bind_filter` 语法**：`"${[['字段名','=','$ds.form.父字段名']]}"` — 把当前表单父字段的值拼成 Filter 传给后端服务。
+
+**后端对应服务（来自 ExampleStudentProfile）：**
+
+```java
+// 无参数：直接返回全量列表
+@MethodService(description = "调用学生查询远程RPC")
+public List<StudentPageViewDTO> callStudentListRpc() {
+    RecordSet processInstance = getMeta().get("example_student");
+    return (List<StudentPageViewDTO>) processInstance.call("searchStudent", 0, 0);
+}
+
+// 带参数：接收级联父字段过滤值
+@MethodService(description = "调用班级查询远程RPC")
+public List<ClassViewDTO> callClassListRpc(String studentId) {
+    RecordSet processInstance = getMeta().get("example_class");
+    return (List<ClassViewDTO>) processInstance.call("searchClass", studentId);
+}
+```
+
+> **契约规则**：
+> - 服务返回的字段名必须与 `reqAfter` 中 `item.xxx` 使用的字段名一致。
+> - `callClassListRpc(String studentId)` 中参数名必须与 `bind_filter` 过滤字段对应，或在服务内解析 Filter。
+> - 使用 DTO 返回类型时，DTO 需要 getter（或使用 `@Getter`），否则序列化会丢字段。
+
+---
+
 ## 自定义交互与联动
 
 这些配置主要由前端执行，但后端必须提供字段和服务契约：

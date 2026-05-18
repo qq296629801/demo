@@ -7,6 +7,11 @@
 ```java
 package com.sie.iidp.{appPkg}.{moduleName}.model;
 
+// ===== 元插件（必须，生成 static 字段常量 / getter / setter）=====
+import com.sie.meta.plugin.StaticVar;
+import com.sie.meta.plugin.Getter;
+import com.sie.meta.plugin.Setter;
+
 // ===== 模型注解（必须引入）=====
 import com.sie.snest.sdk.BaseModel;
 import com.sie.snest.sdk.annotation.meta.Model;
@@ -22,51 +27,39 @@ import com.sie.snest.sdk.annotation.validate.Validate;
 
 // ===== ORM 关联注解（按需）=====
 import com.sie.snest.sdk.annotation.orm.*;   // @Selection @Option @OneToMany @ManyToOne @JoinColumn @JoinTable @Shard @Index
-import com.sie.snest.sdk.annotation.orm.Selection;
-
-
 import com.sie.snest.sdk.annotation.Dict;    // @Dict 字典
 import com.sie.snest.sdk.CascadeType;        // CascadeType.DEL_SET_NULL 等
 
-// ====  服务方法常量 （必须引入） =====
+// ====  服务方法常量 （按需） =====
 import com.sie.iidp.common.util.consts.MethodConst;
 
 // ===== 服务方法常用 API（按需）=====
-import com.sie.snest.engine.data.RecordSet;               // RecordSet
-import com.sie.snest.engine.context.BaseContextHandler;   // BaseContextHandler.getMeta()
-import com.sie.snest.engine.container.Meta;               // 手动事务控制
-import com.sie.snest.engine.rule.Filter;                  // Filter 查询条件
-import com.sie.snest.engine.model.ModelMeta;              // 模型元信息
-import com.sie.snest.engine.constant.MetaConstant;        // MetaConstant.USE_DISPLAY_FOR_MODEL 等
-import com.sie.snest.engine.exception.ModelException;     // 业务异常（会触发事务回滚）
-import com.sie.snest.engine.exception.ValidationException;// 校验异常（不触发回滚）
-import com.sie.snest.sdk.db.DbUtils;                      // DbUtils.search / batchCreate 等
+import com.sie.snest.engine.data.RecordSet;
+import com.sie.snest.engine.context.BaseContextHandler;
+import com.sie.snest.engine.container.Meta;
+import com.sie.snest.engine.rule.Filter;
+import com.sie.snest.engine.constant.MetaConstant;
+import com.sie.snest.engine.exception.ModelException;
+import com.sie.snest.engine.exception.ValidationException;
+import com.sie.snest.sdk.db.DbUtils;
 
-// ===== 直接执行 SQL（按需）=====
-import com.sie.snest.engine.data.access.BussModelDataAccess;
-import com.sie.snest.engine.data.access.ModelDataAccessFactory;
-import com.sie.snest.engine.data.access.ModelTypeEnum;
-import com.sie.snest.engine.db.relationdb.RelationDBAccessor;
-import com.sie.snest.engine.db.relationdb.provider.SqlProvider;
-
-// ===== 缓存 / 配置（按需）=====
-import com.sie.snest.sdk.cache.RedisHelper;         // Redis 分布式锁 / 缓存
-import com.sie.snest.engine.utils.ConfigUtils;      // 读取配置中心值
-
-// ===== 工具类（按需）=====
-import cn.hutool.core.collection.CollUtil;
-import cn.hutool.core.util.ObjectUtil;
-import cn.hutool.core.util.StrUtil;
-import cn.hutool.core.date.DateUtil;
+// ===== 日志（需要日志时加）=====
+import lombok.extern.slf4j.Slf4j;
 
 // ===== Java 标准库 =====
 import java.util.*;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
+// 类级注解说明：
+// @StaticVar  — 元插件，自动生成每个字段的 static 常量（如 F_FIELD_NAME），用于 Filter/values.put 避免硬编码字符串
+// @Getter     — 元插件，生成类型安全的 getter（内部调用 BaseModel 的 typed getter，非普通 Lombok）
+// @Setter     — 元插件，生成 setter（内部调用 BaseModel 的 set 方法）
+// @Slf4j      — Lombok，注入 log 变量；只有需要日志时才加
+@StaticVar
+@Getter
+@Setter
+@Slf4j
 @Model(
+    tableName = "{table_name}",
     name = "{model_name}",
     displayName = "{中文名}",
     isAutoLog = Bool.True,
@@ -78,6 +71,100 @@ public class {ModelName} extends BaseModel<{ModelName}> {
     @Property(displayName = "{字段中文名}", length = 64)
     @Validate.NotBlank(message = "{字段中文名}不能为空")
     private String {fieldName};
+}
+```
+
+> **元插件说明**：`@StaticVar @Getter @Setter` 是 IIDP 平台元插件，**不是** Lombok 的 `@Getter/@Setter`，两者不可混用。编译时由平台插件处理，生成的 getter/setter 底层调用 `BaseModel.getStr/getInt/getDate` 等 typed getter，保证字段值从 Map 中正确取出。
+
+---
+
+## 完整模型示例（来自 ExampleStudent）
+
+展示常见字段类型、校验、ER 关联、计算字段、字典、分片、索引等组合使用：
+
+```java
+@StaticVar
+@Getter
+@Setter
+@Slf4j
+@Model(
+    tableName = "example_student",
+    name = "example_student",
+    displayName = "Example学生",
+    isLogicDelete = Bool.True,
+    isAutoLog = Bool.True,
+    isPrint = Bool.True,
+    isShard = Bool.False,
+    shard = @Shard(shardType = "tables", shardPoint = "create_date:YEAR", shardValues = "2021"),
+    indexes = {@Index(name = "IDX_CLASS_LEVEL", columnList = {"class_id", "student_level"})}
+)
+public class ExampleStudent extends BaseModel<ExampleStudent> {
+
+    // 普通字符串字段 + 校验
+    @Validate.Size(max = 30)
+    @Validate.NotBlank(message = "姓名不能为空")
+    @Property(displayName = "姓名", columnName = "name", length = 30)
+    private String name;
+
+    // 静态选项字段
+    @Property(displayName = "性别", columnName = "sex", length = 1)
+    @Selection(values = {
+        @Option(label = "男", value = "1"),
+        @Option(label = "女", value = "0")
+    })
+    @Validate.NotBlank(message = "性别不能为空")
+    private String sex;
+
+    // 日期字段
+    @Property(columnName = "birth_day", displayName = "生日",
+              dataType = DataType.DATE, dateFormat = "yyyy-MM-dd")
+    @Validate.NotBlank(message = "生日不能为空")
+    private Date birthDay;
+
+    // 字典字段
+    @Dict(typeCode = "studentLevel")
+    @Property(displayName = "学生等级")
+    @Validate.NotBlank(message = "学生等级不能为空")
+    private Integer studentLevel;
+
+    // 计算字段（store=false，不持久化，由 computeMethod 动态计算）
+    @Property(displayName = "是否4级学生", store = false, computeMethod = "isFourLevel")
+    private Boolean isFourLevel;
+
+    // 关联选择字段（外键 ID）
+    @Validate.NotBlank(message = "班级不能为空")
+    @Selection(model = "example_class", properties = {"id", "className"})
+    @Property(displayName = "班级")
+    private String classId;
+
+    // ManyToOne ER 关联（与 classId 对应同一外键列）
+    @ManyToOne(displayName = "班级", cascade = CascadeType.DEL_SET_NULL)
+    @JoinColumn(name = "class_id", referencedProperty = "id")
+    private ExampleClass exampleClass;
+
+    // related 字段：带出关联模型字段，store=false
+    @Property(displayName = "班级编码", related = "exampleClass.classCode")
+    private String classCode;
+
+    @Property(displayName = "班级名称", related = "exampleClass.className")
+    private String className;
+
+    // ManyToMany 关联
+    @ManyToMany(displayName = "课程")
+    @JoinTable(name = "example_student_course",
+        joinColumns = @JoinColumn(name = "student_id"),
+        inverseJoinColumns = @JoinColumn(name = "course_id"))
+    private List<ExampleCourse> courseList;
+
+    // OneToMany 关联
+    @OneToMany
+    private List<ExampleStudentAttachment> attachmentList;
+
+    // 计算字段方法
+    public Boolean isFourLevel(Map<String, Object> valMap) {
+        Object level = valMap.get(F_STUDENT_LEVEL);
+        return level != null && Integer.parseInt(level.toString()) == 4;
+    }
 }
 ```
 
@@ -180,6 +267,17 @@ private String bookName;
 // 关联字段（不存库）
 @Property(displayName = "书号", related = "booksManage.isbn", store = false)
 private String isbn;
+
+// displayForModel = true：标记该字段为 ManyToOne 关联模型的显示字段
+// 查询时 useDisplayForModel=true，平台用此字段值作为外键 ID 的显示文本
+// 来自 ExampleItemCate.cateName
+@Property(displayName = "分类名称", columnName = "cate_name", length = 60, displayForModel = true)
+private String cateName;
+
+// 对应 ManyToOne 外键：外键 ID 字段 + displayForModel 字段配对使用
+@ManyToOne(displayName = "物料", cascade = CascadeType.DELETE)
+@JoinColumn(name = "item_id", referencedProperty = "id")
+private ExampleItem exampleItem;
 ```
 
 ---
@@ -236,10 +334,46 @@ private String bookCode;
 @Property(displayName = "标签")
 private List<BooksTag> tagList;
 
-// 字典
+// 字典（String 类型）
 @Dict(typeCode = "yes_no")
 @Property(displayName = "是否绝版")
 private String isOutOfPrint;
+
+// 字典（Integer 类型，来自 ExampleItemAttribute.attributeType）
+@Dict(typeCode = "itemAttributeType")
+@Property(displayName = "物料属性类型", columnName = "attribute_type", length = 10)
+private Integer attributeType;
+
+// widget：建议前端使用的渲染组件（来自 ExampleDataSource）
+// 常用值："radio-group"（单选按钮组）；省略时平台按字段类型自动选择
+@Property(displayName = "数据源类型", widget = "radio-group")
+@Selection(values = {
+    @Option(label = "DB/SQL", value = "DB", groups = Db.class),
+    @Option(label = "API",    value = "API", groups = Api.class),
+    @Option(label = "Excel",  value = "Excel")
+})
+private String type;
+
+// groups 用于条件渲染：当选中该 Option 时，标记了同 groups 的字段才显示/必填
+// groups 值为自定义 interface，与视图 bind_display 联动
+interface Db {}
+interface Api {}
+
+// 外键 Selection + ManyToOne 配对写法（来自 ExampleStudent，工程中最常见模式）
+// classId：前端选择器绑定字段，存外键 ID
+// exampleClass：ORM 关联对象，提供 related 字段带出
+@Validate.NotBlank(message = "班级不能为空")
+@Selection(model = "example_class", properties = {"id", "className"})
+@Property(displayName = "班级")
+private String classId;
+
+@ManyToOne(displayName = "班级", cascade = CascadeType.DEL_SET_NULL)
+@JoinColumn(name = "class_id", referencedProperty = "id")
+private ExampleClass exampleClass;
+
+// 通过 related 带出关联模型字段（不存库）
+@Property(displayName = "班级名称", related = "exampleClass.className")
+private String className;
 ```
 
 ---

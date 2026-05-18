@@ -58,6 +58,61 @@ public Object update(RecordSet rs, Map<String, Object> values) {
 }
 ```
 
+### 重写 delete（删除前校验）
+
+```java
+@MethodService(description = "delete")
+public Object delete(RecordSet rs) {
+    String[] ids = rs.getIds();
+    // 查出待删除数据，校验是否可删
+    RecordSet records = (RecordSet) rs.callSuper(null, MethodConst.FIND,
+        Filter.in("id", Arrays.asList(ids)), null, null, null);
+    if (records.any()) {
+        // 业务前置校验：如状态检查
+        records.getData().forEach(row -> {
+            if ("LOCKED".equals(row.get("status"))) {
+                throw new ValidationException("已锁定的记录不允许删除");
+            }
+        });
+    }
+    return rs.callSuper(null, MethodConst.DELETE);
+}
+```
+
+### 重写 search / count（前置过滤）
+
+当模型需要按固定条件隔离数据时（如同一张表区分不同业务类型），在 `search` 和 `count` 中统一注入过滤条件：
+
+```java
+private static final String CATE_TYPE_ID = "enterprise";
+
+@Override
+public List<ExampleOrgLevel> search(Filter filter, List<String> properties,
+                                    Integer limit, Integer offset, String order) {
+    // 前置注入固定过滤条件，保证所有查询只返回当前业务类型数据
+    filter.and(Filter.equal(ExampleOrgLevel.F_CATE_TYPE, CATE_TYPE_ID));
+    return super.search(filter, properties, limit, offset, order);
+}
+
+@Override
+public long count(Filter filter) {
+    filter.and(Filter.equal(ExampleOrgLevel.F_CATE_TYPE, CATE_TYPE_ID));
+    return super.count(filter);
+}
+
+public Object create(List<Map<String, Object>> valuesList) {
+    Meta meta = this.getMeta();
+    RecordSet rs = meta.get(this.getModelName());
+    // 新增时自动补充固定字段，避免前端遗漏
+    valuesList.forEach(values -> values.put(ExampleOrgLevel.F_CATE_TYPE, CATE_TYPE_ID));
+    // 执行业务前置校验后调父类实现
+    OrgLevelUtils.createCheck(this, valuesList);
+    return rs.callSuper(ExampleOrgLevel.class, "create", valuesList);
+}
+```
+
+> **规则**：`search`/`count`/`create` 三者必须同步维护同一个固定条件，否则统计数和列表数会不一致。
+
 ---
 
 ## 自定义业务方法
@@ -121,6 +176,8 @@ public Boolean isOverdue(Map<String, Object> valMap) {
 
 ### 下拉选项提供方法（配合 @Selection(method="xxx")）
 
+**方式一：返回 `List<Map<String, Object>>`（查数据库）**
+
 ```java
 @MethodService(description = "selectBook")
 public List<Map<String, Object>> selectBook() {
@@ -128,6 +185,29 @@ public List<Map<String, Object>> selectBook() {
     return bookRs.search(new Filter(), Collections.singletonList("*"), 0, 0, "");
 }
 ```
+
+**方式二：返回 `List<Options>`（来自枚举或常量，来自工程 ExampleOrgLevel）**
+
+`Options.of(label, value)` 构建选项，参数 `value` 为 `Object`（接收当前字段值，可为 `null`）：
+
+```java
+@MethodService(description = "分类列表")
+public List<Options> orgCategoryList(Object value) {
+    List<Options> options = new ArrayList<>();
+    for (OrgCategory cate : OrgCategory.values()) {
+        options.add(Options.of(cate.getDesc(), String.valueOf(cate.getId())));
+    }
+    // 若 value 非空，只返回匹配当前值的选项（编辑回显场景）
+    if (value != null && StringUtils.isNotBlank(value.toString())) {
+        return options.stream()
+            .filter(o -> o.getValue().equals(value.toString()))
+            .collect(Collectors.toList());
+    }
+    return options;
+}
+```
+
+> `Options` 来自 `com.sie.snest.engine.utils.Options`。下拉方法的 `Object value` 参数为前端传来的当前字段值，首次打开下拉时为 `null`，编辑回显时为字段存储值。
 
 ---
 
@@ -354,11 +434,11 @@ public boolean batchCreate(List<Map<String, Object>> valuesList) {
 @MethodService(description = "splitCommit")
 public boolean splitCommit(RecordSet rs) {
     try (Meta meta = new Meta(null, new HashMap<>())) {
-        // 第一批
+        // 第一批：更新后单独提交
         someRecord.update();
         meta.flush();
         meta.commit();
-        // 第二批
+        // 第二批：新增后单独提交
         newRecord.create();
         meta.flush();
         meta.commit();
@@ -368,6 +448,43 @@ public boolean splitCommit(RecordSet rs) {
     return true;
 }
 ```
+
+### Savepoint 局部回滚（嵌套事务）
+
+当需要对某一段操作回滚、同时保留其他操作时，使用 `setSavepoint` + `rollback(point)`：
+
+```java
+@MethodService(description = "savepointDemo")
+public boolean savepointDemo(RecordSet rs) {
+    try (Meta meta = new Meta(null, new HashMap<>())) {
+        // 第一段操作：更新——无论后续是否失败都保留
+        existingStudent.set(ExampleStudent.F_STUDENT_LEVEL, "2");
+        existingStudent.update();
+
+        // 新建事务保存点
+        // Oracle 的保存点名称有字符限制，建议使用 "SP" + 数字 ID
+        // MySQL 可以使用 UUID
+        String point1 = "SP" + IdGenerator.nextId();
+
+        try {
+            meta.setSavepoint(point1);          // 标记保存点
+            newStudent.create();                 // 第二段操作：新增
+            int i = 1 / 0;                       // 模拟异常
+            meta.commit();                       // 成功时提交（含保存点之前的操作）
+        } catch (Exception e) {
+            meta.rollback(point1);               // 仅回滚保存点之后的操作，第一段更新不受影响
+        }
+    } finally {
+        BaseContextHandler.remove();
+    }
+    return true;
+}
+```
+
+> **注意**：
+> - `meta.rollback(point)` 只回滚该保存点之后的操作，保存点之前的写入不受影响。
+> - Oracle 保存点名称不能含 `-`，推荐 `"SP" + IdGenerator.nextId()`；MySQL 无此限制。
+> - 若不调用 `meta.commit()`，请求结束时平台会统一提交所有未回滚的操作。
 
 ---
 

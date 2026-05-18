@@ -23,6 +23,56 @@ private String fileName;
 private String contentType;
 ```
 
+### 文件模型完整示例（@Value 注入 + IdGenerator 生成文件ID）
+
+来自工程 `ExampleFile`，展示如何在模型中注入 MinIO bucket 配置并生成文件对象：
+
+```java
+@Model(tableName = "example_file", name = "example_file",
+       displayName = "文件管理", isLogicDelete = Bool.True)
+public class ExampleFile extends BaseModel<ExampleFile> {
+
+    @Property(displayName = "文件名")
+    private String fileName;
+
+    @Property(displayName = "文件地址")
+    private String fileLocation;
+
+    @Property(displayName = "文件Id")
+    private String fileId;
+
+    // 通过 @Value 注入 Spring 配置属性（docker/config/application.properties 中配置）
+    @Value("minio.bucketName")
+    private String minioBucket;
+
+    // typed getter/setter：BaseModel 底层按 Map 存储，需显式实现
+    public String getFileName()    { return getStr("fileName"); }
+    public ExampleFile setFileName(String v) { this.set("fileName", v); return this; }
+    public String getFileLocation()   { return getStr("fileLocation"); }
+    public ExampleFile setFileLocation(String v) { this.set("fileLocation", v); return this; }
+    public String getFileId()      { return getStr("fileId"); }
+    public ExampleFile setFileId(String v) { this.set("fileId", v); return this; }
+
+    public ExampleFile createFile() {
+        Map<String, Object> arguments = getMeta().getArguments();
+        ExampleFile exampleFile = new ExampleFile();
+        // IdGenerator.nextId() 生成平台雪花 ID 作为文件唯一标识
+        exampleFile.setId(IdGenerator.nextId());
+        exampleFile.setFileName(String.valueOf(arguments.get("fileName")));
+        // MinIO 存储路径 = bucketName + "/" + 业务路径
+        exampleFile.setFileLocation(minioBucket + "/" + arguments.get("fileLocation"));
+        exampleFile.setFileId(String.valueOf(arguments.get("fileId")));
+        return exampleFile;
+    }
+}
+```
+
+> **规则**：
+> - `@Value("minio.bucketName")` 注入配置属性，对应 `docker/config/application.properties` 中的 `minio.bucketName=xxx`。
+> - `IdGenerator.nextId()` 返回平台雪花 ID（`String` 类型），用作文件记录主键或文件标识。
+> - `getMeta().getArguments()` 获取调用方通过 `addArgument` 传入的上下文参数。
+> - typed getter/setter 是 BaseModel 的强制要求：字段实际存储在 Map 中，直接访问 Java 字段会得到 `null`。
+
 视图示例：
 
 ```json
