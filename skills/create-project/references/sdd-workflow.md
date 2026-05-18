@@ -11,7 +11,7 @@
     ↓
 [Clarify / Step 1.2] ★ 规格歧义扫描，生成结构化澄清问题（≤5 条），答案写回 requirements.md（必经步骤）
     ↓
-[契约先行 / Step 1.3a] ★ 定义 integration-map.md + sdd-contracts.md 契约（必须先于规格书，强制步骤）
+[契约先行 / Step 1.3a] ★ 定义 integration-map.md + contracts.md 契约（必须先于规格书，强制步骤）
     ↓
 [Critique / Step 1.4] ★ 产品战略 + 工程风险双视角批判，暂停等用户确认（可选）
     ↓
@@ -101,7 +101,7 @@
 specs/features/
 └── phase1-[feature-name]/
     ├── requirements.md         # 功能需求与契约
-    ├── sdd-contracts.md        # API 级契约（Step 1.3a 生成，先于规格书）
+    ├── contracts.md            # API 级契约（Step 1.3a 生成，先于规格书）
     ├── backend-spec.md         # 后端技术落地规格（命名、模型、服务、视图、菜单、权限）
     ├── frontend-spec.md        # 前端技术落地规格（必写，含实现分支判断）
     ├── interaction-spec.md     # 前端交互规格（含复杂状态/响应式/可访问性时生成）
@@ -236,9 +236,9 @@ specs/features/
 
 ---
 
-**② sdd-contracts.md** — API 级契约（每个 Feature 生成 `specs/features/<feature>/sdd-contracts.md`）
+**② contracts.md** — API 级契约（每个 Feature 生成 `specs/features/<feature>/contracts.md`）
 
-按 `sdd-constitution.md` 中的 **sdd-contracts.md 模板**填写，填写时必须先读对应 backend skills：
+按 `sdd-constitution.md` 中的 **contracts.md 模板**填写，填写时必须先读对应 backend skills：
 
 | 契约项 | 内容 | 必须先读的 backend skills |
 |---|---|---|

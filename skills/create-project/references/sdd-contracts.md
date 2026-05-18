@@ -1,7 +1,7 @@
 # IIDP 前后端契约
 
 > **本文件说明**：这是 `sdd-contracts.md` 的 **skill 参考文件**，描述契约表的格式规范、JSON-RPC 协议、Filter 规则和节点契约规范。
-> 生成每个 Feature 的项目产物（`specs/features/<feature>/sdd-contracts.md`）时，请使用 `sdd-constitution.md` 中的 **sdd-contracts.md 模板**。
+> 生成每个 Feature 的项目产物（`specs/features/<feature>/contracts.md`）时，请使用 `sdd-constitution.md` 中的 **contracts.md 模板**。
 
 ## 多模型业务契约组织
 
