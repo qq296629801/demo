@@ -11,6 +11,8 @@
     ↓
 [Clarify / Step 1.2] ★ 规格歧义扫描，生成结构化澄清问题（≤5 条），答案写回 requirements.md（必经步骤）
     ↓
+[契约先行 / Step 1.3a] ★ 定义 integration-map.md + sdd-contracts.md 契约（必须先于规格书，强制步骤）
+    ↓
 [Critique / Step 1.6] ★ 产品战略 + 工程风险双视角批判，暂停等用户确认（可选）
     ↓
 [Backend Spec] 按 sdd-backend.md 模板生成 backend-spec.md（必写）
@@ -210,6 +212,44 @@ specs/features/
 5. 所有问题回答完毕后，列出 requirements.md 中剩余"待确认"标记及保留理由。
 6. 不进入 Step 1.5 Spec 之前不得跳过此流程。
 ```
+
+---
+
+## Step 1.3a：定义本 Phase 前后端契约（**必须先于 backend-spec 和 frontend-spec，强制步骤**）
+
+生成任何规格书之前，先在以下两个文件中完成本 Phase 的契约定义。
+**定义时必须参考对应的 backend skills 文件，不得凭记忆填写注解参数、字段类型或 JSON 结构。**
+
+---
+
+**① integration-map.md** — 架构级契约
+
+| 契约项 | 内容 | 必须先读的 backend skills |
+|---|---|---|
+| 模型清单 | model_name、Java 类名、ER 关系（含外键字段名）、状态=In-Flight | `references/core/model.md`、`references/core/app-json.md` |
+| 权限码（唯一定义来源） | `{model_name}:{action}` 格式，含义；角色映射可"待确认" | `references/core/method-service.md` §注解属性 |
+| 跨模型服务（如有） | 服务名、挂载模型、涉及模型、事务边界 | `references/core/method-service.md` §跨模型 RPC |
+| 前端实现方式决策 | 每个页面的实现方式（标准模板/hook/扩展视图/Vue2）及原因 | `references/core/view.md`、`references/core/view-advanced.md` |
+
+---
+
+**② sdd-contracts.md** — API 级契约
+
+| 契约项 | 内容 | 必须先读的 backend skills |
+|---|---|---|
+| 模型属性契约 | 字段名、`@Property` 关键参数（displayName/dataType/store 等）、前端类型、是否必填 | `references/core/model.md`、`references/core/model-property-advanced.md` |
+| ER 字段契约 | 外键字段（存 ID）+ related 字段（带出展示）+ ManyToOne/OneToMany 声明 | `references/core/model.md` §ER 关系注解、`references/core/model-property-advanced.md` |
+| 服务签名契约 | 服务名（`@MethodService.name`）、参数名、参数类型（Java→前端映射）；内置服务标"内置契约" | `references/core/method-service.md` |
+| 视图 key / 菜单 key | 命名规则、视图类型（grid/search/form/tree）、菜单 parent_ids | `references/core/view.md`、`references/core/menu.md` |
+| app.json 条目 | resolved、view 数组、data 数组 | `references/core/app-json.md` |
+
+---
+
+> **契约先行原则（强制）**：
+> - backend-spec 的字段注解、服务签名、auth 值、视图结构 必须取自上表已定义内容，**不得自行发明**
+> - frontend-spec 的字段类型、服务参数、前端实现方式 必须取自上表已定义内容，**不得自行发明**
+> - 若生成规格书时发现契约条目缺失，**必须先返回本步骤补充（并先读对应 backend skills），再继续规格书生成**
+> - 契约与规格书产生冲突，**以修订契约为准，同步更新规格书**，不得只改规格书
 
 ---
 
