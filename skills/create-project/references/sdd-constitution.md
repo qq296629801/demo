@@ -250,11 +250,12 @@ specs/
 | `name` | 名称 | — | — | — | 是 | string | — |
 | `status` | 状态 | — | radio-group | — | 是 | string | @Selection 枚举值见下方 |
 | `[mainId]` | [关联对象名] | — | — | — | 是 | number | ManyToOne 外键，存 ID |
-| `[mainName]` | [关联展示名] | — | — | store=false | 否 | string | related，不入库 |
+| `[mainName]` | [关联展示名] | — | — | — | 否 | string | related 冗余存库 |
+| `[mainCode]` | [关联编码名] | — | — | false | 否 | string | related 不存库（store=false） |
 
 > - `dataType`：仅在平台默认推断不够时填写（如 `text`/`date`/`datetime`/`integer`/`float`）；无特殊需求填 `—`
 > - `widget`：仅在需要非默认组件时填写（如 `radio-group`/`checkbox-group`）；默认输入框填 `—`
-> - `store=false`：related 展示字段必填，表示不入库
+> - `store`：related 字段有两种选择——冗余存库（不填，默认 true）或不存库（填 `false`）；按业务决策填写
 
 #### ER 关系声明
 
@@ -263,7 +264,7 @@ specs/
 | 字段名 | 注解 | 关联模型（Java 类名） | 说明 |
 |---|---|---|---|
 | `[mainId]` | `@ManyToOne` | `[MainModel]` | 存 ID，外键字段 |
-| `[subList]` | `@OneToMany(mappedBy="[mainId]")` | `[SubModel]` | 子表反向关联 |
+| `[subList]` | `@OneToMany` | `[SubModel]` | 同 App 子表，平台自动推断；跨 App 加 `targetModel`/`targetProperty` |
 
 ### [ModelName2]（`[model_name2]`）
 
