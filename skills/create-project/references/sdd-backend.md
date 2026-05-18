@@ -39,9 +39,9 @@
 
 | 字段 | Java 类型 | @Property 关键参数 | 必填 | @Validate 校验 | 索引 | 说明 |
 |---|---|---|---|---|---|---|
-| `[fieldName]` | `String/Long/Integer/Boolean/Date` | `displayName="[中文名]"` | 是/否 | `required/length/unique` | 是/否 | [说明] |
-| `[dictField]` | `String` / `Integer` | `displayName="[中文名]"` | 是/否 | — | 否 | 配合 `@Selection` 或 `@Dict`；`widget` 仅在需要特定组件（如 `"radio-group"`）时才写，普通下拉不写 widget |
-| `[dateField]` | `Date` | `displayName="[中文名]", dataType=DataType.DateTime, dateFormat="yyyy-MM-dd HH:mm:ss"` | 否 | — | 否 | 日期字段必须指定 dataType 和 dateFormat |
+| `[fieldName]` | `String/Long/Integer/Boolean/Date` | `displayName="[中文名]"` | 是/否 | `@Validate.NotBlank` / `@Validate.Size(max=N)` / `@Validate.Unique` | 是/否 | [说明] |
+| `[dictField]` | `String` / `Integer` | `displayName="[中文名]"` | 是/否 | — | 否 | 配合 `@Selection(values={...})` / `@Selection(model="...")` / `@Selection(method="[svcName]", linkageFields="...")` 或 `@Dict`；`widget` 仅在需要特定组件（如 `"radio-group"`）时才写 |
+| `[dateField]` | `Date` | `displayName="[中文名]", dataType=DataType.DATE, dateFormat="yyyy-MM-dd"` | 否 | — | 否 | 仅日期；含时间改用 `dataType=DataType.DATE_TIME, dateFormat="yyyy-MM-dd HH:mm:ss"` |
 | `[erField]` | ManyToOne | `@ManyToOne` + `@JoinColumn(name="[col]")` | 是/否 | — | 是 | 同 App ER 关联 |
 
 > **生成任何模型字段前必须先读取以下文件**：
@@ -112,7 +112,7 @@
 > 完整状态机契约（状态 × 服务映射、按钮显示规则、异常分层）在 `sdd-contracts.md` 状态机章节维护，backend-spec.md 只声明服务清单和副作用，不重复状态机规则。
 
 - 每个状态变更服务：**先查库当前状态 → 状态不符合抛 `ModelException`**（请求级事务自动回滚）
-- `@MethodService(name="[action]", displayName="[中文操作名]", auth="{model_name}:[action]")`
+- `@MethodService(name="[action]", description="[中文操作名]", auth="{model_name}:[action]")`
 - 视图按钮 `service` 字段使用 `@MethodService.name`，不使用 Java 方法名
 
 **事务决策树（跨模型 / 跨 App 写操作）**：

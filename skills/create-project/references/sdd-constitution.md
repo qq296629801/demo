@@ -303,7 +303,7 @@ specs/
 {
   "resolved": "[com.sie.iidp.demo.appName]",
   "view": [
-    "views/[model_name]_view.json"
+    "[moduleName]/views/[model_name]_view.json"
   ],
   "data": [
     "data/menus.json",
@@ -311,4 +311,6 @@ specs/
   ]
 }
 ```
+
+> `view` 路径相对于 `resolved` 包目录，按业务模块子目录组织，如 `"classmgr/views/example_class_view.json"`（参考 `app-json.md`）。
 ```
