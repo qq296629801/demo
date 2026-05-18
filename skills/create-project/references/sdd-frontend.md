@@ -399,9 +399,8 @@ page: [页面 key]
 
 ## 12. 按需加载配置 [可选]
 
-- `effectPaths`：可参考第 1 节的 `product` 字段配置，格式为 `^/<product>/`（例如 product 为 `abc` 则填 `^/abc/`）
-- `effectPageIds`：当前配置 / **默认不添加，仅在用户明确要求时配置**
-- 是否需要提醒用户确认：是/否
+- `effectPaths`：自动取第 1 节的 `product` 配置，格式为 `^/<product>/`（例如 product 为 `abc` 则填 `^/abc/`）。无 `product` 时不配置，保留默认占位符。
+- `effectPageIds`：**默认不添加，仅在用户明确要求时配置**
 
 ## 13. 待确认事项 [核心]
 
