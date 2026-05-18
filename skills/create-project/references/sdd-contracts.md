@@ -1,5 +1,9 @@
 # IIDP 前后端契约
 
+> **填写时机（强制）**：本文件在 **Step 1.3a** 填写，必须先于 `backend-spec.md` 和 `frontend-spec.md`。
+> 填写时必须参考 `skills/backend/references/core/` 对应文件（model.md、method-service.md 等），不得凭记忆填写字段名、注解参数、服务签名或 Java 类型。
+> backend-spec 和 frontend-spec 的字段、服务、权限码必须取自本文件已定义内容，不得自行发明。
+
 ## 多模型业务契约组织
 
 业务涉及多个模型时，契约表必须按模型分组，不要把所有模型的服务和按钮混在一张表里。建议结构：

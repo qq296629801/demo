@@ -190,6 +190,9 @@ specs/
 
 ## integration-map.md 模板
 
+> **填写时机（强制）**：在 **Step 1.3a** 填写，必须先于 `backend-spec.md` 和 `frontend-spec.md`。
+> 填写时必须参考 `skills/backend/references/core/model.md`（ER 注解写法）和 `references/core/method-service.md`（权限码格式），不得凭记忆填写。
+
 多模型业务必须按模型分组组织，并补充跨模型服务和权限码总览。
 
 ```markdown
@@ -197,10 +200,10 @@ specs/
 
 ## 模型清单与 ER 关系
 
-| 模型 | Java 类 | model_name | 关系 | 所属 App |
+| 模型 | Java 类 | model_name | 关系（含外键字段名） | 所属 App |
 |---|---|---|---|---|
 | [主模型] | `[MainEntity]` | `[main]` | 一对多 → [子模型] | `[appName]` |
-| [子模型] | `[SubEntity]` | `[sub]` | ManyToOne → [主模型] | `[appName]` |
+| [子模型] | `[SubEntity]` | `[sub]` | ManyToOne → [主模型]（外键字段: `[mainId]`） | `[appName]` |
 
 ## 模型 1：[ModelName]
 
@@ -220,7 +223,7 @@ specs/
 |---|---|---|---|---|---|
 | `[serviceName]` | `[主模型]` | `[模型1], [模型2]` | grid 按钮/form 内 | IIDP 请求级事务（抛 `ModelException` 自动回滚） | `[auth]` |
 
-## 权限码总览
+## 权限码总览（唯一定义来源，backend-spec 和按钮 auth 字段必须取自此处）
 
 | 权限码 | 含义 | 涉及模型 | 角色 |
 |---|---|---|---|

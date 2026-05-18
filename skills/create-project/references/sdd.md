@@ -35,7 +35,7 @@
 - 传统管理后台优先标准模板和在线视图；只有标准能力不足时才写前端扩展。
 - 未知模型、节点 id、权限码、枚举、服务、路由、原型来源必须标记为“待确认”。
 - 需要 UI 原型描述时，优先读取任意支持 MCP 的原型/设计/产品工具服务；无法读取时用截图、导出文档或文字描述兜底，并标记来源可信度。
-- Phase 完成后同步 `roadmap.md`、`integration-map.md`、`decisions.md` 和 `CHANGELOG.md`。
+- `integration-map.md` 在 **Step 1.3a** 填写（先于规格书），Phase 完成后复盘更新；`roadmap.md`、`decisions.md`、`CHANGELOG.md` 在 Phase 完成后同步。
 
 ## IIDP 完整项目结构
 
@@ -52,6 +52,7 @@ agents/
 │   ├── features/
 │   │   └── phase1-[feature]/
 │   │       ├── requirements.md
+│   │       ├── sdd-contracts.md      # API 级契约（Step 1.3a 生成，先于规格书）
 │   │       ├── backend-spec.md       # 后端技术落地规格（模型、服务、视图、菜单、权限细节）
 │   │       ├── frontend-spec.md      # 前端技术落地规格（仅需要前端代码时生成）
 │   │       ├── interaction-spec.md   # 前端交互规格（含复杂状态/响应式/可访问性时生成）
