@@ -229,3 +229,85 @@ specs/
 |---|---|---|---|
 | `[auth_code]` | [说明] | `[model]` | [角色] |
 ```
+
+## sdd-contracts.md 模板
+
+> **填写时机（强制）**：每个 Feature 在 **Step 1.3a** 生成 `specs/features/<feature>/sdd-contracts.md`，必须先于 `backend-spec.md` 和 `frontend-spec.md`。
+> 填写时必须参考 `skills/backend/references/core/` 对应文件，不得凭记忆填写注解参数或字段类型。
+> backend-spec 的字段注解、服务签名、auth 值必须取自本文件，不得自行发明。
+
+```markdown
+# [功能名称] API 级契约
+
+## 模型属性契约
+
+参考 `skills/backend/references/core/model.md`、`references/core/model-property-advanced.md`
+
+### [ModelName]（`[model_name]`）
+
+| 字段名 | displayName | dataType | widget | store | 必填 | 前端类型 | 备注 |
+|---|---|---|---|---|---|---|---|
+| `name` | 名称 | — | — | — | 是 | string | — |
+| `status` | 状态 | — | radio-group | — | 是 | string | @Selection 枚举值见下方 |
+| `[mainId]` | [关联对象名] | — | — | — | 是 | number | ManyToOne 外键，存 ID |
+| `[mainName]` | [关联展示名] | — | — | store=false | 否 | string | related，不入库 |
+
+> - `dataType`：仅在平台默认推断不够时填写（如 `text`/`date`/`datetime`/`integer`/`float`）；无特殊需求填 `—`
+> - `widget`：仅在需要非默认组件时填写（如 `radio-group`/`checkbox-group`）；默认输入框填 `—`
+> - `store=false`：related 展示字段必填，表示不入库
+
+#### ER 关系声明
+
+参考 `skills/backend/references/core/model.md` §ER 关系注解
+
+| 字段名 | 注解 | 关联模型（Java 类名） | 说明 |
+|---|---|---|---|
+| `[mainId]` | `@ManyToOne` | `[MainModel]` | 存 ID，外键字段 |
+| `[subList]` | `@OneToMany(mappedBy="[mainId]")` | `[SubModel]` | 子表反向关联 |
+
+### [ModelName2]（`[model_name2]`）
+
+（多模型时复制上方模型块，按依赖顺序排列）
+
+## 服务签名契约
+
+参考 `skills/backend/references/core/method-service.md`
+
+### [ModelName]（`[model_name]`）
+
+| 服务名 | 类型 | 参数名: Java 类型 | 返回类型 | 权限码 |
+|---|---|---|---|---|
+| `search` | 内置 | 平台标准 | `RecordSet` | `read` |
+| `create` | 内置 | 平台标准 | `RecordSet` | `create` |
+| `update` | 内置 | 平台标准 | `RecordSet` | `update` |
+| `delete` | 内置 | 平台标准 | `void` | `delete` |
+| `[serviceName]` | 自定义 | `[paramName]: [JavaType]` | `[returnType]` | `[model_name]:[action]` |
+
+> - 自定义服务多参数换行列出；`RecordSet rs` 是平台注入参数，不写入此表
+> - 权限码格式 `{model_name}:{action}`，必须与 `integration-map.md` 权限码总览保持一致
+
+## 视图 key / 菜单 key
+
+参考 `skills/backend/references/core/view.md`、`references/core/menu.md`
+
+| 模型 | 视图 key | 视图类型 | 菜单 key | 菜单 parent_ids |
+|---|---|---|---|---|
+| `[model_name]` | `[model_name]_view` | grid / search / form | `[menu_key]` | `["[parent_menu_key]"]` |
+
+## app.json 条目
+
+参考 `skills/backend/references/core/app-json.md`
+
+```json
+{
+  "resolved": "[com.sie.iidp.demo.appName]",
+  "view": [
+    "views/[model_name]_view.json"
+  ],
+  "data": [
+    "data/menus.json",
+    "data/[model_name]_data.json"
+  ]
+}
+```
+```

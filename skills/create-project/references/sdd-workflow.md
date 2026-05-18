@@ -236,14 +236,16 @@ specs/features/
 
 ---
 
-**② sdd-contracts.md** — API 级契约
+**② sdd-contracts.md** — API 级契约（每个 Feature 生成 `specs/features/<feature>/sdd-contracts.md`）
+
+按 `sdd-constitution.md` 中的 **sdd-contracts.md 模板**填写，填写时必须先读对应 backend skills：
 
 | 契约项 | 内容 | 必须先读的 backend skills |
 |---|---|---|
-| 模型属性契约 | 字段名、`@Property` 关键参数（displayName/dataType/store 等）、前端类型、是否必填 | `references/core/model.md`、`references/core/model-property-advanced.md` |
-| ER 字段契约 | 外键字段（存 ID）+ related 字段（带出展示）+ ManyToOne/OneToMany 声明 | `references/core/model.md` §ER 关系注解、`references/core/model-property-advanced.md` |
-| 服务签名契约 | 服务名（`@MethodService.name`）、参数名、参数类型（Java→前端映射）；内置服务标"内置契约" | `references/core/method-service.md` |
-| 视图 key / 菜单 key | 命名规则、视图类型（grid/search/form/tree）、菜单 parent_ids | `references/core/view.md`、`references/core/menu.md` |
+| 模型属性契约 | 字段名、`@Property` 关键参数（displayName/dataType/widget/store 等）、前端类型、是否必填 | `references/core/model.md`、`references/core/model-property-advanced.md` |
+| ER 字段契约 | 外键字段（存 ID）+ related 字段（store=false）+ ManyToOne/OneToMany 声明（含 mappedBy） | `references/core/model.md` §ER 关系注解、`references/core/model-property-advanced.md` |
+| 服务签名契约 | 服务名、参数名、Java 类型；内置服务标"内置"；权限码格式 `{model_name}:{action}` | `references/core/method-service.md` |
+| 视图 key / 菜单 key | 视图 key、视图类型（grid/search/form/tree）、菜单 key、菜单 parent_ids | `references/core/view.md`、`references/core/menu.md` |
 | app.json 条目 | resolved、view 数组、data 数组 | `references/core/app-json.md` |
 
 ---
