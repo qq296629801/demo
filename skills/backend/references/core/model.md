@@ -9,8 +9,8 @@ package com.sie.iidp.{appPkg}.{moduleName}.model;
 
 // ===== 元插件（必须，生成 static 字段常量 / getter / setter）=====
 import com.sie.meta.plugin.StaticVar;
-import com.sie.meta.plugin.Getter;
-import com.sie.meta.plugin.Setter;
+import com.sie.meta.plugin.Getter;  // IIDP 平台元插件，不是 lombok.Getter，禁止替换
+import com.sie.meta.plugin.Setter;  // IIDP 平台元插件，不是 lombok.Setter，禁止替换
 
 // ===== 模型注解（必须引入）=====
 import com.sie.snest.sdk.BaseModel;
