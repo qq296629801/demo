@@ -57,6 +57,8 @@
 - 选项、字典、关联字段用 `@Selection`、`@Dict` 或 ORM 注解。
 - 唯一编码、外键、高频过滤字段和排序字段要考虑索引。
 
+> **注解作用域禁止事项**：以下注解**只能标注在字段上，严禁标注在类上**：`@Property`、`@Validate.*`（`NotBlank`/`Size`/`Pattern`/`Unique`）、`@Selection`/`@Option`、`@Dict`、`@ManyToOne`/`@OneToMany`/`@ManyToMany`、`@JoinColumn`/`@JoinTable`。类上只允许 `@StaticVar`、`@Getter`、`@Setter`、`@Slf4j`、`@Model`。
+
 **跨 App 外部模型引用（弱引用 + 冗余字段模式）**：
 
 当需要引用其他 App 的模型（如产品、工作中心、组织）且不做强依赖时，使用此模式：
@@ -241,6 +243,8 @@ List<?> related = meta.get("[model]").find(Filter.in("id", ids), ...)
 ## 5. 视图和菜单
 
 视图：
+
+> **禁止将视图、菜单、种子数据 JSON 文件放入 `src/main/resources/`**。所有 JSON 文件必须放在 Java 源码路径下，路径相对于 `app.json` 的 `resolved` 包目录（`src/main/java/com/sie/iidp/{appPkg}/`）。放入 `resources/` 引擎不报错、静默跳过，功能不生效。
 
 > **生成任何视图 JSON 前必须先读取 `skills/backend/references/core/view.md`**，获取 grid/search/form/tree 各类型视图的完整 JSON 结构、tbar、columns、buttons、search fields、body 嵌套层级和实际示例。不使用本文内联字段表（避免结构漂移）。
 

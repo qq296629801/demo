@@ -78,6 +78,25 @@ public class {ModelName} extends BaseModel<{ModelName}> {
 
 ---
 
+## 注解作用域规则（严格执行）
+
+**类上只允许以下注解**：`@StaticVar`、`@Getter`、`@Setter`、`@Slf4j`、`@Model`。
+
+**以下注解只能标注在字段上，禁止标注在类上**：
+
+| 注解 | 说明 |
+|---|---|
+| `@Property` | 字段元信息声明 |
+| `@Validate.NotBlank` / `@Validate.Size` / `@Validate.Pattern` / `@Validate.Unique` | 字段校验 |
+| `@Selection` / `@Option` | 下拉选项 |
+| `@Dict` | 字典 |
+| `@ManyToOne` / `@OneToMany` / `@ManyToMany` | ER 关联 |
+| `@JoinColumn` / `@JoinTable` | ER 关联映射 |
+
+违反此规则会导致编译失败或引擎无法识别字段元信息。
+
+---
+
 ## 完整模型示例（来自 ExampleStudent）
 
 展示常见字段类型、校验、ER 关联、计算字段、字典、分片、索引等组合使用：

@@ -22,6 +22,13 @@
 
 ## 文件命名规范
 
+> **禁止将视图、菜单、种子数据 JSON 文件放入 `src/main/resources/`**。所有 JSON 文件必须放在 Java 源码路径下，路径相对于 `app.json` 中 `resolved` 对应的包目录（即 `src/main/java/com/sie/iidp/{appPkg}/`）：
+> - 视图文件：`{moduleName}/views/{model_name}_view.json`
+> - 菜单文件：`data/menus.json`
+> - 种子数据：`data/{model_name}.json`
+>
+> 放入 `resources/` 引擎无法加载，且不会报错，只会静默跳过。
+
 - 文件名：`{model_name}_view.json`
 - 根结构：`{ "views": { ... } }`
 - 常用视图 key：
