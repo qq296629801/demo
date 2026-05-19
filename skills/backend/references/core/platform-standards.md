@@ -69,6 +69,7 @@
 - 返回含糊的 `false` 但不说明失败原因。
 - 在模型类里堆叠超过 80 行的复杂业务流程；应拆到 Service。
 - 无参数校验地执行批量更新、删除、导入。
+- 使用 Spring Boot 原生注解和写法：`@Service`、`@Repository`、`@Controller`、`@RestController`、`@RequestMapping`、`@GetMapping`、`@PostMapping`、`@Autowired`、`@Component`、`@Bean`、`@Configuration`、`@SpringBootApplication`——IIDP 以元模型驱动，所有模型继承 `BaseModel<T>`，服务分层使用 `SdkService<T>`，不使用 Spring MVC / Spring IoC 原生体系。
 
 注释要求：
 

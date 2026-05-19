@@ -120,6 +120,7 @@
 - 自定义服务通过 `@MethodService` 暴露。
 - 写服务必须校验状态、权限、作用域和必填参数。
 - 原生 SQL 只在必要时使用，必须参数化。
+- **禁止 Spring Boot 原生写法**：不得使用 `@Service`、`@Repository`、`@Controller`、`@RestController`、`@RequestMapping`、`@Autowired`、`@Component`、`@Bean`、`@Configuration` 等 Spring MVC / Spring IoC 注解；服务分层统一使用 `SdkService<T>`，模型统一继承 `BaseModel<T>`。
 - **三级异常规范**（来自 `sdd-contracts.md` §5）：
   - 字段级必填/长度/唯一 → 模型层 `@Validate`
   - 参数缺失或格式错误 → 抛 `ValidationException`（**不**触发事务回滚）
