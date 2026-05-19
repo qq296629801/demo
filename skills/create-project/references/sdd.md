@@ -22,6 +22,7 @@
 | `sdd-contracts.md` | 前后端契约：JSON-RPC、Filter、按钮服务、节点 id、节点属性与事件 | 生成契约表、接口参数、视图按钮或节点扩展契约 |
 | `sdd-validation.md` | 实现顺序、后端/前端验证、偏差处理、失败分类、阶段复盘、Spec Sync 漂移检测（含 propose/apply/backfill 修复流程）、PR Bridge PR 描述生成、CHANGELOG | 验证交付、处理失败、阶段复盘、漂移检测与修复闭环、生成 PR 描述 |
 | `sdd-brownfield.md` | 存量项目接入：侦察、契约提取、增量规格；EDCR 能力发现框架（Evidence→Discovery→Capabilities→Risk）；IIDP 威胁矩阵（STRIDE 适配）；风险优先级与 Phase 门控 | 接入或改造已有 IIDP 项目；需要能力发现、风险建模或技术债评估时 |
+| `sdd-greenfield.md` | 全新 IIDP 工程：父工程初始化门控、项目宪法、六步工作流、多 App 规划、最佳实践、常见场景与排查 | 从零搭建 IIDP 工程、POC / 原型或新增独立 App 时 |
 | `usage.md` | create-project 详细使用说明、输入输出、Prompt、质量检查、常见误用 | 用户询问“怎么用 create-project”或需要完整操作指南时 |
 | `sdd-skill-maintenance.md` | `create-project` skill 维护规则、文件结构、校验命令 | 修改本 skill 或检查是否符合 skill 规范 |
 | `sdd-prompts-tools-principles.md` | Prompt 速查、工具命令、核心原则、常见陷阱 | 用户要提示词、工具清单、原则或总览时 |
