@@ -114,6 +114,8 @@ description: >-
 涉及模型类型、继承/扩展、ER 指令集、属性高级参数、分组校验、日期、Dict/Selection 回显或视图模型时，读取 `references/core/model-property-advanced.md`。
 按需读取 `references/core/component-field-mapping.md`、`references/core/method-service.md`、`references/core/data-source-api.md`、`references/core/api-filter-sql.md`、`references/core/file-excel-print-job.md` 获取组件映射、服务、接口、Filter、SQL、外部 API、文件/Excel/打印/任务写法。
 
+**生成任何 Java 模型类前，必须先读取 `references/core/model.md` 开头的 import 区，以该文件中的 import 语句为准生成所有 import，不得凭训练知识补全或替换。** 尤其注意：`@StaticVar`、`@Getter`、`@Setter` 来自 `com.sie.meta.plugin`，不是 Lombok；`@Slf4j` 来自 `lombok.extern.slf4j.Slf4j`，是唯一允许的 Lombok import。
+
 模型类必须包含：
 - 类头：`@StaticVar @Getter @Setter @Slf4j @Model(...)`
 - 继承：`extends BaseModel<{ModelName}>`
