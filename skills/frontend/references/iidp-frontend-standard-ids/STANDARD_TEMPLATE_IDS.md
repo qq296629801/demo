@@ -24,7 +24,28 @@
 idPreTab = idPre + 'tab_' + addTag + '_'
 ```
 
-> **说明**：`body` 指后端视图定义的视图对象（如 `ui_view` 接口返回的 `views.grid.body`），`body.field` 为后端配置的 ER 关系字段或子表字段名。
+`body.field` 来源：后端视图 JSON 中 form 视图里的子表 tab 定义的 `body.field` 属性，对应 Java 模型 `@OneToMany` / `@ManyToMany` 注解的 ER 关系字段名。从前端获取时，通过 `loadView` 接口返回的视图对象中读取。具体的 `field` 值需查阅 SDD 流程生成的契约产物文件（模板规范见 `@skills/create-project/references/sdd-contracts.md`）。
+
+视图 JSON 示例（子表 tab 定义）：
+
+```json
+{
+  "type": "form",
+  "tabs": [
+    {
+      "header": "物料属性列表",
+      "body": {
+        "type": "item_attribute_grid,item_attribute_search",
+        "field": "itemAttributeList",
+        "columns": [...]
+      }
+    }
+  ],
+  "buttons": ["@defaults"]
+}
+```
+
+上例中 `body.field = "itemAttributeList"`（字符串），对应 Java 模型中 `@OneToMany` 字段名 `itemAttributeList`。
 
 `addTag` 的取值逻辑（按优先级）：
 
