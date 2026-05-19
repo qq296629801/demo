@@ -94,7 +94,7 @@
 
 每个 `@MethodService` 在规格阶段就须确定实现位置——是写在模型类内，还是拆到 `service/` 目录的 `SdkService<T>` 子类。判断规则：
 
-强制拆分（在服务清单"说明"列标注"拆分到 service 层"，并在 §4.x 详细设计中写明 Service 类名）：
+强制拆分（在服务清单"说明"列标注"拆分到 service 层"，并在 §4.x 详细设计中写明 Service 类名）。拆分后的目录结构和代码写法以 `skills/backend/references/core/method-service.md` 的「DTO 入参出参与 Service 分层」章节为准：模型层用 `@InjectMeta` 注入 Service、只保留 `@MethodService` 入口；Service 类继承 `SdkService<T>`，DTO 放在 `model/request` 和 `model/response` 目录。
 
 | 触发条件 | 说明 |
 |---|---|
@@ -120,7 +120,7 @@
 - 自定义服务通过 `@MethodService` 暴露。
 - 写服务必须校验状态、权限、作用域和必填参数。
 - 原生 SQL 只在必要时使用，必须参数化。
-- **禁止 Spring Boot 原生写法**：不得使用 `@Service`、`@Repository`、`@Controller`、`@RestController`、`@RequestMapping`、`@Autowired`、`@Component`、`@Bean`、`@Configuration` 等 Spring MVC / Spring IoC 注解；服务分层统一使用 `SdkService<T>`，模型统一继承 `BaseModel<T>`。
+- **禁止用 Spring Boot 原生写法替代 IIDP 平台体系**：不得用 `@Controller`/`@RestController`/`@RequestMapping` 暴露接口，不得用 `@Repository` 做数据访问，不得在模型类中用 `@Autowired`/`@Component`/`@Bean` 注入外部 Bean；`@Service` 仅允许用于 `SdkService<T>` 子类。
 - **三级异常规范**（来自 `sdd-contracts.md` §5）：
   - 字段级必填/长度/唯一 → 模型层 `@Validate`
   - 参数缺失或格式错误 → 抛 `ValidationException`（**不**触发事务回滚）
