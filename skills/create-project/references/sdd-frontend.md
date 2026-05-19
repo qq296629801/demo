@@ -208,7 +208,7 @@ page: [菜单或页面 key]
 
 > **填写 args 列前必须先读契约**：
 > - 内置服务（`search/create/update/delete`）直接填平台标准参数名（`valuesList`、`ids/values` 等）。
-> - 自定义 `@MethodService` 的 args **必须从 `sdd-contracts.md` 对应模型的服务契约表 `args 参数（名称: 类型）` 列读取**，不得自行推断或凭按钮文案猜测。
+> - 自定义 `@MethodService` 的 args **必须从 `contracts.md` 对应模型的服务契约表 `args 参数（名称: 类型）` 列读取**，不得自行推断或凭按钮文案猜测。
 > - 若契约中该服务 args 列为空或"待确认"，**先补全契约再填写本节**。
 
 | 操作 | 入口 | 触发条件         | 前端行为 | 后端服务 | args（来自契约） | 成功结果 | 失败处理     |

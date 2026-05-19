@@ -11,7 +11,9 @@
     ↓
 [Clarify / Step 1.2] ★ 规格歧义扫描，生成结构化澄清问题（≤5 条），答案写回 requirements.md（必经步骤）
     ↓
-[Critique / Step 1.6] ★ 产品战略 + 工程风险双视角批判，暂停等用户确认（可选）
+[契约先行 / Step 1.3a] ★ 定义 integration-map.md + contracts.md 契约（必须先于规格书，强制步骤）
+    ↓
+[Critique / Step 1.4] ★ 产品战略 + 工程风险双视角批判，暂停等用户确认（可选）
     ↓
 [Backend Spec] 按 sdd-backend.md 模板生成 backend-spec.md（必写）
     ↓
@@ -99,6 +101,7 @@
 specs/features/
 └── phase1-[feature-name]/
     ├── requirements.md         # 功能需求与契约
+    ├── contracts.md            # API 级契约（Step 1.3a 生成，先于规格书）
     ├── backend-spec.md         # 后端技术落地规格（命名、模型、服务、视图、菜单、权限）
     ├── frontend-spec.md        # 前端技术落地规格（必写，含实现分支判断）
     ├── interaction-spec.md     # 前端交互规格（含复杂状态/响应式/可访问性时生成）
@@ -108,6 +111,8 @@ specs/features/
 ```
 
 ## Step 0：能力识别
+
+> **输出**：将以下模板填写后写入 `requirements.md` 的 `## 能力识别` 节（作为 Step 1 Specify 的前置内容）。
 
 ```markdown
 ## 能力识别
@@ -213,9 +218,95 @@ specs/features/
 
 ---
 
+## Step 1.3a：定义本 Phase 前后端契约（**必须先于 backend-spec 和 frontend-spec，强制步骤**）
+
+生成任何规格书之前，先在以下两个文件中完成本 Phase 的契约定义。
+**定义时必须参考对应的 backend skills 文件，不得凭记忆填写注解参数、字段类型或 JSON 结构。**
+
+---
+
+**① integration-map.md** — 架构级契约
+
+| 契约项 | 内容 | 必须先读的 backend skills |
+|---|---|---|
+| 模型清单 | model_name、Java 类名、ER 关系（含外键字段名）、状态=In-Flight | `references/core/model.md`、`references/core/app-json.md` |
+| 权限码（唯一定义来源） | `{model_name}:{action}` 格式，含义；角色映射可"待确认" | `references/core/method-service.md` §注解属性 |
+| 跨模型服务（如有） | 服务名、挂载模型、涉及模型、事务边界 | `references/core/method-service.md` §跨模型 RPC |
+| 前端实现方式决策 | 每个页面的实现方式（标准模板/hook/扩展视图/Vue2）及原因 | `references/core/view.md`、`references/core/view-advanced.md` |
+
+---
+
+**② contracts.md** — API 级契约（每个 Feature 生成 `specs/features/<feature>/contracts.md`）
+
+按 `sdd-constitution.md` 中的 **contracts.md 模板**填写，填写时必须先读对应 backend skills：
+
+| 契约项 | 内容 | 必须先读的 backend skills |
+|---|---|---|
+| 模型属性契约 | 字段名、`@Property` 关键参数（displayName/dataType/widget/store 等）、前端类型、是否必填 | `references/core/model.md`、`references/core/model-property-advanced.md` |
+| ER 字段契约 | 外键字段（存 ID）+ related 字段（冗余存库不填 store；不存库填 store=false）+ ManyToOne/OneToMany 声明（同 App 无参；跨 App 加 targetModel/targetProperty） | `references/core/model.md` §ER 关系注解、`references/core/model-property-advanced.md` |
+| 服务签名契约 | 服务名、参数名、Java 类型；内置服务标"内置"；权限码格式 `{model_name}:{action}` | `references/core/method-service.md` |
+| 视图 key / 菜单 key | 视图 key、视图类型（grid/search/form/tree）、菜单 key、菜单 parent_ids | `references/core/view.md`、`references/core/menu.md` |
+| app.json 条目 | resolved、view 数组、data 数组 | `references/core/app-json.md` |
+
+---
+
+> **契约先行原则（强制）**：
+> - backend-spec 的字段注解、服务签名、auth 值、视图结构 必须取自上表已定义内容，**不得自行发明**
+> - frontend-spec 的字段类型、服务参数、前端实现方式 必须取自上表已定义内容，**不得自行发明**
+> - 若生成规格书时发现契约条目缺失，**必须先返回本步骤补充（并先读对应 backend skills），再继续规格书生成**
+> - 契约与规格书产生冲突，**以修订契约为准，同步更新规格书**，不得只改规格书
+
+---
+
+## Step 1.4：Critique（可选，规格重大或不确定性高时触发）
+
+Critique 从两个对立视角对 `requirements.md` 做批判性审查，目的是在生成规格书前识别高风险假设和业务决策漏洞。**不修改规格，只输出发现报告并等待用户决策。**
+
+### 触发条件
+
+用户明确要求，或满足以下任一：规格涉及 3 个以上模型、包含状态机、有明显歧义的成功标准、待确认事项超过 3 项。
+
+### 产品战略视角质疑点
+
+- 这个功能解决的是用户真实痛点，还是技术负债或低频诉求？
+- 功能边界是否清晰，是否会在实现中自然扩大范围（scope creep）？
+- 成功标准是可量化验收的，还是模糊的主观判断？
+- 是否存在更轻量的实现方式（如后端在线视图已满足，无需前端扩展）？
+- 多模型设计是否必要，还是过度设计？
+
+### 工程风险视角质疑点
+
+- 规格中是否有"待确认"事项会在 Implement 阶段造成阻塞？
+- ER 关系、状态机、跨模型服务的事务边界是否足够清晰？
+- 权限码、视图 key、菜单 key 是否已经稳定，还是可能在实现中变更？
+- 前端实现分支判断是否会因为节点 id 未确认导致返工？
+- 是否有遗漏的验收场景（异常态、权限边界、并发修改、多租户）？
+
+### Critique 输出格式
+
+```markdown
+## Critique 报告：[功能名称]
+
+### 产品战略发现
+
+- [高/中/低] [发现描述]
+
+### 工程风险发现
+
+- [高/中/低] [发现描述]
+
+### 需要用户决策的事项
+
+1. [问题描述] — 选项 A：[...] / 选项 B：[...]
+```
+
+输出后**暂停，等待用户决策**后再进入 Step 1.5 Spec。
+
+---
+
 ## Step 1.5：Spec（技术落地规格）
 
-`requirements.md` 完成后、进入 Plan 之前，生成技术落地规格。后端规格和前端规格每个功能都必须生成。
+`requirements.md` 完成后、Step 1.3a 契约定义完成后、进入 Plan 之前，生成技术落地规格。后端规格和前端规格每个功能都必须生成。
 
 ### Step 1.5a：Backend Spec（必须生成）
 
@@ -230,7 +321,7 @@ specs/features/
 | 模型设计   | 字段、IIDP 注解、校验、索引；多模型时先写 ER 总览再逐模型展开   | §3                       |
 | 服务设计   | 内置/自定义服务清单、入参、出参、权限、事务边界；每个自定义服务附详细设计块（入参校验、查询逻辑、业务步骤、异常分层） | §4                       |
 | 视图和菜单 | 视图 key、类型、grid/search/form 配置；菜单 key、model、view    | §5                       |
-| 数据和权限 | 种子数据、字典、菜单/按钮/服务权限码（引用 integration-map.md） | §6                       |
+| 数据和权限 | 种子数据、字典、菜单/按钮/服务权限码（**必须取自** Step 1.3a 定义的 integration-map.md 权限码总览，不得自行发明） | §6                       |
 | 验收       | app.json 登记、命名一致、JSON 可解析、编译                      | §7                       |
 
 ### Step 1.5b：Frontend Spec（必须生成）
@@ -284,52 +375,6 @@ specs/features/
 | `backend-spec.md` | `sdd-backend.md` | 必须生成 | backend skill |
 | `frontend-spec.md` | `sdd-frontend.md` | 必须生成 | frontend skill（§9 实现分支决定是否写代码） |
 | `interaction-spec.md` | `sdd-frontend-interaction.md` | 含复杂状态/响应式/可访问性时 | frontend skill |
-
----
-
-## Step 1.6：Critique（可选，规格重大或不确定性高时触发）
-
-Critique 从两个对立视角对 `requirements.md` 做批判性审查，目的是在进入实现计划前识别高风险假设和业务决策漏洞。**不修改规格，只输出发现报告并等待用户决策。**
-
-### 触发条件
-
-用户明确要求，或满足以下任一：规格涉及 3 个以上模型、包含状态机、有明显歧义的成功标准、待确认事项超过 3 项。
-
-### 产品战略视角质疑点
-
-- 这个功能解决的是用户真实痛点，还是技术负债或低频诉求？
-- 功能边界是否清晰，是否会在实现中自然扩大范围（scope creep）？
-- 成功标准是可量化验收的，还是模糊的主观判断？
-- 是否存在更轻量的实现方式（如后端在线视图已满足，无需前端扩展）？
-- 多模型设计是否必要，还是过度设计？
-
-### 工程风险视角质疑点
-
-- 规格中是否有"待确认"事项会在 Implement 阶段造成阻塞？
-- ER 关系、状态机、跨模型服务的事务边界是否足够清晰？
-- 权限码、视图 key、菜单 key 是否已经稳定，还是可能在实现中变更？
-- 前端实现分支判断是否会因为节点 id 未确认导致返工？
-- 是否有遗漏的验收场景（异常态、权限边界、并发修改、多租户）？
-
-### Critique 输出格式
-
-```markdown
-## Critique 报告：[功能名称]
-
-### 产品战略发现
-
-- [高/中/低] [发现描述]
-
-### 工程风险发现
-
-- [高/中/低] [发现描述]
-
-### 需要用户决策的事项
-
-1. [问题描述] — 选项 A：[...] / 选项 B：[...]
-```
-
-输出后**暂停，等待用户决策**后再进入 Step 2 Plan。
 
 ---
 

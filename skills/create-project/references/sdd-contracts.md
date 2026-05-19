@@ -1,5 +1,8 @@
 # IIDP 前后端契约
 
+> **本文件说明**：这是 `sdd-contracts.md` 的 **skill 参考文件**，描述契约表的格式规范、JSON-RPC 协议、Filter 规则和节点契约规范。
+> 生成每个 Feature 的项目产物（`specs/features/<feature>/contracts.md`）时，请使用 `sdd-constitution.md` 中的 **contracts.md 模板**。
+
 ## 多模型业务契约组织
 
 业务涉及多个模型时，契约表必须按模型分组，不要把所有模型的服务和按钮混在一张表里。建议结构：
@@ -49,61 +52,6 @@
 | 权限码 | 含义 | 涉及模型 | 后端校验位置 | 前端控制位置 |
 |---|---|---|---|---|
 | `[auth_code]` | [说明] | `[model]` | `@MethodService` 服务内 | 按钮 `auth` 字段 |
-
-### 状态机契约（业务含状态流转时必填）
-
-IIDP 业务中 90% 涉及状态机（工单、合同、订单、审批、采购等）。状态机契约必须包含 3 部分：状态枚举、流转规则、按状态映射的服务和按钮。
-
-#### 1. 状态枚举
-
-| 状态值（英文） | 状态值（中文） | 含义 | 允许编辑字段 | 终态/可删除 |
-|---|---|---|---|---|
-| `DRAFT` | 草稿 | 初始态 | 所有业务字段 | 否 / 是 |
-| `RELEASED` | 已下达 | 流程已开始 | 计划日期、备注 | 否 / 否 |
-| `IN_PROGRESS` | 执行中 | 在做 | 报工数量 | 否 / 否 |
-| `COMPLETED` | 已完工 | 完成 | 只读 | 否 / 否 |
-| `CLOSED` | 已关闭 | 归档 | 只读 | 是 / 否 |
-
-#### 2. 状态流转规则
-
-```text
-DRAFT ──release──> RELEASED ──startWork──> IN_PROGRESS ──completeWork──> COMPLETED ──closeWork──> CLOSED
-                                                                                                    │
-                                                                                       任何状态 ──cancel──> CANCELLED（如有）
-```
-
-- 流转方向：单向不可回退（除非有显式回退服务和权限）
-- 跳跃状态：禁止跳跃（如不允许 DRAFT → COMPLETED）；如允许，明确特殊权限和原因
-
-#### 3. 状态 × 服务映射表
-
-| 状态 | 允许的服务 | 触发权限码 | 状态后转 | 系统副作用 |
-|---|---|---|---|---|
-| `DRAFT` | `update`, `delete`, `release` | `edit`/`delete`/`wo_release` | RELEASED | 无 |
-| `RELEASED` | `startWork`, `cancel` | `wo_start` | IN_PROGRESS | 写 `actualStartTime` |
-| `IN_PROGRESS` | `completeWork` | `wo_complete` | COMPLETED | 写 `actualEndTime`、`goodQty`/`scrapQty` |
-| `COMPLETED` | `closeWork` | `wo_close` | CLOSED | 写关闭时间 |
-| `CLOSED` | 无（只读） | — | — | — |
-
-#### 4. 状态 × 按钮显示规则
-
-| 状态 | 显示按钮 | 禁用按钮 | 隐藏字段 |
-|---|---|---|---|
-| `DRAFT` | 编辑/删除/下达 | — | — |
-| `RELEASED` | 开工/取消 | 删除 | — |
-| `IN_PROGRESS` | 完工 | 编辑/删除 | — |
-| `COMPLETED` | 关闭 | 所有编辑类 | — |
-| `CLOSED` | — | 全部 | — |
-
-#### 5. 状态机后端实现规则
-
-- 每个状态变更服务必须在 `@MethodService` 内按 IIDP 异常规范分层校验（见 `skills/backend/references/core/platform-standards.md` 异常与事务）：
-  - 字段级必填/长度/唯一：在模型层用 `@Validate` 表达
-  - 参数缺失或格式错误：抛 `ValidationException`（不触发回滚）
-  - 当前状态不允许该流转、权限不足、业务流程失败：抛 `ModelException`（触发请求级事务回滚）
-- 状态字段使用 `@Property @Selection(values = {...})`，枚举值与本契约表完全一致
-- 状态机服务必须在同一个 `@MethodService` 内完成状态变更与副作用（如生成审批记录），依赖 IIDP 请求级事务统一提交；失败抛 `ModelException` 触发自动回滚。需要分段提交才使用 `Meta` 手动 `flush/commit`（见 `skills/backend/references/core/method-service.md` 事务控制章节）
-- 前端按钮显隐通过 `bind_display`/`auth` 配合后端服务校验，**前端控制不替代后端二次校验**
 
 ---
 
