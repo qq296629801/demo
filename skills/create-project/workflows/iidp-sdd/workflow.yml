@@ -40,6 +40,11 @@ inputs:
     default: false
     prompt: "是否启用 TDD 模式（测试先行）？"
 
+  integration:
+    type: string
+    default: "claude"
+    prompt: "派发 Agent 命令的 Specify 集成（claude / copilot / gemini 等，须已 specify integration）"
+
 # ── 步骤定义 ─────────────────────────────────────────────────────────────────
 steps:
 
@@ -48,6 +53,7 @@ steps:
   # └─────────────────────────────────────────────────────┘
   - id: specify
     command: create-project.specify
+    integration: "{{ inputs.integration }}"
     input:
       args: "{{ inputs.feature }}"
     # 产物：specs/features/{{ inputs.phase }}-<short-name>/requirements.md
@@ -63,6 +69,7 @@ steps:
     steps:
       - id: clarify
         command: create-project.clarify
+        integration: "{{ inputs.integration }}"
         input:
           args: "{{ inputs.feature }}"
         # 每轮最多 5 个澄清问题，答案写回 requirements.md ## Clarifications
@@ -81,6 +88,7 @@ steps:
   # └─────────────────────────────────────────────────────┘
   - id: contracts
     command: create-project.contracts
+    integration: "{{ inputs.integration }}"
     input:
       args: "{{ inputs.feature }}"
 
@@ -95,6 +103,7 @@ steps:
     steps:
       - id: critique
         command: create-project.critique
+        integration: "{{ inputs.integration }}"
         input:
           args: "{{ inputs.feature }}"
         # 输出 Critique 报告（不修改规格），暂停等用户决策
@@ -119,6 +128,7 @@ steps:
     step:
       id: generate-spec
       command: create-project.spec
+      integration: "{{ inputs.integration }}"
       input:
         args: "{{ item }} {{ inputs.feature }}"
       # backend → backend-spec.md；frontend → frontend-spec.md
@@ -135,6 +145,7 @@ steps:
   # └─────────────────────────────────────────────────────┘
   - id: plan
     command: create-project.plan
+    integration: "{{ inputs.integration }}"
     input:
       args: "{{ inputs.feature }}"
     # 产物：plan.md；同步写回 CLAUDE.md IIDP-SDD 标记
@@ -153,6 +164,7 @@ steps:
   # └─────────────────────────────────────────────────────┘
   - id: tasks
     command: create-project.tasks
+    integration: "{{ inputs.integration }}"
     input:
       args: "{{ inputs.feature }} tdd={{ inputs.tdd }}"
     # TDD 模式下测试任务块移至对应实现块之前
@@ -175,6 +187,7 @@ steps:
     then:
       - id: blueprint
         command: create-project.blueprint
+        integration: "{{ inputs.integration }}"
         input:
           args: "{{ inputs.feature }}"
 
@@ -195,13 +208,14 @@ steps:
     steps:
       - id: implement-task
         command: create-project.implement
+        integration: "{{ inputs.integration }}"
         input:
           args: "next-task scope={{ inputs.scope }} feature={{ inputs.feature }}"
         # 每次只执行 tasks.md 中第一个未勾选任务；完成后勾选并停止
 
       - id: task-status
         type: shell
-        command: >
+        run: >
           grep -c '^\- \[ \]' specs/features/*/tasks.md 2>/dev/null
           | awk -F: '{sum+=$NF} END {print (sum>0) ? "true" : "false"}'
           | xargs -I{} echo '{"has_pending": {}}'
@@ -218,6 +232,7 @@ steps:
     steps:
       - id: validate
         command: create-project.validate
+        integration: "{{ inputs.integration }}"
         input:
           args: "{{ inputs.feature }}"
         # 按 validation-checklist.md 检查；输出 has_failures: true/false
@@ -247,6 +262,7 @@ steps:
     step:
       id: review-agent
       command: create-project.review
+      integration: "{{ inputs.integration }}"
       input:
         args: "{{ item }} {{ inputs.feature }}"
       # 每个 Agent 只读规格，输出发现报告，不修改任何文件
@@ -262,7 +278,7 @@ steps:
   # └─────────────────────────────────────────────────────┘
   - id: update-claude-md
     type: shell
-    command: |
+    run: |
       python3 - <<'EOF'
       import re, os, datetime
 
