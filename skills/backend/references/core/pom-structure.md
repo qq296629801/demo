@@ -210,7 +210,7 @@ iidp-backend-demo-ai/
             └── logback-spring.xml
 ```
 
-**说明：** 仓库根下 `modules/apps/` 是否出现取决于 Maven 将 jar 输出到 **`${basedir}/../modules/apps`** 后是否再同步进仓库；**容器与本地引擎实际读取** 以 `apps/modules/*.jar` 与 `apps/apps.json` 为准（见 §4.3、§6）。树中列出 `modules/apps/` 表示该路径在常见集成流程中可能出现，并非要求仓库内必须提交非空目录。
+**说明：** 仓库根下 `apps/modules` 是否出现取决于 Maven 将 jar 输出到 **`${basedir}/../apps/modules`** 后是否再同步进仓库；**容器与本地引擎实际读取** 以 `apps/modules/*.jar` 与 `apps/apps.json` 为准（见 §4.3、§6）。树中列出 `apps/modules` 表示该路径在常见集成流程中可能出现，并非要求仓库内必须提交非空目录。
 
 ---
 
@@ -291,7 +291,7 @@ com.sie.meta:sie-snest-engine:compile
 </resources>
 ```
 
-业务聚合 POM 使用 `sie-snest-maven-plugin` 对业务 App jar 执行 `repackage`，当前配置的复制目录为 `${basedir}/../../modules/apps`（解析为 **仓库根目录的上一级** 下的 `modules/apps`，与根 POM `maven-dependency-plugin` 的平台 jar 落点一致；若团队将仓库放在无父目录约定的路径，须在集成说明中写明如何把 jar 同步到 Docker 使用的 `apps/modules/`）：
+业务聚合 POM 使用 `sie-snest-maven-plugin` 对业务 App jar 执行 `repackage`，当前配置的复制目录为 `${basedir}/../../apps/modules`（解析为 **仓库根目录的上一级** 下的 `apps/modules`，与根 POM `maven-dependency-plugin` 的平台 jar 落点一致；若团队将仓库放在无父目录约定的路径，须在集成说明中写明如何把 jar 同步到 Docker 使用的 `apps/modules/`）：
 
 ```xml
 <plugin>
@@ -299,7 +299,7 @@ com.sie.meta:sie-snest-engine:compile
     <artifactId>sie-snest-maven-plugin</artifactId>
     <version>1.0-SNAPSHOT</version>
     <configuration>
-        <copyDir>${basedir}/../../modules/apps</copyDir>
+        <copyDir>${basedir}/../../apps/modules</copyDir>
     </configuration>
     <executions>
         <execution>
@@ -320,7 +320,7 @@ com.sie.meta:sie-snest-engine:compile
 </plugin>
 ```
 
-注意：`copyDir` 与根 POM `maven-dependency-plugin` 的 `outputDirectory` 均指向 **仓库父目录** 下的 `modules/apps`（`${basedir}` 分别为 `sie-iidp-demo-apps` 与 `iidp-backend-demo-ai` 时的相对路径不同，但解析目标一致）。**Dockerfile / Compose** 挂载的是仓库内的 `./apps`，其中 **`apps/modules/`** 存放引擎加载的 jar；构建后若 jar 只出现在父目录 `modules/apps/`，必须复制或同步到 `iidp-backend-demo-ai/apps/modules/`，且 `apps/apps.json` 的 `apps.SDK` 与物理文件名一致。
+注意：`copyDir` 与根 POM `maven-dependency-plugin` 的 `outputDirectory` 均指向 **仓库父目录** 下的 `apps/modules`（`${basedir}` 分别为 `sie-iidp-demo-apps` 与 `iidp-backend-demo-ai` 时的相对路径不同，但解析目标一致）。**Dockerfile / Compose** 挂载的是仓库内的 `./apps`，其中 **`apps/modules/`** 存放引擎加载的 jar；构建后若 jar 只出现在父目录 `apps/modules`，必须复制或同步到 `iidp-backend-demo-ai/apps/modules/`，且 `apps/apps.json` 的 `apps.SDK` 与物理文件名一致。
 
 ---
 
@@ -390,10 +390,10 @@ com.sie.meta:sie-snest-engine:compile
 
 根 POM 使用：
 
-| 插件 | 版本 | 作用 |
-|---|---|---|
-| `org.apache.maven.plugins:maven-compiler-plugin` | `3.6.0` | Java 1.8 编译，开启 `-parameters` |
-| `org.apache.maven.plugins:maven-dependency-plugin` | `3.6.0` | `package` 阶段复制 IIDP 平台能力 jar 到 `${basedir}/../modules/apps`（**仓库根**的上一级目录下的 `modules/apps`） |
+| 插件 | 版本 | 作用                                                                                    |
+|---|---|---------------------------------------------------------------------------------------|
+| `org.apache.maven.plugins:maven-compiler-plugin` | `3.6.0` | Java 1.8 编译，开启 `-parameters`                                                          |
+| `org.apache.maven.plugins:maven-dependency-plugin` | `3.6.0` | `package` 阶段复制 IIDP 平台能力 jar 到 `${basedir}/../apps/modules`（**仓库根**的上一级目录下的 `apps/modules`） |
 
 根 POM 当前 `artifactItems` 对应坐标（版本属性见 §4.1）：
 
@@ -411,7 +411,7 @@ com.sie.meta:sie-iidp-log:${sie-iidp-log.version}
 
 若根 POM `artifactItems` 中对同一坐标（例如 `sie-iidp-tenant`）出现重复的 `<artifactItem>`，以仓库内实际 `pom.xml` 为准；上表为去重后的能力包清单。
 
-该插件在 **根 POM** 执行时，`${basedir}/../modules/apps` 解析为与 `iidp-backend-demo-ai` 同级的 `modules/apps`。**Docker / 本地运行** 使用的加载目录是仓库内 `apps/modules/`（与 `apps/apps.json` 配合）；若构建产物只出现在父目录 `modules/apps/`，须在交付或脚本中同步到 `iidp-backend-demo-ai/apps/modules/` 后再起容器。
+该插件在 **根 POM** 执行时，`${basedir}/../apps/modules` 解析为与 `iidp-backend-demo-ai` 同级的 `apps/modules`。**Docker / 本地运行** 使用的加载目录是仓库内 `apps/modules/`（与 `apps/apps.json` 配合）；若构建产物只出现在父目录 `apps/modules`，须在交付或脚本中同步到 `iidp-backend-demo-ai/apps/modules/` 后再起容器。
 
 历史上若存在 `sie-iidp-demo-apps/apps/` 等中间目录，以当前 `pom.xml` 为准；**Compose 挂载** 固定为项目根 `./apps`。
 
@@ -701,18 +701,18 @@ spring.profiles.active=dev
 
 `application-dev.properties` 关键项：
 
-| 配置项 | 当前含义 |
-|---|---|
-| `server.port=8060` | 应用端口 |
-| `engine.run.mode=SINGLE` | 单机运行模式 |
-| `engine.store.meta.mode=CLOUD` | 元数据存储模式 |
-| `engine.model2ddl.mode` | 当前注释，示例值 `CREATE` |
-| `minio.endpoint` | 原始开发环境 MinIO 地址，当前为内网地址 |
-| `redis.host` / `redis.port` / `redis.db` / `redis.password` | 原始开发环境 Redis 配置，密码不复制到本文档 |
-| `cas.*` | CAS 单点登录配置 |
-| `getModel.whiteList` | 模型白名单 |
-| `kkfile.host` | 文件预览服务 |
-| `server.host` | 服务域名 |
+| 配置项 | 当前含义                        |
+|---|-----------------------------|
+| `server.port=8060` | 应用端口                        |
+| `engine.run.mode=SINGLE` | 单机运行模式                      |
+| `engine.store.meta.mode=CLOUD` | 元数据存储模式                     |
+| `engine.model2ddl.mode` | 当前注释，示例值 `CREATE`           |
+| `minio.endpoint` | 原始开发环境 MinIO 地址，当前为内网地址,示例：http://192.168.175.54:9000 |
+| `redis.host` / `redis.port` / `redis.db` / `redis.password` | 原始开发环境 Redis 配置，密码不复制到本文档   |
+| `cas.*` | CAS 单点登录配置                  |
+| `getModel.whiteList` | 模型白名单                       |
+| `kkfile.host` | 文件预览服务                      |
+| `server.host` | 服务域名                        |
 
 `dbcp.properties` 关键项：
 
@@ -1012,7 +1012,7 @@ src/main/java/com/sie/iidp/{appPkg}/app.json
 - 两个数组如有遗漏，对应视图或数据在运行时不会被加载，但不会报启动错误，只会静默缺失。
 
 7. 视图 JSON、菜单 JSON 放在 `src/main/java` 下，依赖父 POM 资源配置进入 jar。
-8. 执行 Maven 打包，确认业务 jar 的复制目录（`sie-snest-maven-plugin` 的 `copyDir`）；若要随当前 Dockerfile 部署，须将需加载的 jar 置于 **`iidp-backend-demo-ai/apps/modules/`**（若构建先落在仓库父目录 `modules/apps/`，须同步到此处）。
+8. 执行 Maven 打包，确认业务 jar 的复制目录（`sie-snest-maven-plugin` 的 `copyDir`）；若要随当前 Dockerfile 部署，须将需加载的 jar 置于 **`iidp-backend-demo-ai/apps/modules/`**（若构建先落在仓库父目录 `apps/modules`，须同步到此处）。
 9. 在 `iidp-backend-demo-ai/apps/apps.json` 的 `apps.SDK` 中追加新业务 jar **文件名**；仅有物理 jar、未登记 `apps.SDK` 时，引擎不会加载。
 10. 如果要 Docker 运行，确认 `docker/config` 连接的是 compose 服务名，并执行 `docker compose config --quiet`。
 
