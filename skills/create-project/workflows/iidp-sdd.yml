@@ -1,0 +1,313 @@
+schema_version: "1.0"
+
+workflow:
+  id: "iidp-sdd"
+  name: "IIDP SDD 完整开发周期"
+  version: "1.0.0"
+  author: "IIDP Team"
+  description: >
+    完整 SDD 闭环：Specify → Clarify 循环 → 契约先行 → Spec（并行）→ Plan 门控
+    → Tasks → Blueprint 门控 → Implement 逐任务循环 → Validate 修复循环
+    → 深度审查 → Phase 门控（可继续下一 Phase）
+
+# ── 运行依赖 ────────────────────────────────────────────────────────────────
+requires:
+  skills:
+    - "create-project"
+    - "backend"
+    - "frontend"
+
+# ── 用户输入 ────────────────────────────────────────────────────────────────
+inputs:
+  feature:
+    type: string
+    required: true
+    prompt: "描述你要开发的功能（将作为 requirements.md 的初始输入）"
+
+  phase:
+    type: string
+    default: "phase1"
+    prompt: "当前阶段编号，如 phase1、phase2（决定规格目录前缀）"
+
+  scope:
+    type: string
+    default: "full"
+    enum: ["full", "backend-only", "frontend-only"]
+    prompt: "实现范围（full / backend-only / frontend-only）"
+
+  tdd:
+    type: boolean
+    default: false
+    prompt: "是否启用 TDD 模式（测试先行）？"
+
+# ── 步骤定义 ─────────────────────────────────────────────────────────────────
+steps:
+
+  # ┌─────────────────────────────────────────────────────┐
+  # │  Step 0 + 1  能力识别 → requirements.md             │
+  # └─────────────────────────────────────────────────────┘
+  - id: specify
+    command: create-project.specify
+    input:
+      args: "{{ inputs.feature }}"
+    # 产物：specs/features/{{ inputs.phase }}-<short-name>/requirements.md
+
+  # ┌─────────────────────────────────────────────────────┐
+  # │  Step 1.2  Clarify 循环                             │
+  # │  do-while：至少问一轮，用户说"done"才退出           │
+  # └─────────────────────────────────────────────────────┘
+  - id: clarify-cycle
+    type: do-while
+    condition: "{{ steps.clarify-gate.output.choice == 'more' }}"
+    max_iterations: 5
+    steps:
+      - id: clarify
+        command: create-project.clarify
+        input:
+          args: "{{ inputs.feature }}"
+        # 每轮最多 5 个澄清问题，答案写回 requirements.md ## Clarifications
+
+      - id: clarify-gate
+        type: gate
+        message: |
+          本轮澄清完成。requirements.md 中是否还有"待确认"歧义需要再追问？
+          选 done → 进入契约定义；选 more → 继续澄清（最多 5 轮）。
+        options: [done, more]
+        on_reject: skip   # 用户不回应时自动放行
+
+  # ┌─────────────────────────────────────────────────────┐
+  # │  Step 1.3a  契约先行（强制）                         │
+  # │  生成 integration-map.md + contracts.md             │
+  # └─────────────────────────────────────────────────────┘
+  - id: contracts
+    command: create-project.contracts
+    input:
+      args: "{{ inputs.feature }}"
+
+  # ┌─────────────────────────────────────────────────────┐
+  # │  Step 1.4  Critique 循环（可选）                     │
+  # │  do-while：批判 → 用户决定修改或放行               │
+  # └─────────────────────────────────────────────────────┘
+  - id: critique-cycle
+    type: do-while
+    condition: "{{ steps.critique-gate.output.choice == 'revise' }}"
+    max_iterations: 3
+    steps:
+      - id: critique
+        command: create-project.critique
+        input:
+          args: "{{ inputs.feature }}"
+        # 输出 Critique 报告（不修改规格），暂停等用户决策
+
+      - id: critique-gate
+        type: gate
+        message: |
+          Critique 报告已输出。
+          选 approve → 规格通过，进入 Spec 生成；
+          选 revise  → 返回修改 requirements.md（重新触发 Critique）。
+        options: [approve, revise]
+        on_reject: skip
+
+  # ┌─────────────────────────────────────────────────────┐
+  # │  Step 1.5  Backend-Spec + Frontend-Spec 并行生成    │
+  # │  fan-out：两个 Spec 同时由不同 Agent 生成           │
+  # └─────────────────────────────────────────────────────┘
+  - id: spec-parallel
+    type: fan-out
+    items: ["backend", "frontend"]
+    max_concurrency: 2
+    step:
+      id: generate-spec
+      command: create-project.spec
+      input:
+        args: "{{ item }} {{ inputs.feature }}"
+      # backend → backend-spec.md；frontend → frontend-spec.md
+      # interaction-spec.md 由 frontend spec 步骤按条件自动生成
+
+  # fan-in：等两个 Spec 都完成
+  - id: spec-collect
+    type: fan-in
+    wait_for: [spec-parallel]
+    output: {}
+
+  # ┌─────────────────────────────────────────────────────┐
+  # │  Step 2  Plan → Plan Review Gate                    │
+  # └─────────────────────────────────────────────────────┘
+  - id: plan
+    command: create-project.plan
+    input:
+      args: "{{ inputs.feature }}"
+    # 产物：plan.md；同步写回 CLAUDE.md IIDP-SDD 标记
+
+  - id: plan-gate
+    type: gate
+    message: |
+      计划摘要已展示。
+      选 approve → 生成任务清单；
+      选 reject  → 终止（请手动修改 plan.md 后重新运行）。
+    options: [approve, reject]
+    on_reject: abort
+
+  # ┌─────────────────────────────────────────────────────┐
+  # │  Step 3  Tasks                                      │
+  # └─────────────────────────────────────────────────────┘
+  - id: tasks
+    command: create-project.tasks
+    input:
+      args: "{{ inputs.feature }} tdd={{ inputs.tdd }}"
+    # TDD 模式下测试任务块移至对应实现块之前
+
+  # ┌─────────────────────────────────────────────────────┐
+  # │  Step 3.5  Blueprint 门控（可选）                   │
+  # └─────────────────────────────────────────────────────┘
+  - id: blueprint-gate
+    type: gate
+    message: |
+      是否生成代码蓝图（Blueprint）？
+      复杂功能（L 级 / 跨模型服务 / 团队首次接入 IIDP 前端）建议生成。
+      选 generate → 生成蓝图并等确认；选 skip → 直接进入实现。
+    options: [generate, skip]
+    on_reject: skip
+
+  - id: blueprint-branch
+    type: if
+    condition: "{{ steps.blueprint-gate.output.choice == 'generate' }}"
+    then:
+      - id: blueprint
+        command: create-project.blueprint
+        input:
+          args: "{{ inputs.feature }}"
+
+      - id: blueprint-confirm
+        type: gate
+        message: "蓝图已生成。确认方向后开始实现；若需调整请选 reject 并修改规格。"
+        options: [approve, reject]
+        on_reject: abort
+
+  # ┌─────────────────────────────────────────────────────┐
+  # │  Step 4  Implement 逐任务循环                       │
+  # │  do-while：每次执行一个任务，直到 tasks.md 全勾选   │
+  # └─────────────────────────────────────────────────────┘
+  - id: implement-cycle
+    type: do-while
+    condition: "{{ steps.task-status.output.has_pending == true }}"
+    max_iterations: 100
+    steps:
+      - id: implement-task
+        command: create-project.implement
+        input:
+          args: "next-task scope={{ inputs.scope }} feature={{ inputs.feature }}"
+        # 每次只执行 tasks.md 中第一个未勾选任务；完成后勾选并停止
+
+      - id: task-status
+        type: shell
+        command: >
+          grep -c '^\- \[ \]' specs/features/*/tasks.md 2>/dev/null
+          | awk -F: '{sum+=$NF} END {print (sum>0) ? "true" : "false"}'
+          | xargs -I{} echo '{"has_pending": {}}'
+        # 检查 tasks.md 是否还有未完成任务
+
+  # ┌─────────────────────────────────────────────────────┐
+  # │  Step 5  Validate 修复循环                          │
+  # │  do-while：验证 → 若有失败 → 修复 → 再验证         │
+  # └─────────────────────────────────────────────────────┘
+  - id: validate-cycle
+    type: do-while
+    condition: "{{ steps.validate.output.has_failures == true }}"
+    max_iterations: 3
+    steps:
+      - id: validate
+        command: create-project.validate
+        input:
+          args: "{{ inputs.feature }}"
+        # 按 validation-checklist.md 检查；输出 has_failures: true/false
+
+      - id: validate-gate
+        type: gate
+        message: |
+          验证发现失败项（见上方报告）。
+          选 fix    → 修复失败项后重新验证；
+          选 accept → 接受当前状态，记录为技术债后继续。
+        options: [fix, accept]
+        on_reject: skip   # 无响应时接受当前状态
+
+  # ┌─────────────────────────────────────────────────────┐
+  # │  Phase 结束  深度审查（5 子 Agent 并行）            │
+  # │  fan-out 到 5 个专项 Agent                          │
+  # └─────────────────────────────────────────────────────┘
+  - id: deep-review
+    type: fan-out
+    items:
+      - "spec-consistency"
+      - "backend-alignment"
+      - "frontend-alignment"
+      - "security-boundaries"
+      - "ai-operability"
+    max_concurrency: 5
+    step:
+      id: review-agent
+      command: create-project.review
+      input:
+        args: "{{ item }} {{ inputs.feature }}"
+      # 每个 Agent 只读规格，输出发现报告，不修改任何文件
+
+  - id: review-collect
+    type: fan-in
+    wait_for: [deep-review]
+    output: {}
+    # 协调 Agent 汇总 5 份报告，列出高优先级发现和需用户决策事项
+
+  # ┌─────────────────────────────────────────────────────┐
+  # │  写回 CLAUDE.md（IIDP-SDD 标记）                   │
+  # └─────────────────────────────────────────────────────┘
+  - id: update-claude-md
+    type: shell
+    command: |
+      python3 - <<'EOF'
+      import re, os, datetime
+
+      path = "CLAUDE.md"
+      phase = "{{ inputs.phase }}"
+      feature = "{{ inputs.feature }}"
+      today = datetime.date.today().isoformat()
+
+      section = (
+          "<!-- IIDP-SDD START -->\n"
+          f"当前活动功能：specs/features/{phase}-{feature}/\n"
+          f"实现计划：specs/features/{phase}-{feature}/plan.md\n"
+          f"当前阶段：Phase 完成 ✅（{today}）\n"
+          "<!-- IIDP-SDD END -->"
+      )
+
+      if os.path.exists(path):
+          content = open(path).read()
+          if "<!-- IIDP-SDD START -->" in content:
+              content = re.sub(
+                  r"<!-- IIDP-SDD START -->.*?<!-- IIDP-SDD END -->",
+                  section,
+                  content,
+                  flags=re.DOTALL,
+              )
+          else:
+              content = content.rstrip() + "\n\n" + section + "\n"
+      else:
+          content = "# IIDP SDD 项目\n\n" + section + "\n"
+
+      open(path, "w").write(content)
+      print(f"CLAUDE.md 已更新：{phase}-{feature} Phase 完成")
+      EOF
+
+  # ┌─────────────────────────────────────────────────────┐
+  # │  Phase 门控：决定是否继续下一 Phase                 │
+  # │  on_reject: skip → workflow 结束，不报错            │
+  # └─────────────────────────────────────────────────────┘
+  - id: phase-end-gate
+    type: gate
+    message: |
+      🎉 {{ inputs.phase }}-{{ inputs.feature }} 已完成！
+      ─────────────────────────────────────────
+      下一步选项：
+        next-phase → 重新运行 workflow，输入下一 Phase 功能描述
+        done       → 本次开发周期结束
+    options: [next-phase, done]
+    on_reject: skip
