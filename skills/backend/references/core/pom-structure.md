@@ -254,16 +254,18 @@ iidp-backend-demo-ai/
 
 ```xml
 <modules>
+    <module>sie-iidp-demo-example</module>
     <module>sie-iidp-demo-xxljob-executor</module>
 </modules>
 ```
 
-
 业务聚合 POM 自身声明的依赖：
 
 ```text
-com.sie.meta:sie-snest-sdk:compile，排除 com.sie.meta:sie-snest-engine
+com.sie.meta:sie-snest-sdk:compile，排除 com.sie.meta:sie-snest-engine 和 com.alibaba:fastjson
+com.alibaba:fastjson:1.2.83:compile
 com.sie.meta:sie-snest-engine:compile
+com.sie.meta:sie-iidp-dd-test:1.0.0-SNAPSHOT:test
 ```
 
 业务聚合 POM 的资源配置会把 `src/main/java` 下非 `.java` 文件打包进 jar，必须保留：
@@ -426,9 +428,32 @@ com.sie.meta:sie-iidp-log:${sie-iidp-log.version}
 
 ## 5. 子模块 POM 明细
 
-当前源码子模块仅有 `sie-iidp-demo-xxljob-executor`、`sie-iidp-demo-common`、`sie-iidp-demo-start`。根 POM `dependencyManagement` 中仍保留 `sie-iidp-demo-example` 坐标，但 **源码目录与 `<modules>` 条目当前均不存在**；若恢复该示例模块，须同步补齐目录与聚合 `<module>`。
+当前源码子模块有 `sie-iidp-demo-example`、`sie-iidp-demo-xxljob-executor`、`sie-iidp-demo-common`、`sie-iidp-demo-start`。
 
-### 5.1 `sie-iidp-demo-xxljob-executor`
+### 5.1 `sie-iidp-demo-example`
+
+路径：`iidp-backend-demo-ai/sie-iidp-demo-apps/sie-iidp-demo-example/pom.xml`
+
+| 项 | 当前值 |
+|---|---|
+| parent | `com.sie.iidp:sie-iidp-demo-apps:${revision}` |
+| `artifactId` | `sie-iidp-demo-example` |
+| Java 编译 | `8` |
+
+依赖：
+
+```text
+org.apache.commons:commons-lang3
+org.springframework:spring-core
+cn.hutool:hutool-all
+org.projectlombok:lombok:provided
+com.sie.iidp:sie-iidp-demo-common:compile
+com.sie.meta:sie-iidp-plugin:compile
+```
+
+该模块包含单元测试，测试类位于 `src/test/java/`，测试数据（JSON）与测试类同包，位于 `src/test/resources/`。详见 §7。
+
+### 5.3 `sie-iidp-demo-xxljob-executor`
 
 路径：`iidp-backend-demo-ai/sie-iidp-demo-apps/sie-iidp-demo-xxljob-executor/pom.xml`
 
@@ -448,7 +473,7 @@ org.springframework.boot:spring-boot-starter-web
 
 注意：XXL-Job 模块 POM 显式设置 `maven.compiler.source/target=17`，但父级 `maven-compiler-plugin` 又显式配置 `source/target=1.8`。当前源码未使用 Java 17 语法；如果后续引入 Java 17 语法，需要同步调整继承的 compiler plugin 配置并重新验证构建。
 
-### 5.2 `sie-iidp-demo-common`
+### 5.4 `sie-iidp-demo-common`
 
 路径：`iidp-backend-demo-ai/sie-iidp-demo-common/pom.xml`
 
@@ -469,7 +494,7 @@ com.sie.meta:sie-snest-engine:compile
 
 `sie-snest-sdk` 排除 `sie-snest-engine`，随后单独声明 `sie-snest-engine`。
 
-### 5.3 `sie-iidp-demo-start`
+### 5.5 `sie-iidp-demo-start`
 
 路径：`iidp-backend-demo-ai/sie-iidp-demo-start/pom.xml`
 
@@ -554,6 +579,92 @@ Dockerfile 依赖该 jar；执行 `docker compose up -d --build` 前必须先 Ma
 
 ---
 
+## 7. 单元测试配置
+
+单元测试基于 IIDP 自研的 **DDTest 数据驱动测试框架**，POM 层面的依赖与插件统一在 `sie-iidp-demo-apps/pom.xml` 中声明，所有业务 App 子模块继承。框架注解规范、Mock 配置、JSON 数据格式详见 `skills/backend/references/core/testing.md`。
+
+### 7.1 测试依赖（`sie-iidp-demo-apps/pom.xml`）
+
+```xml
+<!-- fastjson 独立声明，同时从 sie-snest-sdk 中排除，避免版本冲突 -->
+<dependency>
+    <groupId>com.alibaba</groupId>
+    <artifactId>fastjson</artifactId>
+    <version>1.2.83</version>
+</dependency>
+
+<!-- IIDP DDTest 框架，仅在测试阶段使用 -->
+<dependency>
+    <groupId>com.sie.meta</groupId>
+    <artifactId>sie-iidp-dd-test</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+    <scope>test</scope>
+</dependency>
+```
+
+`sie-snest-sdk` 的 exclusion 须同步添加：
+
+```xml
+<exclusion>
+    <groupId>com.alibaba</groupId>
+    <artifactId>fastjson</artifactId>
+</exclusion>
+```
+
+### 7.2 测试插件（`sie-iidp-demo-apps/pom.xml`）
+
+| 插件 | 版本 | 作用 |
+|---|---|---|
+| `org.apache.maven.plugins:maven-surefire-plugin` | `3.2.5` | 扫描并执行测试类 |
+| `org.jacoco:jacoco-maven-plugin` | `0.8.8` | `test` 阶段生成覆盖率报告 |
+
+`maven-surefire-plugin` 关键配置：
+
+```xml
+<plugin>
+    <groupId>org.apache.maven.plugins</groupId>
+    <artifactId>maven-surefire-plugin</artifactId>
+    <version>3.2.5</version>
+    <configuration>
+        <skip>false</skip>
+        <workingDirectory>${project.basedir}/..</workingDirectory>
+        <includes>
+            <include>**/*Test.java</include>
+            <include>**/*Tests.java</include>
+            <include>**/*TestCase.java</include>
+        </includes>
+    </configuration>
+</plugin>
+```
+
+`workingDirectory` 设置为 `${project.basedir}/..`（即 `sie-iidp-demo-apps/` 目录），测试运行时以此为工作目录加载引擎上下文。
+
+### 7.3 测试文件约定
+
+- 测试类：`src/test/java/<包路径>/<业务类名>Test.java`
+- 测试数据：`src/test/resources/<包路径>/<业务类名>Test.json`，与测试类同包同名
+- 测试资源：`src/test/resources/` 下需提供 `application.properties`、`application-dev.properties`、`dbcp.properties`、`logback-spring.xml`
+
+当前已有测试：
+
+| 测试类 | 被测类 | 位置 |
+|---|---|---|
+| `SiteManagerTest` | `SiteManager` | `sie-iidp-demo-example/src/test/` |
+
+执行测试（含覆盖率报告）：
+
+```bash
+cd iidp-backend-demo-ai
+mvn -s ./settings.xml test
+```
+
+跳过测试打包：
+
+```bash
+mvn -s ./settings.xml -DskipTests clean package
+```
+
+---
 
 ## 8. XXL-Job App 明细
 
