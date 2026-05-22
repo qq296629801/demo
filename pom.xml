@@ -296,10 +296,12 @@
                                 </artifactItem>
                                 <!--  以上6个APP，引擎强依赖       -->
 
-
-
-
-
+                                <artifactItem>
+                                    <groupId>com.sie.meta</groupId>
+                                    <artifactId>sie-iidp-dev-center</artifactId>
+                                    <version>${sie-iidp-dev-center.version}</version>
+                                    <type>jar</type>
+                                </artifactItem>
 
                                 <!--   分布式        -->
                                 <!-- <artifactItem>
@@ -316,19 +318,14 @@
                                     <version>v2.1.0-RELEASE</version>
                                     <type>jar</type>
                                 </artifactItem> -->
-                                <artifactItem>
-                                    <groupId>com.sie.meta</groupId>
-                                    <artifactId>sie-iidp-dev-center</artifactId>
-                                    <version>${sie-iidp-dev-center.version}</version>
-                                    <type>jar</type>
-                                </artifactItem>
+
                             </artifactItems>
                             <!-- 可选：是否覆盖已存在的文件 -->
                             <overWriteReleases>true</overWriteReleases>
                             <overWriteSnapshots>true</overWriteSnapshots>
                             <overWriteIfNewer>true</overWriteIfNewer>
                             <!-- 指定输出目录 -->
-                            <outputDirectory>${basedir}/../apps/modules</outputDirectory>
+                            <outputDirectory>${basedir}/../apps/modules/</outputDirectory>
                         </configuration>
                     </execution>
                 </executions>
