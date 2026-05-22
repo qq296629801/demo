@@ -80,9 +80,13 @@ public class {ModelName} extends BaseModel<{ModelName}> {
 
 ## 注解作用域规则（严格执行）
 
+> 完整速查表见 [`annotation-scope.md`](annotation-scope.md)。
+
 **类上只允许以下注解**：`@StaticVar`、`@Getter`、`@Setter`、`@Slf4j`、`@Model`。
 
-**以下注解只能标注在字段上，禁止标注在类上**：
+**方法上只允许以下注解**：`@MethodService`。
+
+**以下注解只能标注在字段上，禁止标注在类或方法上**：
 
 | 注解 | 说明 |
 |---|---|
