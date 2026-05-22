@@ -35,6 +35,7 @@ description: >-
 | `references/core/template-hook-openview.md` | 标准模板、主表单+子表、上下表、树表、抽屉、Hook、openView 后端契约 | 用户提到标准模板、Hook、openView、弹窗/抽屉、上下表、树表时 |
 | `references/core/validation-checklist.md` | 交付前文件登记、命名、Java、视图、服务、静态命令、运行验证清单 | 交付前必须读并按可行范围执行 |
 | `references/core/testing.md` | IIDP 集成测试：`@ExtendWith(SieEngineTestExtension.class)`、Meta 上下文获取、状态机服务测试、租户上下文、TC-BE 覆盖优先级 | 编写或审查 `@MethodService` 测试时 |
+| `references/core/tdd.md` | 测试驱动开发（TDD）规范：铁律、红-绿-重构流程、常见借口对照、警示信号 | 编写任何新业务代码前必须读；用户提到 TDD、测试先行、红绿重构时必须读 |
 
 完整底稿也已迁入 `skills/backend/references/complete/*.md`。优先使用上表中的精炼专题；当专题信息不足、用户要求完整平台细节，或需要核对边界示例时，再读取下表对应的 `references/complete/...` 文件。
 
