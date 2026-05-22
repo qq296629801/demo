@@ -322,7 +322,7 @@
                             <overWriteSnapshots>true</overWriteSnapshots>
                             <overWriteIfNewer>true</overWriteIfNewer>
                             <!-- 指定输出目录 -->
-                            <outputDirectory>${basedir}/../apps</outputDirectory>
+                            <outputDirectory>${basedir}/../apps/modules</outputDirectory>
                         </configuration>
                     </execution>
                 </executions>
