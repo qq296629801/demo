@@ -9,19 +9,25 @@ Step 1.5a（backend-spec.md 生成后）立即执行 AC 提取，将 `requiremen
 ### AC → TC 提取 Prompt
 
 ```text
-请读取 specs/features/[phaseN-feature]/requirements.md 的验收标准，生成测试用例规格：
+请读取 specs/features/[phaseN-feature]/requirements.md 的验收标准，生成测试用例规格及实现：
 
-1. 后端服务测试（TC-BE-xx）：每个 @MethodService 的每条 AC 生成一个 TC。
-   - 包含：TC-ID、AC 来源、前置条件、操作步骤、预期结果、覆盖状态（待执行）。
-   - 测试方式：`@ExtendWith(SieEngineTestExtension.class)` 集成测试，需数据库就绪。
-   - 优先覆盖：正常流程、状态拒绝（非法状态转移）、权限拦截（无 auth 时拒绝）、必填校验。
+1. 后端服务单元测试（TC-BE-xx）：每个 @MethodService 的每条 AC 生成一个 TC。
+   - 包含：TC-ID、AC 来源、前置条件、测试场景、预期结果、覆盖状态（待执行）。
+   - 测试方式：DDTest 框架单元测试（`@IIDPTest` + `@DDTest` + `@DDArgs` + `@DDExpected`），
+     通过 Mockito Mock 隔离所有外部依赖，无需数据库就绪。
+   - 测试框架规范：参照 `skills/backend/references/core/testing.md`（DDTest 框架说明文档）。
+   - 优先覆盖：正常流程、状态拒绝（非法状态转移）、权限拦截（无 auth 时拒绝）、必填校验、边界值。
+   - 每个 TC-BE 除规格描述外，同步生成对应的：
+     a. 测试类文件：`src/test/java/[pkg]/[ModelName]Test.java`（DDTest 框架 Java 代码）
+     b. 测试数据文件：`src/test/resources/[pkg]/[ModelName]Test.json`（DDTest JSON 数据）
 
 2. 前端验收场景（TC-FE-xx）：每个用户可见流程的每条 AC 生成一个 TC。
    - 包含：TC-ID、AC 来源、前置条件、操作步骤（人工操作描述）、预期结果、覆盖状态（待执行）。
    - 优先覆盖：页面加载、增删改查主流程、权限显隐、空态/异常态展示。
 
 3. 输出格式：Markdown 表格 + 每个 TC 的详细描述块（见下方模板）。
-4. 不要编写真实代码；只产出规格描述，等待 tasks.md 测试任务执行。
+4. TC-BE 必须同步输出可直接执行的 DDTest 代码，不得仅停留在规格描述。
+   执行入口：mvn test -pl sie-iidp-demo-apps/sie-iidp-demo-{appName} -am
 ```
 
 ### 测试用例格式
@@ -31,33 +37,90 @@ Step 1.5a（backend-spec.md 生成后）立即执行 AC 提取，将 `requiremen
 ```markdown
 ## 测试覆盖率
 
-| TC-ID | 类型 | AC 来源 | 测试内容摘要 | 覆盖状态 |
-|---|---|---|---|---|
-| TC-BE-01 | 后端·集成 | AC-01 正常提交 | 草稿→已提交状态转移 | ⬜ 待执行 |
-| TC-BE-02 | 后端·集成 | AC-01 | 非草稿拒绝，抛 ModelException | ⬜ 待执行 |
-| TC-BE-03 | 后端·集成 | AC-02 权限控制 | 无 order:submit auth 时拒绝 | ⬜ 待执行 |
-| TC-FE-01 | 前端·手动 | AC-03 列表展示 | 进入页面后表格有数据 | ⬜ 待执行 |
-| TC-FE-02 | 前端·手动 | AC-04 新增流程 | 点击新增，填写，提交，列表刷新 | ⬜ 待执行 |
+| TC-ID | 类型 | AC 来源 | 测试内容摘要 | 测试方法 | 覆盖状态 |
+|---|---|---|---|---|---|
+| TC-BE-01 | 后端·单元（DDTest） | AC-01 正常提交 | 草稿→已提交状态转移 | [ModelName]Test#submit[0] | ⬜ 待执行 |
+| TC-BE-02 | 后端·单元（DDTest） | AC-01 | 非草稿拒绝，抛 ValidationException | [ModelName]Test#submit[1] | ⬜ 待执行 |
+| TC-BE-03 | 后端·单元（DDTest） | AC-02 权限控制 | 无 order:submit auth 时拒绝 | [ModelName]Test#submit[2] | ⬜ 待执行 |
+| TC-FE-01 | 前端·手动 | AC-03 列表展示 | 进入页面后表格有数据 | 手动验收 | ⬜ 待执行 |
+| TC-FE-02 | 前端·手动 | AC-04 新增流程 | 点击新增，填写，提交，列表刷新 | 手动验收 | ⬜ 待执行 |
 ```
 
 覆盖状态枚举：`⬜ 待执行` / `✅ 通过` / `❌ 失败` / `⏸ 阻塞`
 
-**TC 详细描述块（后端服务测试）**：
+**TC 详细描述块（后端服务单元测试）**：
 
 ```markdown
 ### TC-BE-01：正常提交——草稿→已提交
 
-- **类型**：后端·集成测试
+- **类型**：后端·单元测试（DDTest）
 - **AC 来源**：requirements.md AC-01
-- **测试文件**：`src/test/java/[pkg]/[ModuleName]ServiceTest.java`
-- **方法名**：`submitOrder_success_draftToSubmitted()`
-- **前置条件**：数据库存在 status=DRAFT 的订单记录；当前用户有 order:submit 权限
-- **操作步骤**：
-  1. 以 status=DRAFT 的记录 id 为入参，调用 [serviceName] 服务
-  2. 查询该记录，验证 status 字段已变为目标状态
-- **预期结果**：记录 status 变为目标状态；无异常抛出
-- **IIDP 适配说明**：集成测试写法参照 `skills/backend/references/core/testing.md`；需数据库就绪
+- **测试类文件**：`src/test/java/[pkg]/[ModelName]Test.java`
+- **测试数据文件**：`src/test/resources/[pkg]/[ModelName]Test.json`
+- **测试方法**：`submit()`（`@DDTest` 驱动，JSON 数据注入）
+- **前置条件**：Mock RecordSet 返回 status=DRAFT 的记录；Mock Meta 用户有 order:submit 权限
+- **测试场景**：
+  1. 在 JSON 数据的 `submit[0]`（displayName: "正常提交-草稿→已提交"）配置 data/args/expected
+  2. DDTest 框架自动注入参数并驱动 `[ModelName].submit(rs, orderId)` 执行
+  3. 断言 result.status 等于目标状态；无异常
+- **预期结果**：`assertThat(actual.getStatus()).isEqualTo("SUBMITTED")`；无异常抛出
+- **DDTest 框架规范**：参照 `skills/backend/references/core/testing.md`
 - **覆盖状态**：⬜ 待执行
+
+**DDTest 代码模板**（与本 TC 同步生成）：
+
+// [ModelName]Test.java
+@IIDPTest
+class [ModelName]Test {
+
+    @DDTest
+    void submit(
+        @DDArgs(recordSet = @DDRecordSet(model = "[model_name]")) RecordSet rs,
+        @DDArgs String orderId,
+        @DDExpected [ModelName] result,
+        @DDExpected ExpectedError error
+    ) {
+        [ModelName] model = new [ModelName]();
+        RecordSet mockOrder = RecordSetMock.spy("[model_name]");
+        doReturn(/* mock返回值 */).when(mockOrder).call(eq("read"), any());
+
+        try {
+            [ModelName] actual = model.submit(rs, orderId);
+            assertThat(actual.getStatus()).isEqualTo(result.getStatus());
+        } catch (Exception e) {
+            assertThat(e).isInstanceOf(ValidationException.class)
+                         .hasMessageContaining(error.getMessage());
+        }
+    }
+}
+
+// [ModelName]Test.json（对应 submit 方法的测试数据）
+{
+  "submit": [
+    {
+      "displayName": "正常提交-草稿→已提交",
+      "data": {
+        "test-order-draft": {
+          "model": "[model_name]",
+          "properties": { "id": "test-order-draft", "status": "DRAFT" }
+        }
+      },
+      "args": { "orderId": "test-order-draft" },
+      "expected": { "result": { "status": "SUBMITTED" } }
+    },
+    {
+      "displayName": "非草稿拒绝-异常",
+      "data": {
+        "test-order-submitted": {
+          "model": "[model_name]",
+          "properties": { "id": "test-order-submitted", "status": "SUBMITTED" }
+        }
+      },
+      "args": { "orderId": "test-order-submitted" },
+      "expected": { "error": { "message": "非草稿状态不允许提交" } }
+    }
+  ]
+}
 ```
 
 **TC 详细描述块（前端验收场景）**：
@@ -91,9 +154,34 @@ Step 1.5a（backend-spec.md 生成后）立即执行 AC 提取，将 `requiremen
 
 ### Phase 完成门控
 
-Phase 声明完成前，覆盖率追踪表须满足：
-- 所有 TC-BE-xx：无 `⬜ 待执行`（必须执行，结果为通过或有记录的失败）
-- 所有 TC-FE-xx：无 `⬜ 待执行`
+Phase 声明完成前，必须同时满足以下条件：
+
+#### 门禁 1：单元测试全绿（硬门控）
+
+```bash
+# 运行当前 feature 所在 app 模块的全部单元测试
+mvn test -pl sie-iidp-demo-apps/sie-iidp-demo-{appName} -am
+
+# 若只验证特定测试类
+mvn test -pl sie-iidp-demo-apps/sie-iidp-demo-{appName} -am \
+  -Dtest=[ModelName]Test
+
+# 查看测试报告
+open sie-iidp-demo-apps/sie-iidp-demo-{appName}/target/surefire-reports/
+```
+
+**判断标准**：`BUILD SUCCESS`，无 FAILURE / ERROR。任何 FAILURE 都阻塞 Phase 完成。
+
+#### 门禁 2：覆盖率达标（硬门控）
+
+- 所有 TC-BE-xx 对应的测试方法已存在于 `*Test.java` 中
+- 每个 `@MethodService` 的正常路径、异常路径、边界值至少各有 1 个测试场景
+- 代码行覆盖率目标：被测 `@MethodService` 方法 ≥ 90%
+
+#### 门禁 3：状态完整性（软检查）
+
+- 覆盖率追踪表中所有 TC-BE-xx：无 `⬜ 待执行`（已执行且测试绿色则自动满足）
+- 所有 TC-FE-xx：无 `⬜ 待执行`（前端手动验收已完成）
 - ❌ 失败 条目必须在 tasks.md 中有对应修复任务，或在 decisions.md 中记录延期理由
 
 ### 测试缺口扫描（Phase 完成前触发）
@@ -123,20 +211,163 @@ Phase 声明完成前，覆盖率追踪表须满足：
 
 ---
 
+## DDTest 单元测试实现规范
+
+> 完整框架说明见 `skills/backend/references/core/testing.md`，本节仅提供 SDD 工作流中的使用约定。
+
+### 核心注解与引入
+
+```java
+import com.sie.snest.test.*;
+import com.sie.snest.test.dto.*;
+import com.sie.snest.test.mock.*;
+import java.util.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
+import org.mockito.MockedStatic;
+```
+
+| 注解 | 位置 | 作用 |
+|---|---|---|
+| `@IIDPTest` | 类 | 标记为 DDTest 测试类；含 `BaseModel` 时直接用，否则加 `value=false, engine=false` |
+| `@DDTest` | 方法 | 替代 `@ParameterizedTest`，由 JSON 数据文件驱动 |
+| `@DDArgs` | 参数 | 绑定 JSON `args` 字段；`@DDArgs(recordSet=@DDRecordSet(model="model_name"))` 绑定 RecordSet |
+| `@DDExpected` | 参数 | 绑定 JSON `expected` 字段；`ExpectedError error` 接收异常断言 |
+
+### 测试文件位置规范
+
+| 产物 | 路径 |
+|---|---|
+| 测试类 | `src/test/java/com/sie/iidp/{appPkg}/{moduleName}/[ModelName]Test.java` |
+| 测试数据 | `src/test/resources/com/sie/iidp/{appPkg}/{moduleName}/[ModelName]Test.json` |
+
+### 测试类完整模板
+
+```java
+@IIDPTest
+class [ModelName]Test {
+
+    @DDTest
+    void [methodName](
+        @DDArgs(recordSet = @DDRecordSet(model = "[model_name]")) RecordSet rs,
+        @DDArgs String param1,           // 对应 JSON args.param1
+        @DDExpected [ModelName] result,  // 对应 JSON expected.result
+        @DDExpected ExpectedError error  // 对应 JSON expected.error
+    ) {
+        [ModelName] model = new [ModelName]();
+
+        // 按需 Mock 依赖（只 mock 实际调用的外部依赖）
+        RecordSet mockRecordSet = RecordSetMock.spy("[related_model_name]");
+        doReturn(/* 返回值 */).when(mockRecordSet).call(eq("methodName"), any());
+
+        try {
+            [ModelName] actual = model.[methodName](rs, param1);
+            assertThat(actual).isEqualToComparingFieldByField(result);
+        } catch (Exception e) {
+            assertThat(e).isInstanceOf(ValidationException.class)
+                         .hasMessageContaining(error.getMessage());
+        }
+    }
+}
+```
+
+### JSON 测试数据模板
+
+```json
+{
+  "[methodName]": [
+    {
+      "displayName": "正常路径描述",
+      "data": {
+        "test-record-id": {
+          "model": "[model_name]",
+          "properties": {
+            "id": "test-record-id",
+            "status": "DRAFT"
+          }
+        }
+      },
+      "args": {
+        "param1": "test-record-id"
+      },
+      "expected": {
+        "result": { "status": "SUBMITTED" }
+      }
+    },
+    {
+      "displayName": "异常路径描述",
+      "args": {
+        "param1": "non-existent-id"
+      },
+      "expected": {
+        "error": { "message": "期望包含的错误信息片段" }
+      }
+    }
+  ]
+}
+```
+
+### Mock 配置速查
+
+| 场景 | Mock 写法 |
+|---|---|
+| `getMeta().get(model).call(...)` | `RecordSet mock = RecordSetMock.spy("model_name"); doReturn(val).when(mock).call(eq("method"), any())` |
+| `BaseContextHandler.getMeta()` | `Meta mockMeta = MetaMock.spy(); doReturn(userId).when(mockMeta).getUserId()` |
+| `getMeta().getRelationDBAccessor()` | `RelationDBAccessor db = RelationDBAccessorMock.spyExecuteWithoutAuth(); doReturn(rows).when(db).fetchMapAll()` |
+
+### 必须覆盖的场景类型
+
+| 场景类型 | 每个 @MethodService 最低数量 |
+|---|---|
+| 正常路径（主流程） | 1 |
+| 异常路径（如状态校验失败、必填缺失） | 1 |
+| 边界值（空值、最值、特殊字符） | 1 |
+| 业务规则（权限拒绝、状态机约束） | 1 |
+
+**覆盖率目标**：被测 `@MethodService` 方法代码行覆盖率 ≥ 90%。
+
+### DDTest 代码生成 Prompt
+
+```text
+请读取 [ModelName].java 的所有 public @MethodService 方法，按 skills/backend/references/core/testing.md 的 DDTest 框架规范生成单元测试：
+
+1. 生成 [ModelName]Test.java：
+   - 类注解 @IIDPTest（含 BaseModel 则默认；不含则 @IIDPTest(value=false, engine=false)）
+   - 每个 public 方法对应一个 @DDTest 测试方法
+   - 参数用 @DDArgs/@DDExpected 绑定，匹配 JSON 路径
+   - 异常路径：try/catch + assertThat(e).isInstanceOf(...).hasMessageContaining(error.getMessage())
+   - 正常路径：assertThat(actual).isEqualToComparingFieldByField(result) 或字段级断言
+   - 所有外部依赖通过 Mockito Mock，不得引入真实 DB 或网络
+
+2. 生成 [ModelName]Test.json：
+   - 每个方法至少包含：正常路径 ×1、异常路径 ×1、边界值 ×1
+   - data 字段按 @Property/@Validate.NotBlank/@Selection/@ManyToOne 规则构造
+   - Filter 类型参数使用 [["field", "=", "value"]] 格式
+   - displayName 清晰描述场景（"正常提交-草稿→已提交"，"非草稿拒绝-异常"）
+
+3. 生成后执行验证命令，确认测试通过：
+   mvn test -pl sie-iidp-demo-apps/sie-iidp-demo-{appName} -am -Dtest=[ModelName]Test
+```
+
+---
+
 ## 标准执行顺序
 
 ```text
 1. 读取规格和相关 Skill
 2. 识别当前任务的后端能力域和前端实现分支
 3. 修改最小必要文件
-4. 运行静态检查
-5. 能运行时执行构建或启动验证
-6. 对照 validation.md 写验证结果
+4. 生成 DDTest 单元测试（[ModelName]Test.java + [ModelName]Test.json）
+5. 运行 mvn test 确认全绿（门禁 1）
+6. 运行静态检查
+7. 能运行时执行构建或启动验证
+8. 对照 validation.md 写验证结果，更新覆盖率追踪表
 ```
 
 ## AC 提取 Prompt 入口
 
-在 Step 1.5a 完成 backend-spec.md 后，运行"AC → TC 提取 Prompt"（见上方 [AC → TC 提取 Prompt](#ac--tc-提取-prompt) 节），将生成的测试用例规格写入当前 feature 的 `validation.md`，并在 `tasks.md` 中为每个 TC-ID 添加对应的测试任务 checkbox。
+在 Step 1.5a 完成 backend-spec.md 后，运行"AC → TC 提取 Prompt"（见上方 [AC → TC 提取 Prompt](#ac--tc-提取-prompt) 节），将生成的测试用例规格写入当前 feature 的 `validation.md`，**同时生成 DDTest 测试代码和 JSON 数据文件**，并在 `tasks.md` 中为每个 TC-ID 添加对应的测试任务 checkbox。
 
 ---
 
@@ -150,6 +381,8 @@ Phase 声明完成前，覆盖率追踪表须满足：
 - [ ] `app.json.data` 登记菜单、字典、种子、附件
 - [ ] `apps/apps.json` 登记新增 jar
 - [ ] 多模型业务：模型清单中的每个 model 都对应有 Java 类文件、视图文件、菜单入口或子表挂载点
+- [ ] 每个含 `@MethodService` 的模型对应有 `src/test/java/.../{ModelName}Test.java`（DDTest 单元测试类）
+- [ ] 每个 `{ModelName}Test.java` 对应有 `src/test/resources/.../{ModelName}Test.json`（DDTest 测试数据）
 
 ### 命名一致（每个模型独立检查）
 
@@ -177,11 +410,27 @@ Phase 声明完成前，覆盖率追踪表须满足：
 ### 后端命令
 
 ```bash
+# 静态检查
 git diff --check
-find iidp-backend-demo-ai -name '*.json' -print0 | xargs -0 -n1 node -e 'JSON.parse(require("fs").readFileSync(process.argv[1],"utf8"))'
-(cd iidp-backend-demo-ai && mvn -s ./settings.xml -DskipTests clean package)
-(cd iidp-backend-demo-ai && docker compose config)
+find sie-iidp-demo-apps -name '*.json' -print0 | xargs -0 -n1 node -e 'JSON.parse(require("fs").readFileSync(process.argv[1],"utf8"))'
+
+# 【门禁】单元测试（必须全绿，任何 FAILURE 阻塞 Phase 完成）
+mvn test -pl sie-iidp-demo-apps/sie-iidp-demo-{appName} -am
+
+# 指定测试类（快速验证某个模型）
+mvn test -pl sie-iidp-demo-apps/sie-iidp-demo-{appName} -am -Dtest=[ModelName]Test
+
+# 查看测试报告
+cat sie-iidp-demo-apps/sie-iidp-demo-{appName}/target/surefire-reports/*.txt
+
+# 跳过测试的编译（仅静态验证，不算门禁通过）
+mvn -s ./settings.xml -DskipTests clean package -pl sie-iidp-demo-apps -am
+
+# Docker Compose 配置验证
+docker compose config
 ```
+
+**注意**：`-DskipTests` 仅用于快速构建验证，不能替代门禁 1（`mvn test` 必须执行）。
 
 ## 前端验证清单
 
