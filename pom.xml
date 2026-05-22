@@ -43,6 +43,7 @@
         <sie-iidp-config.version>v3.0.0-RELEASE</sie-iidp-config.version>
         <sie-iidp-log.version>v3.0.1-RELEASE</sie-iidp-log.version>
         <sie-iidp-user-prefer.version>v3.0.0-RELEASE</sie-iidp-user-prefer.version>
+        <sie-iidp-dev-center.version>v3.0.0-RELEASE</sie-iidp-dev-center.version>
     </properties>
 
     <dependencyManagement>
@@ -315,7 +316,12 @@
                                     <version>v2.1.0-RELEASE</version>
                                     <type>jar</type>
                                 </artifactItem> -->
-
+                                <artifactItem>
+                                    <groupId>com.sie.meta</groupId>
+                                    <artifactId>sie-iidp-dev-center</artifactId>
+                                    <version>${sie-iidp-dev-center.version}</version>
+                                    <type>jar</type>
+                                </artifactItem>
                             </artifactItems>
                             <!-- 可选：是否覆盖已存在的文件 -->
                             <overWriteReleases>true</overWriteReleases>

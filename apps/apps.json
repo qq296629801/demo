@@ -14,7 +14,9 @@
       "sie-iidp-iam-v3.0.0-RELEASE.jar",
       "sie-iidp-log-v3.0.1-RELEASE.jar",
       "sie-iidp-tenant-v3.0.0-RELEASE.jar",
-      "sie-iidp-user-prefer-v3.0.0-RELEASE.jar"
+      "sie-iidp-user-prefer-v3.0.0-RELEASE.jar",
+      "sie-iidp-dev-center-v3.0.0-RELEASE.jar",
+      "sie-iidp-demo-example-1.0-SNAPSHOT.jar"
     ],
     "SDK-OUT": [
     ],
