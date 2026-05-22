@@ -1126,6 +1126,20 @@ src/main/java/com/sie/iidp/{appPkg}/app.json
 8. 执行 Maven 打包，确认业务 jar 的复制目录（`sie-snest-maven-plugin` 的 `copyDir`）；若要随当前 Dockerfile 部署，须将需加载的 jar 置于 **`iidp-backend-demo-ai/apps/modules/`**（若构建先落在仓库父目录 `apps/modules`，须同步到此处）。
 9. 在 `iidp-backend-demo-ai/apps/apps.json` 的 `apps.SDK` 中追加新业务 jar **文件名**；仅有物理 jar、未登记 `apps.SDK` 时，引擎不会加载。
 10. 如果要 Docker 运行，确认 `docker/config` 连接的是 compose 服务名，并执行 `docker compose config --quiet`。
+11. **必须为每个新 App 模块添加单元测试**，测试文件结构与 `sie-iidp-demo-example` 保持一致：
+
+```text
+src/test/
+├── java/<包路径>/<业务类名>Test.java
+└── resources/
+    ├── application.properties          ← spring.profiles.active=dev
+    ├── application-dev.properties      ← 测试环境连接配置
+    ├── dbcp.properties                 ← 测试数据库连接
+    ├── logback-spring.xml              ← 日志配置
+    └── <包路径>/<业务类名>Test.json    ← 数据驱动用例，与测试类同包同名
+```
+
+测试框架使用 DDTest（`@IIDPTest`、`@DDTest`、`@DDArgs`、`@DDExpected`），父 POM 已声明依赖和插件，子模块无需额外配置。详见 `skills/backend/references/core/testing.md`。
 
 ---
 
@@ -1148,6 +1162,9 @@ src/main/java/com/sie/iidp/{appPkg}/app.json
 - [ ] Docker 外置配置使用 `mysql`、`redis`、`minio` 服务名。
 - [ ] `engine.model2ddl.mode=CREATE` 只用于本地首次建表；测试/生产改为团队约定值。
 - [ ] 没有把真实 `apiToken`、数据库密码、Redis 密码、MinIO 密钥写入 skill 文档。
+- [ ] 新增业务 App 模块已在 `src/test/` 下创建测试类、测试 JSON 数据及测试资源文件（`application.properties`、`application-dev.properties`、`dbcp.properties`、`logback-spring.xml`）。
+- [ ] 测试类使用 `@IIDPTest` + `@DDTest`，覆盖所有 public 方法的正常路径和异常路径。
+- [ ] 已执行 `mvn -s ./settings.xml test` 确认测试通过。
 - [ ] 已执行 `git diff --check`。
 - [ ] 已执行 `docker compose config --quiet`。
 - [ ] 能访问私服并配置 JDK 时，已执行 `JAVA_HOME=$(/usr/libexec/java_home -v 1.8.0_451) mvn -s ./settings.xml -DskipTests clean package`。
