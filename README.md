@@ -7,7 +7,7 @@
 ## 目录
 
 1. [概述](#概述)
-2. [安装](#安装)
+2. [安装](#安装)（Skills 安装 & 命令注册）
 3. [两种使用方式](#两种使用方式)
 4. [方式一：手动命令](#方式一手动命令推荐新手)
 5. [方式二：自动 Workflow（推荐新手）](#方式二自动-workflow)
@@ -36,12 +36,70 @@
 
 ## 安装
 
+### 1. 注册 create-project Slash Commands
+
+将 `sdd-*.md` 命令文件复制到 Claude Code 命令目录，即可在对话中使用 `/sdd-` 前缀命令：
+
 ```bash
 mkdir -p .claude/commands
 cp skills/create-project/commands/sdd-*.md .claude/commands/
 ```
 
-安装后在 Claude Code 输入 `/sdd-` 即可看到所有命令。
+安装后在 Claude Code 输入 `/sdd-` 即可看到全部 12 条命令：
+
+| 命令 | 说明 | 是否必须 |
+|---|---|---|
+| `/sdd-init-templates` | 初始化项目级模板目录 | 可选 |
+| `/sdd-specify` | 生成功能规格 requirements.md | 必须 |
+| `/sdd-clarify` | 规格歧义澄清（可多轮） | 必须 |
+| `/sdd-contracts` | 契约先行：integration-map + contracts | **强制** |
+| `/sdd-critique` | 产品 + 工程双视角批判报告 | 可选 |
+| `/sdd-spec` | 生成 backend-spec + frontend-spec | 必须 |
+| `/sdd-plan` | 生成 plan.md，写回 CLAUDE.md 标记 | 必须 |
+| `/sdd-tasks` | 生成 tasks.md + validation.md TC 节 | 必须 |
+| `/sdd-blueprint` | 代码蓝图（伪代码 + 文件清单） | 可选 |
+| `/sdd-implement` | 执行单个任务（重复直到全部完成） | 必须 |
+| `/sdd-validate` | 运行验收清单，输出验收报告 | 必须 |
+| `/sdd-review` | 5 子 Agent 并行深度审查 | 必须 |
+
+---
+
+### 2. 加载 Backend / Frontend 技能上下文
+
+Backend 和 Frontend 技能文件提供 IIDP 平台规范，供 `/sdd-spec`、`/sdd-implement` 等命令参考。有两种加载方式：
+
+**方式 A：对话中 @ 引用（临时）**
+
+在 Claude Code 对话框中直接引用文件路径：
+
+```
+@skills/backend/SKILL.md
+@skills/frontend/SKILL.md
+```
+
+**方式 B：写入 CLAUDE.md（推荐，会话自动加载）**
+
+在项目根目录创建或编辑 `CLAUDE.md`，加入以下内容，后续每个会话自动读取：
+
+```markdown
+## 技能参考
+
+- 后端开发规范：@skills/backend/SKILL.md
+- 前端开发规范：@skills/frontend/SKILL.md
+```
+
+---
+
+### 3. 其他 Skills 速查
+
+| 技能文件 | 用途 | 使用方式 |
+|---|---|---|
+| `skills/backend/SKILL.md` | IIDP 后端工程：模型、服务、视图、权限、API | `@` 引用或写入 CLAUDE.md |
+| `skills/backend/greenfield/SKILL.md` | 从零搭建 IIDP 父工程（首次建项目） | `@` 引用 |
+| `skills/frontend/SKILL.md` | IIDP 前端总入口，自动路由到 6 个子技能 | `@` 引用或写入 CLAUDE.md |
+| `skills/app-store/SKILL.md` | IIDP 应用市场 JSON-RPC 服务构建 | `@` 引用 |
+| `skills/gitlab/SKILL.md` | GitLab MCP：MR、代码搜索、CI 流水线 | `@` 引用 |
+| `skills/jenkins/SKILL.md` | Jenkins MCP：任务查询、触发、构建日志 | `@` 引用 |
 
 ---
 
@@ -100,6 +158,8 @@ cp skills/create-project/commands/sdd-*.md .claude/commands/
 ### 完整流程
 
 ```
+/sdd-init-templates   ← [可选] 初始化项目级模板（首次使用建议运行，后续无需重复）
+     ↓
 /sdd-specify          ← 输入功能描述，生成 requirements.md
      ↓
 /sdd-clarify          ← 规格澄清（可多轮，直到无歧义）
@@ -128,6 +188,41 @@ cp skills/create-project/commands/sdd-*.md .claude/commands/
 ---
 
 ### 各命令说明
+
+#### `/sdd-init-templates [模板名称...]` （可选）
+
+将 `sdd-constitution.md` 中的默认模板提取到 `specs/templates/`，用户可直接编辑定制模板结构。**后续所有规格生成命令将自动优先使用项目级模板。**
+
+> 不运行此命令也可以：手动在 `specs/templates/` 创建与默认模板同名的 `.md` 文件即可生效。
+
+**使用方式：**
+
+```
+/sdd-init-templates                        # 进入交互式选择
+/sdd-init-templates requirements contracts # 直接初始化指定模板
+/sdd-init-templates all                    # 初始化全部模板
+```
+
+**可选模板列表（交互模式下显示）：**
+
+```
+A) requirements.md    — 功能规格（US 格式、FR 编号、成功标准章节结构）
+B) contracts.md       — API 契约（字段表格列、服务签名、app.json 格式）
+C) mission.md         — 项目使命（定位、目标用户、核心价值）
+D) iidp-stack.md      — 技术栈约束（工程路径、命名规则、Git 工作流）
+E) ui-constitution.md — UI 宪法（设计来源、组件规则、可访问性）
+F) roadmap.md         — 路线图（Phase 结构、验收标准、技术债表格）
+G) integration-map.md — 集成地图（模型清单、ER、权限码总览表格）
+H) all                — 全部初始化
+```
+
+**产物：**
+- `specs/templates/{filename}.md`：已提取的可编辑模板，顶部含说明注释
+- `specs/templates/README.md`：已初始化模板列表、覆盖规则、注意事项
+
+**完成后：** 编辑 `specs/templates/` 中的文件，再运行 `/sdd-specify` 或 `/sdd-contracts` 即会自动使用定制模板。
+
+---
 
 #### `/sdd-specify [功能描述]`
 
