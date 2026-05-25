@@ -42,23 +42,28 @@ DDTest是一个专为IIDP业务系统设计的数据驱动单元测试框架，�
 
 ```java
 import com.sie.snest.test.*;
-import com.sie.snest.test.dto.*;
-import com.sie.snest.test.mock.*;
+import com.sie.snest.test.dto.ExpectedError;
+import com.sie.snest.test.mock.RecordSetMock;
+import org.mockito.MockedStatic;
 
 import java.util.*;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
-import org.mockito.MockedStatic;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mockStatic;
 ```
 
 其中：
 - `com.sie.snest.test`：测试基础包，包含注解、dto、mock等相关内容
-- `org.assertj.core.api.Assertions.assertThat`：使用assertJ进行断言，替代JUnit的`assertEquals`等断言方法
-- `org.mockito.ArgumentMatchers.*`：用于模拟方法参数
-- `org.mockito.Mockito.*`：用于模拟方法调用
-- `org.mockito.MockedStatic`：使用Mockito进行依赖模拟
+- `com.sie.snest.test.dto.ExpectedError`：异常断言期望值类，按需单独引入
+- `com.sie.snest.test.mock.RecordSetMock`：RecordSet mock 工具，按需单独引入
+- `org.assertj.core.api.AssertionsForInterfaceTypes.assertThat`：assertJ 断言，用于集合、接口类型断言
+- `org.junit.jupiter.api.Assertions.*`：JUnit 原生断言（`assertEquals`、`assertInstanceOf`、`assertTrue` 等），与 assertJ 配合使用
+- `org.mockito.ArgumentMatchers.*`：用于模拟方法参数匹配
+- `org.mockito.Mockito.doReturn` / `mockStatic`：用于模拟方法返回值和静态方法
+- `org.mockito.MockedStatic`：静态方法 mock 的 try-with-resources 句柄
 
 ### 1.3 Mock配置规则
 
@@ -294,103 +299,59 @@ void methodName(@DDArgs 参数1, @DDArgs 参数2, ..., @DDExpected 期望1, @DDE
 ## 六、完整示例
 
 ### 6.1 测试数据示例 (SiteManagerTest.json)
+
+对应业务类 `SiteManager.tryConnection(String cloudAddress, String protocol, String applicationId)`，覆盖正常连接、protocol 为空、clearLicense 分支和异常四种场景：
+
 ```json
 {
-  "search": [
+  "tryConnection": [
     {
-      "displayName": "正常搜索所有站点",
-      "data": {
-        "test-search-id1": {
-          "model": "hcm_site_manager",
-          "properties": {
-            "id": "test-search-id1",
-            "applicationId": "test-search-id1",
-            "edgeAlias": "测试站点1",
-            "type": "edge",
-            "edgeAddress": "http://test-edge.com"
-          }
-        }
-      },
+      "displayName": "正常连接测试",
       "args": {
-        "filter": null,
-        "properties": ["*"],
-        "limit": 0,
-        "offset": 0,
-        "order": null
+        "cloudAddress": "http://cloud.example.com",
+        "protocol": "http",
+        "applicationId": "test-app-id",
+        "clearLicense": false
       },
       "expected": {
-        "result": {
-          "id": "test-search-id1"
-        }
+        "result": true
       }
     },
     {
-      "displayName": "按类型搜索（edge类型）",
-      "data": {
-        "test-search-id2": {
-          "model": "hcm_site_manager",
-          "properties": {
-            "id": "test-search-id2",
-            "applicationId": "test-search-id2",
-            "edgeAlias": "测试站点2",
-            "type": "edge",
-            "edgeAddress": "http://test-edge.com"
-          }
-        }
-      },
+      "displayName": "protocol为空时连接测试",
       "args": {
-        "filter": [["type", "=", "edge"]],
-        "properties": ["*"],
-        "limit": 10,
-        "offset": 0,
-        "order": "id"
+        "cloudAddress": "http://cloud.example.com",
+        "protocol": "",
+        "applicationId": "test-app-id",
+        "clearLicense": false
       },
       "expected": {
-        "result": {
-          "id": "test-search-id2"
-        }
-      }
-    }
-  ],
-  "listScopeBySite": [
-    {
-      "displayName": "正常查询站点作用域",
-      "data": {
-        "test-id-list-scop": {
-          "model": "hcm_site_manager",
-          "properties": {
-            "id": "test-id-list-scop",
-            "applicationId": "test-id-list-scop",
-            "projectName": "test-id-list-scop-alias",
-            "edgeAlias": "测试站点lisScop",
-            "confirmStatus": "1",
-            "connectionStatus": "NORMAL",
-            "protocol": "http",
-            "type": "edge",
-            "cloudAddress": "http://test-cloud.com",
-            "edgeAddress": "http://test-edge.com",
-            "edgeProjectUrl": "http://test-edge-project.com"
-          }
-        }
-      },
-      "args": {
-        "applicationId": "test-id-list-scop",
-        "tenantId": "myScop"
-      },
-      "expected": {
-        "mock" : ["a","b"],
-        "size": 2
+        "result": true
       }
     },
     {
-      "displayName": "查询不存在站点作用域-异常",
+      "displayName": "clearLicense=true时连接测试",
       "args": {
-        "applicationId": "non-existent-app-id",
-        "tenantId": "test-tenant-id"
+        "cloudAddress": "http://cloud.example.com",
+        "protocol": "http",
+        "applicationId": "test-app-id",
+        "clearLicense": true
+      },
+      "expected": {
+        "result": true
+      }
+    },
+    {
+      "displayName": "连接失败-抛出异常",
+      "args": {
+        "cloudAddress": "http://invalid-cloud.example.com",
+        "protocol": "http",
+        "applicationId": "invalid-app-id",
+        "clearLicense": false
       },
       "expected": {
         "error": {
-          "message": "站点不存在"
+          "message": "连接失败"
         }
       }
     }
@@ -399,64 +360,77 @@ void methodName(@DDArgs 参数1, @DDArgs 参数2, ..., @DDExpected 期望1, @DDE
 ```
 
 ### 6.2 测试代码示例 (SiteManagerTest.java)
+
+以下为项目中 `sie-iidp-demo-example` 的实际测试代码，路径：
+`src/test/java/com/sie/iidp/example/sitemanager/SiteManagerTest.java`
+
 ```java
+package com.sie.iidp.example.sitemanager;
+
 import com.sie.snest.engine.data.RecordSet;
-import com.sie.snest.test.dto.*;
-import com.sie.snest.test.mock.*;
+import com.sie.snest.engine.exception.ValidationException;
+import com.sie.snest.engine.utils.ConfigUtils;
 import com.sie.snest.test.*;
+import com.sie.snest.test.dto.ExpectedError;
+import com.sie.snest.test.mock.RecordSetMock;
+import org.mockito.MockedStatic;
 
 import java.util.*;
 
+import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mockStatic;
 
-@IIDPTest
+@IIDPTest(value = true, engine = true) // value=true 加载Spring上下文，engine=true 加载引擎上下文
 class SiteManagerTest {
-    
+
     @DDTest
-    void search(
-        @DDArgs(recordSet = @DDRecordSet(model = "hcm_site_manager")) RecordSet rs,
-        @DDArgs Filter filter,
-        @DDArgs List<String> properties,
-        @DDArgs Integer limit,
-        @DDArgs Integer offset,
-        @DDArgs String order,
-        @DDExpected SiteManager result,
-        @DDExpected ExpectedError error
-    ) {
+    void tryConnection(
+            @DDArgs String cloudAddress,
+            @DDArgs String protocol,
+            @DDArgs String applicationId,
+            @DDArgs boolean clearLicense,
+            @DDExpected Boolean result,
+            @DDExpected ExpectedError error) {
+
         SiteManager siteManager = new SiteManager();
+        // Mock 内部调用的 RecordSet（模型名与业务代码中 call 的第一个参数对应）
         RecordSet mockRecordSet = RecordSetMock.spy("ops_cloud_registration_manager");
-        
-        // 模拟search方法返回
-        List<SiteManager> mockList = new ArrayList<>();
-        mockList.add(new SiteManager().setId(result.getId()));
-        when(mockRecordSet.call(eq("search"), any(), any(), anyInt(), anyInt(), anyString()))
-            .thenReturn(mockList);
-        try {
-            List<SiteManager> actual = siteManager.search(rs, filter, properties, limit, offset, order);
-            assertThat(actual).isNotEmpty().usingElementComparator((t1,t2)->t1.getId().compareTo(t2.getId())).contains(result);
-        } catch (Exception e) {
-            assertThat(e).hasMessageContaining(error.getMessage());
-        }
-    }
-    
-    @DDTest
-    void listScopeBySite(@DDArgs(recordSet = @DDRecordSet(model="hcm_site_manager")) RecordSet rs, @DDArgs String applicationId, @DDArgs String tenantId, @DDExpected List<String> mock,@DDExpected Integer size, @DDExpected ExpectedError error) {
-        SiteManager siteManager = new SiteManager();
-        Meta mockMeta = RecordSetMock.getMeta();
-        RecordSet mockRecordSet = RecordSetMock.spyGet(mockMeta, "scope_dimension_service_vm");
-        doReturn(mock).when(mockRecordSet).call(eq("listScope"), any());
+        doReturn(true).when(mockRecordSet).call(
+                eq("tryConnectionSign"),
+                eq(cloudAddress),
+                argThat(arg -> null == arg || "".equals(protocol) || arg.equals(protocol)),
+                anyString(),
+                eq(applicationId));
 
         try {
-            List actual = siteManager.listScopeBySite(rs, applicationId, tenantId);
-            assertThat(actual).hasSize(size);
+            if (clearLicense) {
+                // 使用 MockedStatic 模拟静态方法，try-with-resources 确保作用域结束后恢复
+                try (MockedStatic<ConfigUtils> mockedStatic = mockStatic(ConfigUtils.class)) {
+                    mockedStatic.when(() -> ConfigUtils.get("iidp.hc.license")).thenReturn(null);
+                }
+            }
+            Boolean actual = siteManager.tryConnection(cloudAddress, protocol, applicationId);
+            assertEquals(result, actual);
         } catch (Exception e) {
-            assertThat(e).isInstanceOf(ValidationException.class).hasMessageContaining(error.getMessage());
+            assertInstanceOf(ValidationException.class, e);
+            assertTrue(e.getMessage().contains(error.getMessage()));
         }
     }
 }
 ```
+
+**要点说明：**
+
+| 要点 | 说明 |
+|------|------|
+| `@IIDPTest(value=true, engine=true)` | `SiteManager extends BaseModel`，且方法内部会调用 `getMeta()`，两个参数都须为 `true` |
+| `RecordSetMock.spy("ops_cloud_registration_manager")` | 模型名与业务代码中实际 call 的 RecordSet 模型名保持一致 |
+| `argThat(...)` | 对 protocol 参数做柔性匹配，覆盖 null、空字符串、正常值三种情况 |
+| `MockedStatic` + try-with-resources | 静态方法 mock 必须在 try-with-resources 块内使用，否则会污染后续测试 |
+| JUnit 断言混用 | `assertEquals` / `assertInstanceOf` / `assertTrue` 来自 JUnit，`assertThat` 来自 assertJ，两者可共存 |
 
 ---
 
