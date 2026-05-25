@@ -30,7 +30,10 @@ $ARGUMENTS
 1. **读取** `skills/create-project/SKILL.md` 和 `references/sdd-workflow.md`。
 2. **能力识别（Step 0）**：将用户输入映射到 IIDP 后端能力域和前端实现分支；填写 `## 能力识别` 模板表格。
 3. **生成功能目录**：命名格式 `specs/features/<phaseN>-<short-name>/`，创建目录。
-4. **编写 requirements.md**：按 `skills/create-project/references/sdd-constitution.md § requirements.md 模板` 结构填写，包含：
+4. **模板查找**：先检查 `specs/templates/requirements.md` 是否存在。
+   - 存在 → 以该文件为骨架，将本功能业务内容填入其中的 `[...]` 占位符。
+   - 不存在 → 使用 `skills/create-project/references/sdd-constitution.md § requirements.md 模板`。
+5. **编写 requirements.md**：按上一步确定的模板结构填写，包含：
    - `## 能力识别`：模型清单、服务、前端实现分支意向（Step 0）
    - `## 用户故事与验收场景`：US-01…，P1/P2/P3 优先级，Given/When/Then 验收场景，边界条件
    - `## 功能需求`：FR-001… 编号列表，未明确项用 `待确认` 标记；后端技术要求五问

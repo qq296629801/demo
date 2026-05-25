@@ -25,6 +25,7 @@
 | `sdd-greenfield.md` | 全新 IIDP 工程：父工程初始化门控、项目宪法、六步工作流、多 App 规划、最佳实践、常见场景与排查 | 从零搭建 IIDP 工程、POC / 原型或新增独立 App 时 |
 | `usage.md` | create-project 详细使用说明、输入输出、Prompt、质量检查、常见误用 | 用户询问“怎么用 create-project”或需要完整操作指南时 |
 | `sdd-skill-maintenance.md` | `create-project` skill 维护规则、文件结构、校验命令 | 修改本 skill 或检查是否符合 skill 规范 |
+| `sdd-constitution.md § 项目级模板覆盖规则` | 两层模板机制（技能级默认 vs 项目级 `specs/templates/`）、查找优先级、可覆盖模板列表 | 用户需要定制规格模板结构时；解释模板覆盖机制；运行 `/sdd-init-templates` 前 |
 | `sdd-prompts-tools-principles.md` | Prompt 速查、工具命令、核心原则、常见陷阱 | 用户要提示词、工具清单、原则或总览时 |
 | `sdd-review.md` | 深度审查：触发时机、5 个标准子 Agent（规格一致性/后端对齐/前端对齐/安全边界/AI 可操作性）、汇总报告格式、调用约定 | Phase 结束、PR 前或规格重大变更时触发多 Agent 并行审查 |
 
@@ -50,6 +51,10 @@ agents/
 │   ├── roadmap.md
 │   ├── integration-map.md
 │   ├── decisions.md
+│   ├── templates/                # 可选，项目级模板覆盖（见 sdd-constitution.md § 项目级模板覆盖规则）
+│   │   ├── requirements.md       # 覆盖默认 requirements.md 模板
+│   │   ├── contracts.md          # 覆盖默认 contracts.md 模板
+│   │   └── ...                   # 其他可覆盖模板见 sdd-constitution.md
 │   ├── features/
 │   │   └── phase1-[feature]/
 │   │       ├── requirements.md

@@ -87,6 +87,12 @@ C) 记录环境阻塞原因，暂缓进入步骤 2
 - `specs/roadmap.md`：Phase 规划、App 优先级、里程碑
 - `specs/integration-map.md`：App 清单（含 appName / appPkg / 依赖顺序）
 
+**模板查找（四个文件各自独立）**：
+- `specs/templates/mission.md` 存在 → 用它；否则用 `sdd-constitution.md § mission.md 模板`
+- `specs/templates/iidp-stack.md` 存在 → 用它；否则用 `sdd-constitution.md § iidp-stack.md 模板`
+- `specs/templates/roadmap.md` 存在 → 用它；否则用 `sdd-constitution.md § roadmap.md 模板`
+- `specs/templates/integration-map.md` 存在 → 用它；否则用 `sdd-constitution.md § integration-map.md 模板`
+
 **交互示例**：
 
 ```text

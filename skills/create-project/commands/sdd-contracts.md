@@ -32,6 +32,10 @@ $ARGUMENTS
 
 ### ① 架构级契约 integration-map.md
 
+**模板查找**：先检查 `specs/templates/integration-map.md` 是否存在。
+- 存在 → 以该文件为骨架追加本 Phase 内容；
+- 不存在 → 使用 `sdd-constitution.md § integration-map.md 模板`。
+
 填写并更新 `specs/integration-map.md`（每个 Phase 追加，不覆盖其他 Phase 内容）：
 
 - 模型清单与 ER 关系（含外键字段名）
@@ -41,7 +45,11 @@ $ARGUMENTS
 
 ### ② API 级契约 contracts.md
 
-新建 `specs/features/<feature>/contracts.md`，按 `sdd-constitution.md § contracts.md 模板` 填写：
+**模板查找**：先检查 `specs/templates/contracts.md` 是否存在。
+- 存在 → 以该文件为骨架填写本功能契约；
+- 不存在 → 使用 `sdd-constitution.md § contracts.md 模板`。
+
+新建 `specs/features/<feature>/contracts.md`，按上一步确定的模板填写：
 
 | 契约项 | 必须先读的 backend skills |
 |---|---|

@@ -24,6 +24,10 @@ specs/
 ├── roadmap.md
 ├── integration-map.md          # 架构级契约（模型清单、ER、权限码、前端实现方式决策）
 ├── decisions.md
+├── templates/                  # 可选，项目级模板覆盖（见下方"项目级模板覆盖规则"）
+│   ├── requirements.md
+│   ├── contracts.md
+│   └── ...
 └── features/
     └── phase1-[feature]/
         ├── requirements.md
@@ -34,6 +38,34 @@ specs/
         ├── tasks.md
         └── validation.md
 ```
+
+---
+
+## 项目级模板覆盖规则
+
+本文件下方的各 `## *.md 模板` 节是**技能级默认模板**。项目可在 `specs/templates/` 目录下放置同名文件，AI 生成规格文件时优先使用项目级模板，找不到时 fallback 到本文件默认模板。
+
+**读取优先级**：`specs/templates/{filename}.md` > 本文件 `## {filename}.md 模板` 节
+
+| 可覆盖的模板 | 项目级覆盖路径 | 本文件默认位置 |
+|---|---|---|
+| mission.md | `specs/templates/mission.md` | `## mission.md 模板` |
+| iidp-stack.md | `specs/templates/iidp-stack.md` | `## iidp-stack.md 模板` |
+| ui-constitution.md | `specs/templates/ui-constitution.md` | `## ui-constitution.md 模板` |
+| roadmap.md | `specs/templates/roadmap.md` | `## roadmap.md 模板` |
+| integration-map.md | `specs/templates/integration-map.md` | `## integration-map.md 模板` |
+| requirements.md | `specs/templates/requirements.md` | `## requirements.md 模板` |
+| contracts.md | `specs/templates/contracts.md` | `## contracts.md 模板` |
+
+**查找示例**：生成 `requirements.md` 时，先尝试读取 `specs/templates/requirements.md`。
+- 存在 → 以该文件为骨架，将本功能的业务内容填入其中的 `[...]` 占位符。
+- 不存在 → 使用本文件 `## requirements.md 模板` 节中的内容作为骨架。
+
+> **三条约束不受此规则影响**：无论使用哪层模板，本文件 `## 三条约束` 节中的三条规则始终强制适用，项目级模板不得降低或绕过这三条约束的要求。
+
+> **初始化**：运行 `/sdd-init-templates` 可将选定的默认模板复制到 `specs/templates/` 供用户编辑；也可手动在该目录创建对应文件名的 `.md` 文件直接开始定制。
+
+---
 
 ## mission.md 模板
 
