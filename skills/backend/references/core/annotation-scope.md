@@ -9,6 +9,7 @@
 | 注解 | 类 | 方法 | 字段 | 说明 |
 |---|:---:|:---:|:---:|---|
 | `@Model` | ✅ | ❌ | ❌ | 声明模型元信息 |
+| `@Index` | ✅ | ❌ | ❌ | 数据库索引，**必须作为 `@Model(indexes = {...})` 的参数使用**，禁止单独标注在类、方法或字段上 |
 | `@StaticVar` | ✅ | ❌ | ❌ | 元插件，生成字段 static 常量（`F_FIELD_NAME`） |
 | `@Getter` | ✅ | ❌ | ❌ | 元插件，生成类型安全 getter（**非** Lombok） |
 | `@Setter` | ✅ | ❌ | ❌ | 元插件，生成 setter（**非** Lombok） |
@@ -50,6 +51,18 @@ public class MyModel extends BaseModel<MyModel> { ... }
 
 - `@StaticVar` / `@Getter` / `@Setter` 是 **IIDP 平台元插件**，不是 Lombok，不可混用
 - `@Model` 每个类只允许一个，且只能在类上
+- `@Index` 只能作为 `@Model(indexes = {...})` 的参数使用，必须与 `@Model` 一起出现在类上：
+
+```java
+@Model(
+    name = "books_borrow",
+    indexes = {
+        @Index(name = "UQ_BOOKS_BORROW_CODE", columnList = {"borrow_code"}, unique = true),
+        @Index(name = "IDX_BOOKS_BORROW_READER_STATUS", columnList = {"reader_id", "status"})
+    }
+)
+public class BooksBorrow extends BaseModel<BooksBorrow> { ... }
+```
 
 ### 只能标注在方法上
 
@@ -108,6 +121,7 @@ private List<ExampleStudentAttachment> attachmentList;
 | 把 `@ManyToOne` / `@OneToMany` 等标注在类上 | ER 注解只能在字段上 |
 | 把 `@MethodService` 标注在类或字段上 | 服务注解只能在方法上 |
 | 把 `@Model` 标注在方法或字段上 | 模型注解只能在类上 |
+| 把 `@Index` 标注在方法或字段上 | `@Index` 只能作为 `@Model(indexes = {...})` 的参数，不可独立使用 |
 | 在字段上混用 Lombok `@Getter` / `@Setter` | 与平台元插件冲突，产生类型不匹配 |
 
 ---

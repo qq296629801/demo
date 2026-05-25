@@ -373,48 +373,28 @@ class [ModelName]Test {
 
 ## 后端验证清单
 
-### 文件登记
+> **权威源**：完整的后端交付前自检清单见 `skills/backend/references/core/validation-checklist.md`，覆盖文件登记、命名一致性、Java 模型、视图与菜单、种子数据、服务与 API、权限/多租户/国际化、测试质量与版本、部署与环境、静态命令、编译与运行验证。
+>
+> **本节只列 SDD 工作流的增量条目和门禁命令**，不重复 `validation-checklist.md` 中已有的内容，避免两份清单漂移。
 
-- [ ] `sie-iidp-demo-apps/pom.xml` 登记新增模块
-- [ ] `app.json` 位于 `resolved` 包路径
-- [ ] `app.json.view` 登记**所有模型**的视图文件路径
-- [ ] `app.json.data` 登记菜单、字典、种子、附件
-- [ ] `apps/apps.json` 登记新增 jar
-- [ ] 多模型业务：模型清单中的每个 model 都对应有 Java 类文件、视图文件、菜单入口或子表挂载点
+### SDD 工作流增量条目（在 `validation-checklist.md` 基础上追加）
+
 - [ ] 每个含 `@MethodService` 的模型对应有 `src/test/java/.../{ModelName}Test.java`（DDTest 单元测试类）
 - [ ] 每个 `{ModelName}Test.java` 对应有 `src/test/resources/.../{ModelName}Test.json`（DDTest 测试数据）
+- [ ] 多模型业务：模型清单中的每个 model 都对应有 Java 类文件、视图文件、菜单入口或子表挂载点（与本 feature 的 `requirements.md` 模型清单逐项对照）
+- [ ] 命名一致性按模型清单中每个模型独立检查：`@Model(name)` ↔ 视图 JSON 的 `model` ↔ 菜单 `model` 全部一致；视图 key、菜单 key 带 `{appPkg}_` 业务前缀；自定义按钮 `service` 对应模型的 Java `@MethodService`
+- [ ] 跨模型服务标注挂载模型、涉及模型、事务边界（默认 IIDP 请求级事务，抛 `ModelException` 自动回滚；分段提交需说明 `Meta.flush/commit` 用法）
+- [ ] 权限码在三处对齐：后端服务 `auth` + 视图按钮 `auth` + `integration-map.md` 权限码总览表
+- [ ] 存量项目接入：模型字段类型、状态枚举、唯一索引/外键变更与已有数据兼容，已规划默认值或迁移脚本，已评估锁表风险
 
-### 命名一致（每个模型独立检查）
-
-对模型清单中的**每一个模型**重复以下检查：
-
-- [ ] 模型 [N]：`@Model(name)` 与视图 JSON 的 `model`、菜单的 `model` 完全一致
-- [ ] 模型 [N]：视图 key 和菜单 key 带业务前缀（如 `{appPkg}_`）
-- [ ] 模型 [N]：自定义按钮 `service` 对应该模型的 Java `@MethodService`
-- [ ] ER 关系：`@ManyToOne`/`@OneToMany` 指向的目标模型已存在（本应用内或跨应用 `strong` 依赖）
-
-### 服务与权限
-
-- [ ] 每个模型的写服务都校验：状态、权限、作用域、必填参数
-- [ ] 每个模型的查询服务都支持：Filter、分页、排序、字段选择
-- [ ] 跨模型服务：标注挂载模型、涉及模型、事务边界（默认 IIDP 请求级事务，抛 `ModelException` 自动回滚；分段提交需说明 `Meta.flush/commit` 用法），并对所有涉及模型的状态做联合校验
-- [ ] 菜单、按钮、服务权限码与权限码总览表一致
-- [ ] 权限码在三处对齐：后端服务 `auth` + 视图按钮 `auth` + 权限码总览表
-
-### 数据兼容性（存量项目接入时）
-
-- [ ] 模型字段类型与已有数据库表兼容；增加非空字段时已规划默认值或迁移脚本
-- [ ] 状态枚举（如 `DRAFT/RELEASED/...`）与已有数据兼容；新增枚举值不破坏旧数据
-- [ ] 唯一索引、外键约束变更已评估锁表风险
-
-### 后端命令
+### 门禁命令（SDD Phase 完成前必须执行）
 
 ```bash
-# 静态检查
+# 静态检查（继承 validation-checklist.md「静态命令」章节）
 git diff --check
 find sie-iidp-demo-apps -name '*.json' -print0 | xargs -0 -n1 node -e 'JSON.parse(require("fs").readFileSync(process.argv[1],"utf8"))'
 
-# 【门禁】单元测试（必须全绿，任何 FAILURE 阻塞 Phase 完成）
+# 【门禁 1】DDTest 单元测试（必须 BUILD SUCCESS，任何 FAILURE 阻塞 Phase 完成）
 mvn test -pl sie-iidp-demo-apps/sie-iidp-demo-{appName} -am
 
 # 指定测试类（快速验证某个模型）
@@ -430,7 +410,7 @@ mvn -s ./settings.xml -DskipTests clean package -pl sie-iidp-demo-apps -am
 docker compose config
 ```
 
-**注意**：`-DskipTests` 仅用于快速构建验证，不能替代门禁 1（`mvn test` 必须执行）。
+**注意**：`-DskipTests` 仅用于快速构建验证，不能替代门禁 1（`mvn test` 必须执行）。完整的编译/运行验证步骤见 `validation-checklist.md`「编译验证」「运行验证」章节。
 
 ## 前端验证清单
 

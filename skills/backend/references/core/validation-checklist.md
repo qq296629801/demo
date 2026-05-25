@@ -36,7 +36,7 @@
 - [ ] 选项字段有 `@Selection` 或 `@Dict`。
 - [ ] ER 字段有正确 ORM 注解和级联策略。
 - [ ] ER 关系查询避免循环中逐条读取导致 N+1；必要时批量查询后组装。
-- [ ] 唯一业务编码、外键、高频过滤字段和排序字段已设计索引。
+- [ ] 唯一业务编码、外键、高频过滤字段和排序字段已设计索引；`@Index` 仅在 `@Model(indexes={...})` 类注解中使用，未出现在属性或方法上。
 - [ ] ER API 指令集 `(0/1/2/3/4/5/6, ...)` 的 create/update 场景合法。
 - [ ] 视图模型 `ModelType.View` 的 `@View.From/@View.MapProperty/@View.MapFunction` 映射、聚合别名和可写能力明确。
 - [ ] 复杂业务已拆到 Service/DTO。

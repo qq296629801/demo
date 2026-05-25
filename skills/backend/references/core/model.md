@@ -204,7 +204,7 @@ public class ExampleStudent extends BaseModel<ExampleStudent> {
 | `isLogicDelete` | 启用逻辑删除 | `Bool.True` |
 | `isPrint` | 是否支持打印 | `Bool.True` |
 | `orderBy` | 默认排序字段 | `"id desc"` |
-| `indexes` | 数据库联合索引 | `@Index(name="IDX_XX", columnList={"col1","col2"})` |
+| `indexes` | 数据库联合索引，**`@Index` 只能写在 `@Model` 的 `indexes` 参数中（类级别），禁止放到属性或方法上** | `@Index(name="IDX_XX", columnList={"col1","col2"})` |
 | `parent` | 继承/扩展的父模型名（字符串数组） | `{"example_unit"}` |
 | `isShard` / `shard` | 分库分表开关与策略 | `isShard = Bool.False` |
 | `type` | 模型类型，DTO/Mix 场景才需要显式配置 | `Model.ModelType.Mix` |
