@@ -64,42 +64,25 @@ cp skills/create-project/commands/sdd-*.md .claude/commands/
 
 ---
 
-### 2. 加载 Backend / Frontend 技能上下文
+### 2. 安装 Skills 上下文文件
 
-Backend 和 Frontend 技能文件提供 IIDP 平台规范，供 `/sdd-spec`、`/sdd-implement` 等命令参考。有两种加载方式：
+将 `skills/` 目录下所有技能文件复制到 `.claude/skills/`，Claude Code 会自动加载：
 
-**方式 A：对话中 @ 引用（临时）**
-
-在 Claude Code 对话框中直接引用文件路径：
-
-```
-@skills/backend/SKILL.md
-@skills/frontend/SKILL.md
+```bash
+mkdir -p .claude/skills
+cp -r skills/* .claude/skills/
 ```
 
-**方式 B：写入 CLAUDE.md（推荐，会话自动加载）**
+安装后包含以下技能：
 
-在项目根目录创建或编辑 `CLAUDE.md`，加入以下内容，后续每个会话自动读取：
-
-```markdown
-## 技能参考
-
-- 后端开发规范：@skills/backend/SKILL.md
-- 前端开发规范：@skills/frontend/SKILL.md
-```
-
----
-
-### 3. 其他 Skills 速查
-
-| 技能文件 | 用途 | 使用方式 |
-|---|---|---|
-| `skills/backend/SKILL.md` | IIDP 后端工程：模型、服务、视图、权限、API | `@` 引用或写入 CLAUDE.md |
-| `skills/backend/greenfield/SKILL.md` | 从零搭建 IIDP 父工程（首次建项目） | `@` 引用 |
-| `skills/frontend/SKILL.md` | IIDP 前端总入口，自动路由到 6 个子技能 | `@` 引用或写入 CLAUDE.md |
-| `skills/app-store/SKILL.md` | IIDP 应用市场 JSON-RPC 服务构建 | `@` 引用 |
-| `skills/gitlab/SKILL.md` | GitLab MCP：MR、代码搜索、CI 流水线 | `@` 引用 |
-| `skills/jenkins/SKILL.md` | Jenkins MCP：任务查询、触发、构建日志 | `@` 引用 |
+| 技能文件 | 用途 |
+|---|---|
+| `backend/SKILL.md` | IIDP 后端工程：模型、服务、视图、权限、API |
+| `backend/greenfield/SKILL.md` | 从零搭建 IIDP 父工程（首次建项目） |
+| `frontend/SKILL.md` | IIDP 前端总入口，自动路由到 6 个子技能 |
+| `app-store/SKILL.md` | IIDP 应用市场 JSON-RPC 服务构建 |
+| `gitlab/SKILL.md` | GitLab MCP：MR、代码搜索、CI 流水线 |
+| `jenkins/SKILL.md` | Jenkins MCP：任务查询、触发、构建日志 |
 
 ---
 
