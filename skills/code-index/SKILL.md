@@ -368,23 +368,26 @@ Write("spec/.progress.md") → 写入完整任务清单（见 spec-templates.md 
     → 直接作为 06-flowcharts/ 流程图的节点序列
 ```
 
-**前端项目 Phase C（Vue/React/Angular）：**
+**Phase C 补充步骤 CF（识别到前端框架时追加执行，全栈项目在 C1-C3 后继续）：**
 
 ```
-C1. codegraph_search("router" / "routes", kind="variable")
-    Read(src/router/index.ts 或等价文件) → 路由表（path + component + meta.auth）
+CF1. codegraph_search("router" / "routes", kind="variable")
+     Read(src/router/index.ts 或等价文件) → 路由表（path + component + meta.auth）
+     → 输出字段供 Prompt 12（spec/10-pages.md）使用
 
-C2. codegraph_search("defineStore") → Pinia store 文件
-    Read(store 文件) → store name、state 字段类型、actions 方法签名
+CF2. codegraph_search("defineStore") → Pinia store 文件
+     Read(store 文件) → store name、state 字段类型、actions 方法签名
+     → 输出字段供 Prompt 12（spec/12-state.md）使用
 
-C3. codegraph_search("request" / "axios", kind="function") → API 服务文件
-    Read(src/api/ 目录) → API 函数 → 调用端点 + 参数类型 + 返回类型
+CF3. codegraph_search("request" / "axios", kind="function") → API 服务文件
+     Read(src/api/ 目录) → API 函数 → 调用端点 + 参数类型 + 返回类型
+     → 作为 {{FRONTEND_API_SOURCE}} 变量注入 Prompt 5（spec/05-api.md 前端调用对照）
 
-C4. codegraph_callers("useUserStore" / "usePermissionStore")
-    → 找出依赖权限 Store 的页面/组件 → 权限守卫文档
+CF4. codegraph_callers("useUserStore" / "usePermissionStore")
+     → 找出依赖权限 Store 的页面/组件 → 权限守卫文档
 
-C5. codegraph_trace(from="LoginPage.submit", to="useUserStore.setToken")
-    → 登录流程调用链 → 前端流程图
+CF5. codegraph_trace(from="LoginPage.submit", to="useUserStore.setToken")
+     → 登录流程调用链 → 前端流程图
 ```
 
 **Phase C'：完整性核对（Phase C 结束后，Phase D 开始前）**
@@ -397,6 +400,11 @@ for each 模块 in 模块列表：
   ✓ codegraph_callers 已对 ≥ 1 个核心 Service 方法执行
   ✓ codegraph_trace   已对 ≥ 1 个核心流程执行
 
+如果识别到前端框架（FRONTEND_FRAMEWORK != "无"）：
+  ✓ 路由配置文件已 Read（CF1，已提取 ≥ 1 个 path）
+  ✓ Store 文件已 Read（CF2，已提取 ≥ 1 个 defineStore/createSlice）
+  ✓ API 服务文件已 Read（CF3，已提取 ≥ 1 个 HTTP 调用函数，将作为 {{FRONTEND_API_SOURCE}}）
+
 如果某模块未通过：
   → 补充执行缺失步骤 → 重新检查 → 通过后才继续
   → 更新 spec/.progress.md 的完整性校验表格
@@ -407,8 +415,9 @@ for each 模块 in 模块列表：
 **Phase D：生成规格书**
 
 ```
-每个模块独立生成，按顺序：SRS → API → Database → 错误码 → 流程图
+每个模块独立生成，按顺序：SRS → API（含前端调用对照，如有 CF3 数据）→ Database → 错误码 → 流程图
 最后汇总：HLA → PRD → 用户故事 → 全局概览
+如识别到前端框架，追加生成：10-pages.md → 11-components.md → 12-state.md → 13-i18n.md（如有 i18n）
 
 # 关键：每生成一个文件后，立即更新 spec/.progress.md 对应条目为 [x]
 # 如果 context 在生成过程中溢出，该文件仍标记为 [ ]（未完成），恢复后重做
@@ -450,13 +459,17 @@ spec/
 ├── 02-srs.md               软件需求规格
 ├── 03-prd.md               产品需求文档
 ├── 04-user-stories.md      用户故事列表
-├── 05-api.md               API 规格（含字段校验矩阵）
+├── 05-api.md               API 规格（含字段校验矩阵 + 前端调用对照）
 ├── 06-flowcharts/          流程图（Mermaid）
 │   ├── login-flow.mmd
 │   └── ...
 ├── 07-database.md          数据库结构（DDL + ER 图）
 ├── 08-error-codes.md       错误码表
-└── 09-ui/                  界面布局（静态 HTML）
+├── 09-ui/                  界面布局（静态 HTML）
+├── 10-pages.md             前端页面路由表              ← 仅前端项目生成
+├── 11-components.md        核心组件树（Props/Emits）   ← 仅前端项目生成
+├── 12-state.md             状态管理（Store 模块）       ← 仅前端项目生成
+└── 13-i18n.md              国际化 key 列表             ← 仅前端 + i18n 时生成
 ```
 
 ### 大型项目（模块 > 5）— 模块化结构
@@ -479,16 +492,17 @@ spec/
     └── ...
 ```
 
-### 前端项目 — 前端规格目录
+> **前端规格文件（10-13 号）** 已整合到主 `spec/` 目录，不再单独放 `spec/frontend/` 子目录。  
+> 仅在识别到前端框架时生成（纯后端项目跳过 10-13 号文件）。  
+> 原 `04-api-client.md` 的 API 调用对照内容并入 `05-api.md` 的"前端调用层对照"章节，使同一接口下同时展示后端字段校验矩阵与前端 TS 类型定义。
 
 ```
-spec/frontend/
-├── 00-overview.md         技术栈/构建工具/目录结构
-├── 01-pages.md            页面路由表（路径/组件/权限守卫）
-├── 02-components.md       核心组件树及 Props/Emits 定义
-├── 03-state.md            Store 模块结构（state/action/effect）
-├── 04-api-client.md       API 服务层（调用的后端端点 + 请求/响应类型）
-└── 05-i18n.md             国际化 key 列表（如存在 i18n 文件）
+spec/                           （含前端项目时）
+├── ...（00-09 后端规格文件）
+├── 10-pages.md             前端页面路由表              ← 仅前端项目生成
+├── 11-components.md        核心组件树（Props/Emits）   ← 仅前端项目生成
+├── 12-state.md             状态管理（Store 模块）       ← 仅前端项目生成
+└── 13-i18n.md              国际化 key 列表             ← 仅前端 + i18n 时生成
 ```
 
 ### 输出格式规则

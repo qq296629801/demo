@@ -243,6 +243,10 @@
 {{ERROR_CODES_SOURCE}}
 （来自 Read(ErrorCodeConstants.java)，格式：常量名 = 错误码编号; // 描述）
 
+## 前端 API 调用源码（全栈项目填写，纯后端项目填"无"）
+{{FRONTEND_API_SOURCE}}
+（来自 Read(src/api/*.ts)，TypeScript 函数签名 + 请求/响应类型；无前端则填"无"）
+
 ## 请为每个 API 生成以下格式：
 
 ---
@@ -290,6 +294,12 @@
 | 400 | 请求参数校验失败 |
 | 401 | 未登录或 Token 失效 |
 | 403 | 权限不足 |
+
+**前端调用层对照**（仅当 FRONTEND_API_SOURCE 非空时生成，纯后端项目省略）：
+| 前端函数名 | HTTP 方法 | 端点 | TS 请求类型 | TS 响应类型 | 使用页面 |
+|-----------|---------|------|-----------|-----------|---------|
+| createUser | POST | /system/user/create | UserSaveReqVO | CommonResult\<Long\> | 用户创建弹窗 |
+
 ---
 
 输出格式：Markdown，按模块分组，每个接口用 --- 分隔。
@@ -298,6 +308,7 @@
 2. 创建接口和更新接口的必填字段可能不同，必须分别标注
 3. 错误码必须来自 ErrorCodeConstants 源码，不得推测
 4. 权限码必须来自 @PreAuthorize/@SaCheckPermission 注解，不得推测
+5. 如 FRONTEND_API_SOURCE 非空，必须为每个接口追加"前端调用层对照"表格；TS 类型与后端 Java VO 字段如有差异，用 `[⚠️ 类型不一致]` 标注
 对于不确定的字段类型，标注 [需确认]。
 ```
 
@@ -554,7 +565,7 @@ graph LR
 
 ## Prompt 12 — 前端规格书
 
-> 执行顺序：第 11 步（仅前端项目）| 依赖：frontend-frameworks.md 识别结论 | 输出：`spec/frontend/` 目录
+> 执行顺序：第 11 步（仅前端项目）| 依赖：frontend-frameworks.md 识别结论 | 输出：`spec/` 主目录（10-13 号文件）
 
 ```
 你是一名前端架构师，请根据以下前端代码分析结果，生成前端规格文档。
@@ -579,14 +590,18 @@ graph LR
 
 ## 请生成以下内容：
 
-### 1. spec/frontend/01-pages.md — 页面路由表
+### 1. spec/10-pages.md — 页面路由表
 
 | 路径 | 组件文件 | 布局 | 权限守卫 | 功能描述 |
 |-----|---------|------|---------|---------|
 | /login | views/Login.vue | 空布局 | 无 | 用户登录页 |
 | /system/user | views/system/user/index.vue | 管理布局 | 需登录 + system:user:list | 用户列表管理 |
 
-### 2. spec/frontend/03-state.md — Store 模块
+### 2. spec/11-components.md — 核心组件树
+
+列出核心复用组件（排除单纯页面组件），格式：组件名 | 文件路径 | Props | Emits | 说明
+
+### 3. spec/12-state.md — Store 模块
 
 #### useUserStore（Pinia）
 - **State 字段**：
@@ -598,16 +613,10 @@ graph LR
   - `login(loginForm)` → 调用登录接口，存储 token
   - `logout()` → 清除 token 和用户信息
 
-### 3. spec/frontend/04-api-client.md — API 调用层
-
-| 函数名 | HTTP方法 | 端点 | 请求类型 | 响应类型 | 使用页面 |
-|--------|---------|------|---------|---------|---------|
-| getUserPage | GET | /system/user/page | UserPageReqVO | PageResult<UserRespVO> | 用户列表页 |
-| createUser | POST | /system/user/create | UserSaveReqVO | Long | 用户创建弹窗 |
+> **注意**：API 调用层对照表已在 Prompt 5 的 `spec/05-api.md` 中按接口逐条生成（"前端调用层对照"章节），此处不重复输出。
 
 规则：
 - 路由表必须包含权限守卫信息（从 meta.auth / canActivate 提取）
 - Store actions 必须列出调用的 API 函数名
-- API 函数必须标注请求/响应类型（从 TypeScript 泛型提取）
-- 如存在 i18n，生成 spec/frontend/05-i18n.md（key + 中文值 + 使用组件）
+- 如存在 i18n，生成 spec/13-i18n.md（key + 中文值 + 使用组件）
 ```

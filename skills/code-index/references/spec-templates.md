@@ -14,25 +14,32 @@ spec/
 ├── 02-srs.md               软件需求规格（SRS，含字段校验规则）
 ├── 03-prd.md               产品需求文档（PRD）
 ├── 04-user-stories.md      用户故事（User Stories）
-├── 05-api.md               API 规格文档（含字段校验矩阵）
+├── 05-api.md               API 规格文档（含字段校验矩阵 + 前端调用对照）
 ├── 06-flowcharts/          流程图（Mermaid 源码）
 ├── 07-database.md          数据库结构文档（DDL + 索引 + ER 图）
 ├── 08-error-codes.md       错误码表（从 ErrorCodeConstants 提取）
-└── 09-ui/                  UI/UX 静态原型（HTML）
+├── 09-ui/                  UI/UX 静态原型（HTML）
+├── 10-pages.md             前端页面路由表              ← 仅前端项目生成
+├── 11-components.md        核心组件树（Props/Emits）   ← 仅前端项目生成
+├── 12-state.md             状态管理（Store 模块）       ← 仅前端项目生成
+└── 13-i18n.md              国际化 key 列表             ← 仅前端 + i18n 时生成
 ```
 
 ### 大型项目（模块 > 5）— 模块化结构
 
 ```
 spec/
-├── 00-overview.md              全局概览
+├── 00-overview.md              全局概览（含前后端技术栈）
 ├── 01-hla.md                   全局架构图（微服务拓扑/模块依赖）
 ├── 04-user-stories.md          跨模块用户故事汇总
 ├── 07-database-overview.md     全库 ER 总图（模块间关系）
+├── 10-pages.md                 前端页面路由表（全局）      ← 仅前端项目生成
+├── 12-state.md                 状态管理模块总览            ← 仅前端项目生成
+├── 13-i18n.md                  国际化 key 列表             ← 仅前端 + i18n 时生成
 └── modules/
     ├── {module-a}/
     │   ├── 02-srs.md           模块需求规格（含字段校验规则）
-    │   ├── 05-api.md           模块 API（含字段校验矩阵 + 业务错误码）
+    │   ├── 05-api.md           模块 API（含字段校验矩阵 + 前端调用对照）
     │   ├── 07-database.md      模块 DDL + ER 图（含所有索引定义）
     │   ├── 08-error-codes.md   模块错误码表
     │   └── 06-flowcharts/
@@ -41,17 +48,9 @@ spec/
         └── ...
 ```
 
-### 前端项目 — 前端规格目录
-
-```
-spec/frontend/
-├── 00-overview.md         技术栈/构建工具/目录结构
-├── 01-pages.md            页面路由表（路径/组件/权限守卫）
-├── 02-components.md       核心组件树及 Props/Emits 定义
-├── 03-state.md            Store 模块结构（state/action/effect）
-├── 04-api-client.md       API 服务层（调用的后端端点+请求/响应类型）
-└── 05-i18n.md             国际化 key 列表（如存在 i18n 文件）
-```
+> **说明**：前端规格文件（10-13 号）已整合到主 `spec/` 目录，不再单独放 `spec/frontend/` 子目录。
+> 原 `spec/frontend/04-api-client.md` 的内容并入 `05-api.md` 的"前端调用层对照"章节，使同一接口下同时展示后端字段校验矩阵与前端 TS 类型定义。
+> 10-13 号文件仅在识别到前端框架时生成，纯后端项目不生成。
 
 ---
 
@@ -66,7 +65,8 @@ spec/frontend/
 |-----|------|
 | 项目名称 | {{PROJECT_NAME}} |
 | 版本 | v{{VERSION}} |
-| 技术栈 | Java 17 + Spring Boot 3.x + MyBatis-Plus |
+| 后端技术栈 | Java 17 + Spring Boot 3.x + MyBatis-Plus |
+| 前端技术栈 | {{FRONTEND_STACK}}（无前端则填"N/A"）|
 | 框架 | {{FRAMEWORK}} |
 | 架构模式 | 单体应用 / 微服务 |
 | 代码规模 | {{FILE_COUNT}} 文件，{{NODE_COUNT}} 符号节点 |
@@ -98,7 +98,11 @@ spec/frontend/
 - [API 文档](./05-api.md)
 - [流程图](./06-flowcharts/)
 - [数据库结构](./07-database.md)
-- [UI 原型](./08-ui/)
+- [UI 原型](./09-ui/)
+- [前端页面路由](./10-pages.md)（仅全栈项目）
+- [前端组件树](./11-components.md)（仅全栈项目）
+- [前端状态管理](./12-state.md)（仅全栈项目）
+- [国际化](./13-i18n.md)（仅含 i18n 的前端项目）
 ```
 
 ---
@@ -401,6 +405,11 @@ CREATE TABLE `{{table_name}}` (
 | mobile | string | 否 | ^1[3-9]\d{9}$ | 手机号格式错误 |
 | sex | integer | 否 | 枚举值：0=未知 1=男 2=女 | - |
 | deptId | long | 否 | 部门必须存在 | 部门不存在 |
+
+**前端调用层对照**（仅全栈项目生成，纯后端项目省略此节）：
+| 前端函数名 | HTTP 方法 | 端点 | TS 请求类型 | TS 响应类型 | 使用页面 |
+|-----------|---------|------|-----------|-----------|---------|
+| createUser | POST | /system/user/create | UserSaveReqVO | CommonResult\<Long\> | 用户创建弹窗 |
 ```
 
 **字段来源规则：**
@@ -409,6 +418,7 @@ CREATE TABLE `{{table_name}}` (
 - 必填标记：来自 `@NotBlank` / `@NotNull`（更新接口通常标"更新可选"）
 - 错误提示：来自注解的 `message` 属性
 - 枚举约束：来自 `@Schema(description)` 或枚举类常量
+- **前端调用层**：来自 `src/api/*.ts` 的 TypeScript 函数签名，TS 类型字段与后端字段如有差异，标注 `[⚠️ 类型不一致]`
 
 ---
 
@@ -430,7 +440,7 @@ CREATE TABLE `{{table_name}}` (
 
 ---
 
-## 前端页面路由表模板（spec/frontend/01-pages.md）
+## 前端页面路由表模板（spec/10-pages.md）
 
 ```markdown
 # 页面路由表
@@ -446,7 +456,7 @@ CREATE TABLE `{{table_name}}` (
 
 ---
 
-## 前端 Store 模块模板（spec/frontend/03-state.md）
+## 前端 Store 模块模板（spec/12-state.md）
 
 ```markdown
 # 状态管理（Pinia）
@@ -486,6 +496,7 @@ CREATE TABLE `{{table_name}}` (
 最后更新：{{TIMESTAMP}}
 项目：{{PROJECT_NAME}}
 框架：{{FRAMEWORK}}
+前端框架：{{FRONTEND_FRAMEWORK}}（无则填"无"，恢复时据此决定是否生成 10-13 号文件）
 模块总数：{{MODULE_COUNT}}
 codegraph class 总数（基线）：{{CLASS_COUNT_BASELINE}}
 
@@ -516,6 +527,10 @@ codegraph class 总数（基线）：{{CLASS_COUNT_BASELINE}}
 - [ ] spec/03-prd.md
 - [ ] spec/04-user-stories.md
 - [ ] spec/00-overview.md（最后生成）
+- [ ] spec/10-pages.md             ← 如有前端框架
+- [ ] spec/11-components.md        ← 如有前端框架
+- [ ] spec/12-state.md             ← 如有前端框架
+- [ ] spec/13-i18n.md              ← 如有前端框架且有 i18n
 
 ### 模块文件（大型项目，小型项目调整为顶层路径）
 - [ ] spec/modules/{{MODULE_1}}/02-srs.md
