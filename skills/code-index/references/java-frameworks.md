@@ -220,7 +220,9 @@ PageResult<T>                           // 分页返回
 ```
 # 数据库表结构提取
 codegraph_search("@TableName") → 所有数据库表
-codegraph_node(entity_id, include_source=true) → 字段列表（即建表字段）
+# 获取 Entity 文件路径后，用 Read 读取源码提取字段定义：
+# codegraph_search("XxxDO", kind="class") → 获取 file 路径
+# Read(file) → 提取 @TableField、字段类型长度、@Column 约束、索引注解
 
 # 枚举/字典
 codegraph_search("@EnumValue") → 枚举字段（写入数据库文档）
@@ -232,6 +234,98 @@ codegraph_search("DataScope")  → 多租户/数据隔离模式
 # 代码生成器产物识别
 codegraph_search("@Generated") → 自动生成代码，Spec 中标注
 ```
+
+---
+
+## 通用 Spring Boot（Generic Spring Boot）
+
+适用于不使用特定快速开发框架基类的标准 Spring Boot 项目（覆盖大多数自研项目）。
+
+### 识别信号
+
+```
+# 无特定框架基类，Controller 直接继承 Object
+codegraph_search("@RestController", kind="class")  → Spring MVC 入口
+codegraph_search("@RequestMapping", kind="class")  → 路由前缀
+# 区别于快速开发框架：没有 BaseController / JeecgController 等基类
+```
+
+### 实体层识别
+
+```
+# JPA
+codegraph_search("@Entity", kind="class")          → JPA 实体（对应数据库表）
+codegraph_search("@Table", kind="class")           → 表名映射
+codegraph_search("extends JpaRepository")          → Spring Data JPA 仓储
+codegraph_search("extends CrudRepository")         → 简化 JPA 仓储
+
+# MyBatis-Plus
+codegraph_search("@TableName", kind="class")       → MyBatis-Plus 实体
+codegraph_search("extends BaseMapper")             → MyBatis-Plus Mapper
+codegraph_search("extends IService")               → MyBatis-Plus Service 接口
+codegraph_search("extends ServiceImpl")            → MyBatis-Plus Service 实现
+```
+
+### 服务层与 DTO 识别
+
+```
+codegraph_search("@Service", kind="class")         → 服务类
+codegraph_search("@Transactional", kind="function")→ 事务边界（@Transactional 方法）
+
+# DTO 命名约定（按命中率排序）
+codegraph_search("*Request", kind="class")         → 请求体 DTO
+codegraph_search("*Response", kind="class")        → 响应体 DTO
+codegraph_search("*DTO", kind="class")             → 数据传输对象
+codegraph_search("*VO", kind="class")              → 视图对象
+codegraph_search("*Command", kind="class")         → CQRS 命令
+codegraph_search("*Query", kind="class")           → CQRS 查询
+codegraph_search("*Req", kind="class")             → 简写请求体
+codegraph_search("*Resp", kind="class")            → 简写响应体
+```
+
+### 字段校验注解提取（Read DTO 文件后识别）
+
+```java
+@NotBlank(message = "...")      // 必填字符串，提取到字段校验矩阵
+@NotNull(message = "...")       // 必填对象，提取到字段校验矩阵
+@Size(min=x, max=y)             // 长度约束
+@Pattern(regexp = "...")        // 正则校验，提取 regexp 值
+@Email                          // 邮箱格式
+@Min / @Max                     // 数值范围
+@Valid / @Validated             // 嵌套校验
+```
+
+### 横切关注点识别
+
+```
+codegraph_search("@Cacheable")      → 缓存查询接口
+codegraph_search("@CacheEvict")     → 缓存失效触发点
+codegraph_search("@Async")          → 异步方法（HLA 异步流程）
+codegraph_search("@Scheduled")      → 定时任务（SRS 触发方式）
+codegraph_search("@EventListener")  → 领域事件处理（HLA 事件流）
+```
+
+### codegraph 提取规则
+
+```
+1. codegraph_search("@RestController") → Controller 列表 → 逐一 Read 源文件
+2. Read(Controller 文件) → 提取 @GetMapping/@PostMapping 路径 + @PreAuthorize/@Secured 权限
+3. codegraph_search("*ReqDTO" / "*Request") → Read DTO 文件 → 字段校验矩阵
+4. codegraph_search("@Entity" / "@TableName") → Read Entity 文件 → DDL + 索引
+5. codegraph_callers("XxxService.save") → 找出 Controller + @Scheduled + MQ Consumer
+6. codegraph_trace("XxxController.create", "XxxRepository.save") → 流程图骨架
+```
+
+### Spec 映射
+
+| 代码元素 | Spec 文档位置 |
+|---------|-------------|
+| `@Operation(summary=...)` / `@ApiOperation` | API 文档接口描述 |
+| `@PreAuthorize("hasRole/hasAuthority")` | API 文档权限说明 |
+| `@NotBlank/@Pattern` 字段注解 | API 字段校验矩阵 |
+| `@Entity @Column(unique=true)` | 数据库文档唯一索引 |
+| `@Transactional` 方法 | SRS 事务边界说明 |
+| `@Scheduled` 方法 | SRS 定时触发条件 |
 
 ---
 

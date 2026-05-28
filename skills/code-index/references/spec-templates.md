@@ -2,17 +2,52 @@
 
 ## 文档体系说明
 
+### 小型项目（模块 ≤ 5）— 平铺结构
+
 ```
-Spec 文档体系
+spec/
 ├── 00-overview.md          项目概览（1-2页）
 ├── 01-hla.md               高阶架构（HLA）
-├── 02-srs.md               软件需求规格（SRS）
+├── 02-srs.md               软件需求规格（SRS，含字段校验规则）
 ├── 03-prd.md               产品需求文档（PRD）
 ├── 04-user-stories.md      用户故事（User Stories）
-├── 05-api.md               API 规格文档
-├── 06-flowcharts/          流程图（Mermaid 源码 + SVG）
-├── 07-database.md          数据库结构文档
-└── 08-ui/                  UI/UX 静态原型（HTML）
+├── 05-api.md               API 规格文档（含字段校验矩阵）
+├── 06-flowcharts/          流程图（Mermaid 源码）
+├── 07-database.md          数据库结构文档（DDL + 索引 + ER 图）
+├── 08-error-codes.md       错误码表（从 ErrorCodeConstants 提取）
+└── 09-ui/                  UI/UX 静态原型（HTML）
+```
+
+### 大型项目（模块 > 5）— 模块化结构
+
+```
+spec/
+├── 00-overview.md              全局概览
+├── 01-hla.md                   全局架构图（微服务拓扑/模块依赖）
+├── 04-user-stories.md          跨模块用户故事汇总
+├── 07-database-overview.md     全库 ER 总图（模块间关系）
+└── modules/
+    ├── {module-a}/
+    │   ├── 02-srs.md           模块需求规格（含字段校验规则）
+    │   ├── 05-api.md           模块 API（含字段校验矩阵 + 业务错误码）
+    │   ├── 07-database.md      模块 DDL + ER 图（含所有索引定义）
+    │   ├── 08-error-codes.md   模块错误码表
+    │   └── 06-flowcharts/
+    │       └── *.mmd
+    └── {module-b}/
+        └── ...
+```
+
+### 前端项目 — 前端规格目录
+
+```
+spec/frontend/
+├── 00-overview.md         技术栈/构建工具/目录结构
+├── 01-pages.md            页面路由表（路径/组件/权限守卫）
+├── 02-components.md       核心组件树及 Props/Emits 定义
+├── 03-state.md            Store 模块结构（state/action/effect）
+├── 04-api-client.md       API 服务层（调用的后端端点+请求/响应类型）
+└── 05-i18n.md             国际化 key 列表（如存在 i18n 文件）
 ```
 
 ---
@@ -345,3 +380,91 @@ CREATE TABLE `{{table_name}}` (
 ```
 
 每个 .mmd 文件同时生成对应的 SVG 版本（通过 `show_widget` 渲染后保存）。
+
+---
+
+## 字段校验矩阵模板（05-api.md 中使用）
+
+每个 POST/PUT 接口的请求体必须包含此表格，字段来自实际 VO/DTO 源码的注解：
+
+```markdown
+**请求体字段校验矩阵**：
+| 字段 | 类型 | 必填 | 规则/约束 | 错误提示 |
+|------|------|------|-----------|---------|
+| username | string | 是 | 4-30位，仅字母数字（^[a-zA-Z0-9]{4,30}$）| 用户账号由数字、字母组成 |
+| password | string | 创建必填 | 4-16位 | 密码长度为 4-16 位 |
+| nickname | string | 是 | 1-30位 | 用户昵称不能为空 |
+| email | string | 否 | 邮箱格式 | 邮箱地址不正确 |
+| mobile | string | 否 | ^1[3-9]\d{9}$ | 手机号格式错误 |
+| sex | integer | 否 | 枚举值：0=未知 1=男 2=女 | - |
+| deptId | long | 否 | 部门必须存在 | 部门不存在 |
+```
+
+**字段来源规则：**
+- 正则约束：来自 `@Pattern(regexp = "...")`
+- 长度约束：来自 `@Size(min=, max=)` 或 `@Length`
+- 必填标记：来自 `@NotBlank` / `@NotNull`（更新接口通常标"更新可选"）
+- 错误提示：来自注解的 `message` 属性
+- 枚举约束：来自 `@Schema(description)` 或枚举类常量
+
+---
+
+## 错误码表模板（08-error-codes.md）
+
+```markdown
+# {{MODULE_NAME}} 模块错误码
+
+> 来源文件：`ErrorCodeConstants.java` / `*ErrorCode.java`
+
+| 错误码编号 | 常量名 | 中文描述 | 触发场景 |
+|-----------|--------|---------|---------|
+| 1002001 | USER_USERNAME_EXISTS | 用户账号已存在 | 创建/更新用户时用户名重复 |
+| 1002002 | USER_MOBILE_EXISTS | 手机号已存在 | 创建/更新用户时手机号重复 |
+| 1002003 | USER_EMAIL_EXISTS | 邮箱已存在 | 创建/更新用户时邮箱重复 |
+| 1002004 | USER_NOT_EXISTS | 用户不存在 | 查询/更新/删除时 ID 无效 |
+| 1002007 | USER_PASSWORD_EXPIRED | 密码已过期 | 登录时检测到密码超过有效期 |
+```
+
+---
+
+## 前端页面路由表模板（spec/frontend/01-pages.md）
+
+```markdown
+# 页面路由表
+
+| 路径 | 组件文件 | 布局 | 权限守卫 | 功能描述 |
+|-----|---------|------|---------|---------|
+| /login | views/Login.vue | 空布局（BasicLayout） | 无需登录 | 用户名/密码登录 |
+| /dashboard | views/Dashboard.vue | 管理布局（AdminLayout） | 需登录 | 系统首页/工作台 |
+| /system/user | views/system/user/index.vue | 管理布局 | 需登录 + `system:user:list` | 用户列表管理 |
+| /system/user/create | views/system/user/form.vue | 管理布局 | `system:user:create` | 创建用户 |
+| /bpm/process | views/bpm/process/index.vue | 管理布局 | `bpm:process:query` | 流程定义管理 |
+```
+
+---
+
+## 前端 Store 模块模板（spec/frontend/03-state.md）
+
+```markdown
+# 状态管理（Pinia）
+
+## useUserStore
+
+**文件**：`src/store/modules/user.ts`
+
+### State 字段
+| 字段 | 类型 | 初始值 | 说明 |
+|-----|------|-------|------|
+| token | string | '' | 登录 Token（存 localStorage） |
+| name | string | '' | 用户昵称 |
+| avatar | string | '' | 头像 URL |
+| roles | string[] | [] | 角色编码列表 |
+| permissions | string[] | [] | 权限码列表（用于按钮级权限） |
+
+### Actions
+| 方法 | 参数 | 说明 |
+|-----|------|------|
+| `login(form)` | `{ username, password, captcha }` | 调用登录接口，存储 token |
+| `getInfo()` | - | 获取当前用户信息和权限列表 |
+| `logout()` | - | 清除 token，跳转登录页 |
+```

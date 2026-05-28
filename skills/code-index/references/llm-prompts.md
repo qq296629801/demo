@@ -8,15 +8,20 @@
 ## 通用变量说明
 
 ```
-{{PROJECT_NAME}}    项目名称
-{{FRAMEWORK}}       框架名（RuoYi / JEECG Boot / yudao-cloud / maku-boot / 其他）
-{{MODULES}}         模块列表（从 codegraph_search 提取）
-{{CONTROLLERS}}     Controller 类列表（含方法签名）
-{{ENTITIES}}        Entity 类列表（含字段）
-{{SERVICES}}        Service 接口列表
-{{CALL_TRACE}}      某功能的完整调用链（codegraph_trace 输出）
-{{CALLERS}}         某方法的调用者列表（codegraph_callers 输出）
-{{API_ANNOTATIONS}} API 注解信息（@ApiOperation / @Operation）
+{{PROJECT_NAME}}        项目名称
+{{FRAMEWORK}}           框架名（RuoYi / JEECG Boot / yudao-cloud / Spring Boot / NestJS / Django 等）
+{{MODULE_NAME}}         当前分析的模块名称（大型项目按模块分析时使用）
+{{MODULES}}             模块列表（从 codegraph_search 提取）
+{{CONTROLLERS}}         Controller 类列表（含方法签名）
+{{CONTROLLER_SOURCE}}   Controller 完整源码（codegraph_search → Read 获取）
+{{ENTITIES}}            Entity 类列表（含字段）
+{{ENTITY_SOURCE}}       Entity/DO 完整源码（codegraph_search → Read 获取）
+{{VO_SOURCE}}           ReqVO/RespVO/DTO 完整源码（codegraph_search → Read 获取）
+{{SERVICES}}            Service 接口列表
+{{CALL_TRACE}}          某功能的完整调用链（codegraph_trace 输出）
+{{CALLERS}}             某方法的调用者列表（codegraph_callers 输出）
+{{API_ANNOTATIONS}}     API 注解信息（@ApiOperation / @Operation）
+{{ERROR_CODES_SOURCE}}  错误码常量文件源码（Read ErrorCodeConstants.java 获取）
 ```
 
 ---
@@ -70,11 +75,12 @@
 
 ## 系统概览
 - 系统名称：{{PROJECT_NAME}}
+- 模块名称：{{MODULE_NAME}}（大型项目请按模块单独生成）
 - 框架：{{FRAMEWORK}}
 
-## 功能入口（API Controller 列表）
-{{CONTROLLERS_WITH_METHODS}}
-（格式：ControllerName.methodName(params) → HTTP Method + Path）
+## 功能入口（API Controller 完整源码）
+{{CONTROLLER_SOURCE}}
+（来自 codegraph_search → Read 读取源文件，包含所有端点和注解）
 
 ## 操作日志覆盖的功能点
 {{LOG_ANNOTATIONS}}
@@ -84,6 +90,10 @@
 {{PERMISSION_ANNOTATIONS}}
 （格式：@PreAuthorize("@ss.hasPermi('system:user:edit')")）
 
+## 触发点（codegraph_callers 结果）
+{{CALLERS}}
+（格式：调用方类名.方法名 + 触发类型：Controller/Scheduler/EventListener/MQ）
+
 ## 请生成以下内容：
 
 ### 1. 功能需求列表（每条格式如下）
@@ -92,18 +102,26 @@
 - 描述：用户通过用户名/密码登录系统，验证通过后返回 JWT Token
 - 优先级：P0（核心功能）
 - 相关 API：POST /system/user/login
+- 触发方式：用户手动触发 / 定时任务 / 事件驱动（从 callers 推断）
 - 前置条件：用户账号未被禁用
 - 主流程：[步骤列表]
 - 异常流程：账号不存在 / 密码错误 / 账号锁定
+- **字段约束**：（从 VO/DTO 注解提取，每个字段一行）
+  - username：必填，4-30 位字母数字（正则：^[a-zA-Z0-9]{4,30}$）
+  - password：必填，4-16 位
+- **唯一性约束**：username 不允许重复（从 @Column(unique=true) 或 UNIQUE INDEX 推断）
+- **删除策略**：软删除（deleted 字段）/ 物理删除
 
 ### 2. 非功能需求（从代码推断）
 - 安全性需求（认证方式、权限粒度）
-- 数据验证需求（@NotNull、@Length 等注解）
-- 日志审计需求（@Log、@AutoLog 覆盖范围）
+- 数据验证需求（从 @NotNull/@Pattern/@Size 等注解逐字段列出具体规则）
+- 日志审计需求（@Log / @AutoLog 覆盖范围）
+- 事务范围（@Transactional 方法列表）
 
 ### 3. 约束条件
 - 框架约束（如 JEECG 的 Online 低代码功能限制）
 - 数据权限约束（@DataScope 规则）
+- 异步处理约束（@Async 方法、MQ 消费者）
 
 输出：Markdown，按业务模块分章节，每个功能需求一个独立章节。
 不要编造代码中不存在的需求，遇到不确定的地方用 [需确认] 标注。
@@ -201,56 +219,75 @@
 ## 项目信息
 - API Base URL：/api（或从配置推断）
 - 认证方式：{{AUTH_METHOD}}（JWT Bearer / Sa-Token / Session）
+- 模块名称：{{MODULE_NAME}}
 
-## Controller 信息
-{{CONTROLLER_DETAILS}}
-（格式：ControllerName、@RequestMapping 路径、每个方法的签名 + 注解）
+## Controller 完整源码
+{{CONTROLLER_SOURCE}}
+（来自 Read(Controller 文件)，包含所有端点、@PreAuthorize/@SaCheckPermission、@Operation 注解）
 
-## DTO/VO 信息
-{{DTO_DETAILS}}
-（Entity/ReqVO/RespVO 字段列表，含 @ApiModelProperty/@Schema 描述）
+## ReqVO / DTO 完整源码（请求体字段定义）
+{{VO_SOURCE}}
+（来自 Read(ReqVO/DTO 文件)，包含所有字段的 @NotBlank/@Pattern/@Size/@Schema 注解）
+
+## 错误码常量
+{{ERROR_CODES_SOURCE}}
+（来自 Read(ErrorCodeConstants.java)，格式：常量名 = 错误码编号; // 描述）
 
 ## 请为每个 API 生成以下格式：
 
 ---
-### POST /system/user/login
-**描述**：用户登录，获取访问令牌
+### POST /system/user/create
+**描述**：创建用户  
+**权限**：`system:user:create`（从 @PreAuthorize 提取）
 
-**请求头**：
-| Key | Value |
-|-----|-------|
-| Content-Type | application/json |
+**请求体字段校验矩阵**：
+| 字段 | 类型 | 必填 | 规则/约束 | 错误提示 |
+|------|------|------|-----------|---------|
+| username | string | 是 | 4-30位，仅字母数字（^[a-zA-Z0-9]{4,30}$） | 用户账号由数字、字母组成 |
+| password | string | 创建必填 | 4-16位 | 密码长度为 4-16 位 |
+| nickname | string | 是 | 1-30位 | 用户昵称不能为空 |
+| mobile | string | 否 | 手机号格式 | 手机号格式错误 |
 
-**请求体**：
+**请求体示例**：
 ```json
 {
-  "username": "string（必填）用户名",
-  "password": "string（必填）密码，MD5 加密"
+  "username": "string（必填）",
+  "password": "string（创建必填）",
+  "nickname": "string（必填）"
 }
 ```
 
-**响应**：
+**响应**（区分创建/查询/列表接口的响应结构）：
 ```json
 {
   "code": 200,
   "msg": "操作成功",
-  "data": {
-    "token": "string JWT Token",
-    "tokenHead": "Bearer "
-  }
+  "data": 1001
 }
 ```
 
-**错误码**：
-| 错误码 | 说明 |
-|-------|------|
-| 401 | 用户名或密码错误 |
-| 423 | 账号已被禁用 |
+**业务错误码**（从 ErrorCodeConstants 提取该模块的错误码）：
+| 错误码 | 常量名 | 说明 | 触发场景 |
+|-------|--------|------|---------|
+| 1002001 | USER_USERNAME_EXISTS | 用户账号已存在 | 创建/更新时用户名重复 |
+| 1002002 | USER_MOBILE_EXISTS | 手机号已存在 | 创建/更新时手机号重复 |
+| 1002004 | USER_NOT_EXISTS | 用户不存在 | 查询/更新/删除时 ID 无效 |
 
-**权限**：无需登录
+**HTTP 状态码**：
+| 状态码 | 说明 |
+|-------|------|
+| 200 | 操作成功 |
+| 400 | 请求参数校验失败 |
+| 401 | 未登录或 Token 失效 |
+| 403 | 权限不足 |
 ---
 
 输出格式：Markdown，按模块分组，每个接口用 --- 分隔。
+**强制要求**：
+1. Request Body 必须用字段校验矩阵表格（字段名/类型/必填/规则/错误提示）
+2. 创建接口和更新接口的必填字段可能不同，必须分别标注
+3. 错误码必须来自 ErrorCodeConstants 源码，不得推测
+4. 权限码必须来自 @PreAuthorize/@SaCheckPermission 注解，不得推测
 对于不确定的字段类型，标注 [需确认]。
 ```
 
@@ -309,11 +346,11 @@ sequenceDiagram
 ## Prompt 7 — 数据库结构文档
 
 ```
-请根据以下 Entity 类代码分析，生成数据库结构文档。
+请根据以下 Entity/DO 类完整源码，生成数据库结构文档。
 
-## Entity 类信息
-{{ENTITY_SOURCE_CODE}}
-（来自 codegraph_node(include_source=true) 的输出）
+## Entity/DO 类完整源码
+{{ENTITY_SOURCE}}
+（来自 codegraph_search("XxxDO/XxxEntity", kind="class") → Read(file) 获取实际源码）
 
 ## 请生成：
 
@@ -355,9 +392,11 @@ erDiagram
 （来自代码中的枚举类和 @Dict 注解）
 
 规则：
-- 从 @Column、@TableField、字段注释推断类型和说明
-- 标注公共字段（create_by、create_time、update_by、update_time、del_flag）
-- 标注 BaseEntity 继承的字段（避免重复列出）
+- 字段类型/长度必须来自实际 DO 源码（如 `@Schema(description="...", example="...")`、`varchar(100)` 注释），不得推测
+- DDL 必须包含所有索引：UNIQUE 索引、普通索引、联合索引（从 @UniqueConstraint 或 @TableIndex 或类注释提取）
+- JSON 字段必须注明序列化方式（如 `JacksonTypeHandler`、`FastjsonTypeHandler`）
+- 继承字段（来自 BaseDO/TenantBaseDO/BaseEntity）必须单独标注来源父类，避免遗漏
+- 标注公共字段（creator/create_time/updater/update_time/deleted/tenant_id）
 ```
 
 ---
@@ -412,12 +451,139 @@ erDiagram
 
 ## 请判断并输出：
 
-1. **主框架**：RuoYi / JEECG Boot / yudao-cloud / maku-boot / 其他（说明）
-2. **次框架/组件**：Spring Boot 版本、MyBatis-Plus、Sa-Token、Flowable 等
-3. **架构模式**：单体 / 微服务 / 模块化单体
-4. **前端分离情况**：前后端分离 / MVC 模板渲染
+1. **主框架**：RuoYi / JEECG Boot / yudao-cloud / maku-boot / 通用 Spring Boot / NestJS / Django / FastAPI / Gin / React / Vue / Angular 等
+2. **次框架/组件**：Spring Boot 版本、MyBatis-Plus / JPA、Sa-Token / JWT、Flowable 等
+3. **架构模式**：单体 / 微服务 / 模块化单体 / 前端 SPA
+4. **前端分离情况**：前后端分离 / MVC 模板渲染 / 纯前端项目
 5. **特殊组件**：代码生成器、低代码模块、工作流引擎
 6. **魔改程度**：原版 / 轻度定制 / 深度定制（依据特征类名/包名变化判断）
 
 输出格式：简洁的 Markdown 列表，不超过 1 页。
+```
+
+---
+
+## Prompt 10 — 错误码文档
+
+```
+请根据以下错误码常量文件源码，生成模块错误码文档。
+
+## 错误码常量文件源码
+{{ERROR_CODES_SOURCE}}
+（来自 Read(ErrorCodeConstants.java 或 *ErrorCode.java) 实际源码）
+
+## 请生成：
+
+### 模块错误码表
+
+| 错误码编号 | 常量名 | 中文描述 | 触发场景 |
+|-----------|--------|---------|---------|
+| 1002001 | USER_USERNAME_EXISTS | 用户账号已存在 | 创建/更新用户时，传入的用户名已被其他用户使用 |
+| 1002002 | USER_MOBILE_EXISTS | 手机号已存在 | 创建/更新用户时，传入的手机号已被其他用户绑定 |
+| 1002004 | USER_NOT_EXISTS | 用户不存在 | 通过 ID 查询/更新/删除用户，该 ID 对应记录不存在 |
+
+规则：
+- 错误码编号和常量名必须与源码完全一致，不得推断
+- 触发场景从常量名含义推断，标注 [需确认] 如不确定
+- 按错误码编号升序排列
+- 如一个文件包含多个模块的错误码，按模块前缀分组
+```
+
+---
+
+## Prompt 11 — 服务依赖图
+
+```
+请根据以下 Service Impl 源码，生成服务依赖关系图。
+
+## Service Impl 源码（含 @Autowired/@Resource 注入字段）
+{{SERVICE_IMPL_SOURCE}}
+（来自 Read(XxxServiceImpl.java) 实际源码）
+
+## 请生成：
+
+### 1. 服务依赖关系图（Mermaid）
+
+```mermaid
+graph LR
+    UserServiceImpl --> DeptServiceImpl
+    UserServiceImpl --> PermissionServiceImpl
+    UserServiceImpl --> PasswordEncoder
+    OrderServiceImpl --> UserServiceImpl
+    OrderServiceImpl --> StockServiceImpl
+    OrderServiceImpl --> PayOrderApi
+```
+
+### 2. 外部依赖说明表
+
+| 依赖服务 | 类型 | 用途 |
+|---------|------|------|
+| DeptServiceImpl | 内部 Service | 校验部门是否存在 |
+| PayOrderApi | @FeignClient | 调用支付模块创建支付单 |
+| RedisTemplate | 基础设施 | 缓存用户信息 |
+
+规则：
+- 只提取 @Autowired/@Resource/@Inject 注入的字段
+- 区分：内部 Service / @FeignClient 远程调用 / 基础设施（Redis/MQ/OSS）
+- 忽略工具类注入（StringUtils 等）
+```
+
+---
+
+## Prompt 12 — 前端规格书
+
+```
+你是一名前端架构师，请根据以下前端代码分析结果，生成前端规格文档。
+
+## 项目信息
+- 项目名称：{{PROJECT_NAME}}
+- 前端框架：{{FRONTEND_FRAMEWORK}}（React / Vue 3 / Angular）
+- 状态管理：{{STATE_MANAGEMENT}}（Redux / Pinia / Vuex / NgRx）
+- 构建工具：{{BUILD_TOOL}}（Vite / Webpack / Next.js / Nuxt.js）
+
+## 路由配置源码
+{{ROUTER_SOURCE}}
+（来自 Read(src/router/index.ts) 或 pages/ 目录结构）
+
+## Store 文件源码
+{{STORE_SOURCE}}
+（来自 codegraph_search("defineStore") → Read store 文件）
+
+## API 服务文件源码
+{{API_SOURCE}}
+（来自 Read(src/api/*.ts)）
+
+## 请生成以下内容：
+
+### 1. spec/frontend/01-pages.md — 页面路由表
+
+| 路径 | 组件文件 | 布局 | 权限守卫 | 功能描述 |
+|-----|---------|------|---------|---------|
+| /login | views/Login.vue | 空布局 | 无 | 用户登录页 |
+| /system/user | views/system/user/index.vue | 管理布局 | 需登录 + system:user:list | 用户列表管理 |
+
+### 2. spec/frontend/03-state.md — Store 模块
+
+#### useUserStore（Pinia）
+- **State 字段**：
+  | 字段 | 类型 | 初始值 | 说明 |
+  |-----|------|-------|------|
+  | token | string | '' | 登录 Token |
+  | roles | string[] | [] | 用户角色列表 |
+- **Actions**：
+  - `login(loginForm)` → 调用登录接口，存储 token
+  - `logout()` → 清除 token 和用户信息
+
+### 3. spec/frontend/04-api-client.md — API 调用层
+
+| 函数名 | HTTP方法 | 端点 | 请求类型 | 响应类型 | 使用页面 |
+|--------|---------|------|---------|---------|---------|
+| getUserPage | GET | /system/user/page | UserPageReqVO | PageResult<UserRespVO> | 用户列表页 |
+| createUser | POST | /system/user/create | UserSaveReqVO | Long | 用户创建弹窗 |
+
+规则：
+- 路由表必须包含权限守卫信息（从 meta.auth / canActivate 提取）
+- Store actions 必须列出调用的 API 函数名
+- API 函数必须标注请求/响应类型（从 TypeScript 泛型提取）
+- 如存在 i18n，生成 spec/frontend/05-i18n.md（key + 中文值 + 使用组件）
 ```
