@@ -410,7 +410,7 @@ spec/frontend/
 | `references/codegraph-setup.md` | 安装/初始化/CLI 命令完整参考 |
 | `references/java-frameworks.md` | 识别到 Java 项目时必读（Spring 生态注解发现）|
 | `references/frontend-frameworks.md` | 识别到前端项目时必读（Vue/React/Angular via package.json）|
-| `references/multi-framework-patterns.md` | 识别到 Python/TS/Go 后端项目时必读；各前端框架详细提取规则 |
+| `references/multi-framework-patterns.md` | 识别到 Python/TS/Go 后端项目时必读 |
 | `references/llm-prompts.md` | 生成任何 Spec 文档前必读 |
 | `references/spec-templates.md` | 需要具体文档模板结构时读取 |
 | `scripts/install-codegraph.sh` | 批量安装脚本 |

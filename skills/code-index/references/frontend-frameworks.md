@@ -16,7 +16,7 @@ Step 2 — 对比依赖键映射表（见第二节）
   → 识别出核心框架 + 状态管理库 + 路由库 + HTTP 库 + UI 组件库 + 构建工具
 
 Step 3 — 执行对应提取策略
-  → 详细提取规则见 multi-framework-patterns.md 对应章节
+  → 详细提取规则见本文件第五节（React）、第六节（Vue.js）、第七节（Angular）
 
 Step 4 — package.json 缺失或依赖未命中 → 退回符号搜索（见第三节）
 ```
@@ -190,11 +190,213 @@ Step 2 — 命中依赖键：
   vite → Vite 构建
 
 Step 3 — 执行 Vue.js 提取策略：
-  → 详细规则见 multi-framework-patterns.md §Vue.js
+  → 详细规则见本文件第六节 §Vue.js
 
 Step 4 — 按第四节分层提取：
   codegraph_search("createRouter") → Read(src/router/index.ts) → 路由表
   codegraph_search("defineStore")  → Read(src/store/*.ts)      → State 模块
   codegraph_search("axios.create") → Read(src/utils/request.ts) → HTTP 实例
   codegraph_search("useUserStore") → callers → 权限相关页面列表
+```
+
+---
+
+## 第五节：React / Next.js 详细提取规则
+
+**检测信号：**
+
+```
+codegraph_search("React.FC", kind="function")      → React 函数组件
+codegraph_search("useState", kind="function")      → React Hooks 使用
+codegraph_search("useEffect", kind="function")     → 副作用 Hook
+codegraph_search("createSlice")                    → Redux Toolkit
+codegraph_search("create()", kind="function")      → Zustand store
+```
+
+**提取规则：**
+
+```
+# 路由表
+# React Router v6
+codegraph_search("createBrowserRouter" / "Route path=")
+Read(src/router/*.tsx) → path + element（组件）+ loader（权限守卫）
+
+# Next.js：直接扫描目录结构
+ls src/app/ 或 src/pages/ → 文件路径即路由（file-based routing）
+
+# 状态管理（Redux Toolkit）
+codegraph_search("createSlice") → slice 文件路径
+Read(src/store/*.ts) → name + initialState 字段 + reducers/actions 方法名
+
+# 状态管理（Zustand）
+codegraph_search("create(", kind="function") → store 文件
+Read(*.store.ts) → state 字段类型 + action 函数签名
+
+# API 调用层
+codegraph_search("axios.get" / "axios.post") → API 服务文件
+Read(src/api/*.ts) → 函数名 + 调用路径 + 请求类型 + 响应类型
+
+# React Query（TanStack Query）
+codegraph_search("useQuery" / "useMutation") → 查询 key + 调用的 API 函数
+
+# 权限
+codegraph_callers("useAuth" / "usePermission") → 找出使用权限 Hook 的组件
+```
+
+**Spec 输出字段：**
+
+```
+spec/frontend/01-pages.md：
+  路径 | 组件文件 | 布局 | 权限守卫 | 功能描述
+
+spec/frontend/03-state.md（Redux/Zustand）：
+  Store 名称 | State 字段（字段名/类型/初始值）| Actions 列表
+
+spec/frontend/04-api-client.md：
+  函数名 | HTTP 方法 | 端点路径 | 请求参数类型 | 响应类型 | 使用的页面
+```
+
+---
+
+## 第六节：Vue.js / Nuxt.js 详细提取规则
+
+**检测信号：**
+
+```
+codegraph_search("defineComponent", kind="function") → Vue 组件（Options API）
+codegraph_search("defineStore", kind="function")     → Pinia store
+codegraph_search("createRouter")                     → Vue Router 实例
+codegraph_search("createStore" / "defineStore")      → Vuex / Pinia
+```
+
+**提取规则：**
+
+```
+# 路由表（Vue Router）
+codegraph_search("createRouter") → 路由文件路径
+Read(src/router/index.ts) → routes 数组 → path + component + meta.requiresAuth
+
+# Nuxt.js：扫描 pages/ 目录结构（文件路由）
+
+# Pinia Store
+codegraph_search("defineStore") → 获取所有 store 文件路径
+Read(src/store/*.ts) → store id + state() 函数返回字段 + actions 方法签名
+
+# Vuex Store（旧项目）
+codegraph_search("createStore") → Vuex store 文件
+Read(src/store/index.ts) → modules → state 字段 + mutations + actions
+
+# API 调用
+codegraph_search("request(" / "http.get" / "useHttp") → API 封装文件
+Read(src/api/*.ts) → 函数名 + url 字符串 + method + 参数类型
+
+# 权限守卫
+codegraph_search("router.beforeEach") → 路由守卫逻辑
+Read(permission.ts / guard.ts) → 权限判断逻辑 → 补充到 pages.md
+
+# 组件 Props/Emits
+codegraph_search("defineProps" / "defineEmits") → 组件文件
+Read(*.vue) → 提取 props 类型定义 + emits 事件列表
+```
+
+**yudao-ui-admin-vue3 特有（Element Plus + Vue 3）：**
+
+```
+codegraph_search("usePermission" / "hasPermi") → 按钮级权限控制
+codegraph_search("ElTable" / "ElForm")          → 识别列表/表单组件
+Read(src/api/**.ts) → 提取所有 defHttp() / request() 调用 → API 客户端文档
+```
+
+---
+
+## 第七节：Angular 详细提取规则
+
+**检测信号：**
+
+```
+codegraph_search("@Component", kind="class")       → Angular 组件
+codegraph_search("@Injectable", kind="class")      → Angular 服务
+codegraph_search("@NgModule", kind="class")        → 模块定义
+codegraph_search("HttpClient", kind="class")       → HTTP 服务
+codegraph_search("RouterModule")                   → 路由模块
+```
+
+**提取规则：**
+
+```
+# 路由配置
+codegraph_search("RouterModule.forRoot" / "RouterModule.forChild")
+Read(app-routing.module.ts / *.routing.ts) → Routes 数组
+  → path + component + canActivate（守卫）+ loadChildren（懒加载）
+
+# 服务层（相当于 API Client + Store）
+codegraph_search("HttpClient") → 服务文件路径
+Read(*.service.ts) → this.http.get/post 调用 → 端点路径 + 返回类型 Observable<T>
+
+# NgRx 状态管理
+codegraph_search("createReducer" / "createEffect" / "createAction")
+Read(*.reducer.ts + *.effects.ts) → State 接口字段 + Action 类型 + Effect（副作用）
+
+# 组件 Input/Output
+codegraph_search("@Input" / "@Output", kind="class") → 组件文件
+Read(*.component.ts) → @Input() 字段类型 + @Output() EventEmitter<T>
+
+# 权限守卫
+codegraph_search("CanActivate", kind="class") → 守卫文件
+Read(auth.guard.ts) → 判断逻辑 → 补充到路由表权限列
+
+# 模块依赖图
+codegraph_search("@NgModule") → 所有模块文件
+Read(*.module.ts) → imports/declarations/providers → 模块树
+```
+
+---
+
+## 第八节：通用前端跨框架模式
+
+### 认证中间件模式识别
+
+```
+# Token 存储
+codegraph_search("localStorage.setItem" / "Cookies.set")
+
+# 请求拦截（Axios）
+codegraph_search("request.interceptors" / "axios.interceptors")
+
+# 路由守卫
+codegraph_search("router.beforeEach" / "canActivate")
+```
+
+### HTTP 动词识别（前端视角）
+
+```
+匹配 API 服务函数中的调用模式：
+  axios.get / http.get    → 查询/列表/详情
+  axios.post / http.post  → 创建/登录/提交
+  axios.put               → 全量更新
+  axios.patch             → 部分更新
+  axios.delete            → 删除
+
+路径规范识别：
+  /api/v1/{resource}           → RESTful 资源集合
+  /api/v1/{resource}/{id}      → 资源单项
+  /api/v1/{resource}/{action}  → 资源动作
+```
+
+### 字段类型注解提取（TypeScript 前端 DTO）
+
+```typescript
+// 从接口/类型定义提取字段信息：
+interface CreateUserReq {
+  username: string      // → 字段名/类型
+  password?: string     // → 可选字段（? 号）
+  roleIds: number[]     // → 数组类型
+}
+
+// Zod / Yup 运行时校验（可选）
+const schema = z.object({
+  username: z.string().min(4).max(30),
+  email: z.string().email(),
+})
+// → 提取校验规则写入字段校验矩阵
 ```
