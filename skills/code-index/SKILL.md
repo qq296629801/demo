@@ -174,8 +174,9 @@ codegraph_impact(symbol_id="<node_id>")   # 变更影响面分析
 
 ## 第三步：框架自动识别
 
-> Java 框架详细规则见 `references/java-frameworks.md`  
-> Python/TypeScript/Go/前端框架规则见 `references/multi-framework-patterns.md`
+> Java 后端框架详细规则见 `references/java-frameworks.md`  
+> 前端框架识别规则见 `references/frontend-frameworks.md`  
+> Python/TypeScript/Go 后端框架规则见 `references/multi-framework-patterns.md`
 
 **Java 项目（通用注解发现，无需枚举框架名）：**
 
@@ -214,9 +215,13 @@ codegraph_search("router.GET")       → Gin/Echo（Go）
 **前端框架检测序列：**
 
 ```
-# 优先读取 package.json 判断框架
-Read("package.json") → 检查 dependencies 中的 react/vue/@angular/core
+# 优先读取 package.json 判断框架（详细规则见 references/frontend-frameworks.md）
+Read("package.json") → 对比依赖键映射表
+  → vue → Vue 3/2；react + react-dom → React；@angular/core → Angular
+  → pinia/vuex → 状态管理；vue-router/react-router-dom → 路由
+  → axios → HTTP 层；element-plus/antd → UI 组件库
 
+# package.json 缺失时退回符号搜索
 codegraph_search("defineStore")         → Vue + Pinia
 codegraph_search("createSlice")         → React + Redux
 codegraph_search("@NgModule")           → Angular
@@ -403,8 +408,9 @@ spec/frontend/
 | 文件 | 何时读取 |
 |-----|---------|
 | `references/codegraph-setup.md` | 安装/初始化/CLI 命令完整参考 |
-| `references/java-frameworks.md` | 识别到 Java 项目时必读（含通用 Spring Boot） |
-| `references/multi-framework-patterns.md` | 识别到 Python/TS/Go/前端项目时必读 |
+| `references/java-frameworks.md` | 识别到 Java 项目时必读（Spring 生态注解发现）|
+| `references/frontend-frameworks.md` | 识别到前端项目时必读（Vue/React/Angular via package.json）|
+| `references/multi-framework-patterns.md` | 识别到 Python/TS/Go 后端项目时必读；各前端框架详细提取规则 |
 | `references/llm-prompts.md` | 生成任何 Spec 文档前必读 |
 | `references/spec-templates.md` | 需要具体文档模板结构时读取 |
 | `scripts/install-codegraph.sh` | 批量安装脚本 |
