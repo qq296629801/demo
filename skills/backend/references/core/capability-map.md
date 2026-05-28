@@ -15,7 +15,7 @@
 | 能力域 | 后端落点 | 主要参考 |
 |---|---|---|
 | 工程、应用、路由、部署 | Maven 模块、`app.json`、`apps/apps.json`、App 拆分、资源打包、环境配置 | `pom-structure.md`、`platform-standards.md` |
-| 模型、字段、校验、ER 关系 | Java `@Model` / `@Property` / `@Validate` / ORM 注解 | `model.md`、`model-property-advanced.md`、`platform-standards.md` |
+| 模型、字段、校验、ER 关系 | Java `@Model` / `@Property` / `@Validate` / ORM 注解 | `model.md`、`model-property-advanced.md`、`er.md`、`platform-standards.md` |
 | 标准模板、搜索、表格、表单、树视图 | `views/*.json`、菜单 `view`、视图 key、`tbar/buttons/tabs` | `view.md`、`view-advanced.md`、`template-hook-openview.md` |
 | 输入类组件、选择器、上传、富文本、日期、树、表格组件 | 字段类型、字典/选项、关联查询、组件属性、服务方法 | `component-field-mapping.md` |
 | 菜单、菜单复用、菜单过滤、页面类型 | `data/menus.json`、`filter`、`config`、权限码 | `menu.md`、`security-permission-i18n.md` |
@@ -54,6 +54,7 @@
 - 主表格：至少生成 `grid + search + form` 三类视图，菜单 `view` 用逗号连接。
 - 主表单 + 子表：Java 模型必须有 ER 字段，form 视图 `tabs.body.field` 与字段名一致。
 - ER API 指令集：OneToMany/ManyToMany 保存时支持 `(0/1/2/3/4/5/6, ...)` 指令，服务端要校验关系合法性。
+- 多对多中间表需要有效期、状态、排序、权限范围等业务字段时，读取 `er.md`，优先采用 OneToMany + ManyToOne 中间模型方案。
 - 种子数据：普通初始化数据用 `data/*.json`，附件配置用 `file/*.json` 并引用 `file/document/*`；关系引用用 `@ref/@eval`，文件引用用 `@fileId/@fileUrl/@filePath`。
 - 树表模板：树模型必须提供父子字段或可查询树结构，tree 视图配置 `subModel/subViewFilter`。
 - 上下表模板：主表和子表分别有 grid/search/form，子表查询条件由主表选中行拼接。

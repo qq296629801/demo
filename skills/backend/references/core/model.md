@@ -403,6 +403,8 @@ private String className;
 
 ## ER 关系注解
 
+普通 `ManyToMany` 适合无额外字段的直接多对多关系；如果中间关系需要有效期、状态、排序、权限范围等业务字段，先读取 [`er.md`](er.md)，使用 OneToMany + ManyToOne 中间模型方案，并同步调整 ER 子表视图与 `addEr/createEr` 按钮行为。
+
 ### OneToMany（一对多）
 
 ```java

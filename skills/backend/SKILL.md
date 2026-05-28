@@ -22,6 +22,7 @@ description: >-
 | `references/core/app-json.md` | app.json 完整字段说明（name/resolved/view/data/events 等）与两类示例 | Step 4 创建 app.json 时必须读 |
 | `references/core/model.md` | @Model/@Property/@Validate/@Selection/ER 关系注解详细参数 | Step 5 编写模型类 |
 | `references/core/model-property-advanced.md` | 模型层高级能力：模型类型、继承扩展、ER 指令集、属性高级参数、日期、视图模型 | Step 5 涉及模型/属性/日期/视图模型高级能力时必须读 |
+| `references/core/er.md` | ER 专题：使用 OneToMany + ManyToOne 替代带业务字段的 ManyToMany 中间表 | 涉及带业务字段的多对多关系、中间关系模型、OneToMany + ManyToOne 替代 ManyToMany、ER 子表视图或 addEr/createEr 差异时必须读 |
 | `references/core/method-service.md` | @MethodService 全场景：CRUD重写、业务方法、Excel、RPC、SQL、事务、Redis、DTO 服务分层 | Step 5 需要服务方法时 |
 | `references/core/api-filter-sql.md` | 接口层能力：JSON-RPC、Filter 波兰表达式、内置服务参数、服务编排、异步、原生 SQL | Step 5~6 涉及接口、Filter、SQL、编排、异步时必须读 |
 | `references/core/view.md` | 后端视图 JSON 完整结构、search/grid/form/tree 配置、tbar/buttons、子表、扩展视图 | Step 6 编写视图文件 |
