@@ -31,11 +31,11 @@ Step 4 — package.json 缺失或依赖未命中 → 退回符号搜索（见第
 
 | 依赖键 | 识别结论 | 详细提取规则 |
 |--------|---------|------------|
-| `vue` | Vue 3 / Vue 2 | multi-framework-patterns.md §Vue.js |
-| `react` + `react-dom` | React | multi-framework-patterns.md §React |
-| `@angular/core` | Angular | multi-framework-patterns.md §Angular |
-| `next` | Next.js（React SSR）| multi-framework-patterns.md §React |
-| `nuxt` | Nuxt.js（Vue SSR）| multi-framework-patterns.md §Vue.js |
+| `vue` | Vue 3 / Vue 2 | 本文件第六节 §Vue.js |
+| `react` + `react-dom` | React | 本文件第五节 §React |
+| `@angular/core` | Angular | 本文件第七节 §Angular |
+| `next` | Next.js（React SSR）| 本文件第五节 §React（Next.js 适用）|
+| `nuxt` | Nuxt.js（Vue SSR）| 本文件第六节 §Vue.js（Nuxt.js 适用）|
 | `svelte` | Svelte | 通用前端规则 |
 | `solid-js` | SolidJS | 通用前端规则 |
 

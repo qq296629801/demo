@@ -229,6 +229,16 @@ codegraph_search("@NgModule")           → Angular
 
 识别框架后，使用对应的 **框架提取规则** 理解代码分层，再进入第四步。
 
+**框架识别失败的兜底处理：**
+
+```
+# 当 package.json 不存在且符号搜索也无法命中任何已知框架时
+→ 在 spec/00-overview.md 中注明"技术栈未能自动识别"
+→ 列出扫描到的文件扩展名分布（.java / .py / .go / .ts / .vue 等）
+→ 列出顶层目录结构（ls -d */ 输出）
+→ 由人工根据目录结构和文件扩展名判断框架类型，再手动指定重新运行
+```
+
 ---
 
 ## 第四步：规格书生成流程
@@ -257,6 +267,14 @@ codegraph_search(query="", kind="class") → 全类名列表（判断规模）
 
 ```
 按包路径/子目录将 Controller 分组为业务模块
+
+模块识别规则（按语言）：
+  Java：取 Controller 类完整包名的第三层
+        com.company.project.{module}.controller → 模块名为 {module}
+  前端：src/views/{module}/ 或 src/pages/{module}/ 的一级目录名
+  Python：apps/{module}/ 目录名 或 routers/{module}.py 文件名前缀
+  Go：handler/{module}/ 或 controller/{module}/ 目录名
+
 模块数 > 5 → 采用模块化输出目录（见下方）
 模块数 ≤ 5 → 输出到顶层 spec/ 目录
 ```

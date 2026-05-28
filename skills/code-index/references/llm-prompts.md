@@ -28,6 +28,8 @@
 
 ## Prompt 1 — 项目概览 + HLA 高阶架构
 
+> 执行顺序：第 1 步 | 依赖：无（需先完成 Phase A/B 数据采集）| 输出：`spec/01-hla.md`
+
 ```
 你是一名资深系统架构师，请根据以下代码分析结果生成项目高阶架构文档（HLA）。
 
@@ -69,6 +71,8 @@
 ---
 
 ## Prompt 2 — SRS 软件需求规格
+
+> 执行顺序：第 2 步 | 依赖：Prompt 1（模块边界 + 系统定位）| 输出：`spec/02-srs.md` 或 `spec/modules/{module}/02-srs.md`
 
 ```
 你是一名需求工程师，请根据以下代码分析结果，逆向生成软件需求规格说明书（SRS）。
@@ -131,6 +135,8 @@
 
 ## Prompt 3 — PRD 产品需求文档
 
+> 执行顺序：第 3 步 | 依赖：Prompt 2（功能需求列表）| 输出：`spec/03-prd.md`（大型项目顶层生成，不按模块分拆）
+
 ```
 你是一名产品经理，请将以下技术代码分析结果转化为面向产品和业务的 PRD 文档。
 
@@ -175,6 +181,8 @@
 
 ## Prompt 4 — 用户故事
 
+> 执行顺序：第 4 步 | 依赖：Prompt 2、3（需求边界）| 输出：`spec/04-user-stories.md`
+
 ```
 请根据以下 API 接口列表和操作日志注解，生成标准格式的用户故事（User Stories）。
 
@@ -212,6 +220,8 @@
 ---
 
 ## Prompt 5 — API 文档（RESTful）
+
+> 执行顺序：第 5 步 | 依赖：Prompt 2（字段约束来源）| 输出：`spec/05-api.md` 或 `spec/modules/{module}/05-api.md`
 
 ```
 你是一名 API 文档工程师，请根据以下代码分析结果生成 RESTful API 规格文档。
@@ -295,6 +305,8 @@
 
 ## Prompt 6 — 流程图生成
 
+> 执行顺序：第 6 步 | 依赖：Prompt 2（业务流程）、Prompt 5（API 入口）、codegraph_trace 输出 | 输出：`spec/06-flowcharts/` 目录
+
 ```
 请根据以下调用链分析结果，生成业务流程的 Mermaid 流程图。
 
@@ -344,6 +356,8 @@ sequenceDiagram
 ---
 
 ## Prompt 7 — 数据库结构文档
+
+> 执行顺序：第 7 步 | 依赖：无（独立于 API 文档，直接读取 Entity 源码）| 输出：`spec/07-database.md` 或 `spec/modules/{module}/07-database.md`
 
 ```
 请根据以下 Entity/DO 类完整源码，生成数据库结构文档。
@@ -403,6 +417,8 @@ erDiagram
 
 ## Prompt 8 — UI/UX 静态页面
 
+> 执行顺序：第 8 步 | 依赖：Prompt 5（API 字段 → 表单/列表字段）| 输出：`spec/09-ui/{module}-list.html` + `spec/09-ui/{module}-form.html`
+
 ```
 请根据以下业务模块信息，生成标准 CRUD 管理页面的静态 HTML 原型。
 
@@ -440,6 +456,8 @@ erDiagram
 
 ## Prompt 9 — 现有框架识别总结
 
+> 执行顺序：第 0 步（初始化阶段）| 依赖：无（Phase A 数据采集后立即执行）| 输出：框架识别结论，供所有后续 Prompt 的 `{{FRAMEWORK}}` 变量使用
+
 ```
 请分析以下 codegraph 输出，识别该项目使用的框架并给出摘要报告。
 
@@ -464,6 +482,8 @@ erDiagram
 ---
 
 ## Prompt 10 — 错误码文档
+
+> 执行顺序：第 9 步 | 依赖：无（直接读取 ErrorCodeConstants 源码）| 输出：`spec/08-error-codes.md` 或 `spec/modules/{module}/08-error-codes.md`
 
 ```
 请根据以下错误码常量文件源码，生成模块错误码文档。
@@ -492,6 +512,8 @@ erDiagram
 ---
 
 ## Prompt 11 — 服务依赖图
+
+> 执行顺序：第 10 步 | 依赖：Prompt 1（已识别模块列表）| 输出：追加至 `spec/01-hla.md` 服务依赖图章节
 
 ```
 请根据以下 Service Impl 源码，生成服务依赖关系图。
@@ -531,6 +553,8 @@ graph LR
 ---
 
 ## Prompt 12 — 前端规格书
+
+> 执行顺序：第 11 步（仅前端项目）| 依赖：frontend-frameworks.md 识别结论 | 输出：`spec/frontend/` 目录
 
 ```
 你是一名前端架构师，请根据以下前端代码分析结果，生成前端规格文档。
