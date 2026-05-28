@@ -1,0 +1,31 @@
+flowchart TD
+    A([会员]) --> B[浏览商品列表]
+    B --> C[加入购物车]
+    C --> D[提交订单]
+    D --> E{库存校验}
+    E -->|库存不足| ERR1[返回库存不足]
+    E -->|库存充足| F[锁定库存]
+    F --> G[计算优惠\n优惠券/积分/满减]
+    G --> H[创建 trade_order\nstatus=0 待付款]
+    H --> I[创建 pay_order\nstatus=0 等待支付]
+    I --> J{选择支付渠道}
+    J -->|微信支付| K[调用微信支付 API\n获取预支付 prepayId]
+    J -->|支付宝| L[调用支付宝 API\n获取支付链接]
+    K --> M[前端拉起支付]
+    L --> M
+    M --> N{支付结果}
+    N -->|超时未付款| O[关闭订单\n释放库存]
+    N -->|支付成功| P[微信/支付宝回调\nPOST /pay/notify/{channelCode}]
+    P --> Q[更新 pay_order status=10]
+    Q --> R[发送 MQ 消息\nPayOrderSuccessEvent]
+    R --> S[更新 trade_order status=10\n扣减实际库存]
+    S --> T[发送订单通知短信]
+    T --> U[商家发货\n填写快递单号]
+    U --> V[更新 status=20 待收货]
+    V --> W{收货方式}
+    W -->|自动确认| X[超时自动确认\n定时任务触发]
+    W -->|手动确认| Y[会员点击确认收货]
+    X --> Z[更新 status=30 已完成]
+    Y --> Z
+    Z --> AA[增加积分/成长值]
+    AA --> AB([订单完成])

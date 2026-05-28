@@ -1,0 +1,23 @@
+flowchart TD
+    A([员工]) --> B[填写请假申请\n类型/时间/原因]
+    B --> C[POST /bpm/oa/leave/create]
+    C --> D[创建 bpm_oa_leave\nresult=0 审批中]
+    D --> E[Flowable 发起流程实例\nbpm_process_instance]
+    E --> F[生成待办任务\n分配给部门经理]
+    F --> G([部门经理])
+    G --> H{审批决定}
+    H -->|通过| I[POST /bpm/task/approve]
+    H -->|驳回| J[POST /bpm/task/reject]
+    H -->|转办| K[委托给其他审批人]
+    I --> L{流程是否结束?}
+    L -->|否 需下一级审批| M[生成下一级待办\n分配给 HR / 总经理]
+    M --> G
+    L -->|是 流程结束| N[更新 bpm_oa_leave.result=1\n审批通过]
+    N --> O[发送通知给申请人]
+    J --> P[更新 bpm_oa_leave.result=2\n审批拒绝]
+    P --> O
+    O --> Z([流程结束])
+
+    A2([员工]) --> Q[撤销申请\nPOST /bpm/process-instance/cancel]
+    Q --> R[更新 result=3 已撤销]
+    R --> Z
