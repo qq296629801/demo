@@ -28,6 +28,24 @@ description: |
 
 ---
 
+## 断点恢复
+
+每次 Skill 被调用时，**首先**检查是否存在未完成的任务：
+
+```
+# 检查断点
+如果 spec/.progress.md 存在：
+  Read("spec/.progress.md")
+  → 找第一个 [ ] 条目，从该步骤继续执行
+  → 跳过所有 [x] 已完成条目，不重做
+  → 无需重新执行 Phase A/B
+
+如果 spec/.progress.md 不存在：
+  → 从 Phase A 重新开始
+```
+
+---
+
 ## 总体流程
 
 ```
@@ -131,6 +149,28 @@ codegraph query "UserController" --kind class --json
 ```
 
 **输出字段**：`id`, `name`, `kind`, `file`, `line`, `signature`, `docstring`
+
+**大型项目分页策略（重要）：**
+
+```
+# 问题：单次查询有 limit 上限，大型项目（800+ 类）会截断
+# 解决：用命名模式分批精确查询，代替空字符串全量查询
+
+# 正确做法：分批查询 + 截断检测
+codegraph_search("Controller", kind="class", limit=200)
+codegraph_search("ServiceImpl", kind="class", limit=200)
+codegraph_search("Mapper",      kind="class", limit=200)
+codegraph_search("DO",          kind="class", limit=200)   # MyBatis-Plus 实体
+codegraph_search("Entity",      kind="class", limit=200)   # JPA 实体
+codegraph_search("ErrorCode",   kind="class", limit=200)
+
+# 截断检测：如果 len(results) == limit（返回数 = 上限值）
+#   → 说明可能被截断，需换更精确的 query 重查
+#   → 例：query="system" + kind="class" 缩小到单个包
+
+# 完整性校验：各批结果数之和 ≈ codegraph status 的 class 总数（允许 ±20% 误差）
+# 如差距 > 20%，补充查询直到覆盖全部
+```
 
 ---
 
@@ -259,8 +299,20 @@ codegraph_search("@NgModule")           → Angular
 **Phase A：项目概况**
 
 ```
-codegraph status → 文件数/节点数/语言分布
-codegraph_search(query="", kind="class") → 全类名列表（判断规模）
+codegraph status → 记录总量基线（后续用于完整性校验）：
+  文件总数 F、节点总数 N、class 节点数 C（关键：作为后续查询完整性的参照基线）
+  语言分布（判断是 Java/Python/Go/TS/前端）
+
+# 用命名模式分批查询（禁止空字符串全量查询，会截断）
+codegraph_search("Controller", kind="class", limit=200) → 控制器列表
+codegraph_search("ServiceImpl", kind="class", limit=200) → 服务列表
+codegraph_search("DO",          kind="class", limit=200) → 实体列表（MyBatis-Plus）
+codegraph_search("Entity",      kind="class", limit=200) → 实体列表（JPA）
+# 如 len(results) == 200 → 截断，改用更精确 query 分包查询
+
+各批结果数之和是否接近 class 总数 C：
+  差距 ≤ 20% → 继续
+  差距 > 20% → 补充查询（按包名前缀细分）
 ```
 
 **Phase B：模块划分**
@@ -277,6 +329,11 @@ codegraph_search(query="", kind="class") → 全类名列表（判断规模）
 
 模块数 > 5 → 采用模块化输出目录（见下方）
 模块数 ≤ 5 → 输出到顶层 spec/ 目录
+
+# Phase B 完成后立即写入进度文件（断点恢复的基础）
+Write("spec/.progress.md") → 写入完整任务清单（见 spec-templates.md §.progress.md 模板）
+  - Phase A/B 标记为 [x]，所有 Phase C/D 条目标记为 [ ]
+  - 列出所有预期生成的 Spec 文件路径
 ```
 
 **Phase C：逐模块深挖（对每个模块执行以下步骤）**
@@ -330,10 +387,36 @@ C5. codegraph_trace(from="LoginPage.submit", to="useUserStore.setToken")
     → 登录流程调用链 → 前端流程图
 ```
 
+**Phase C'：完整性核对（Phase C 结束后，Phase D 开始前）**
+
+```
+for each 模块 in 模块列表：
+  ✓ Controller 文件已 Read（已提取 ≥ 1 个 endpoint）
+  ✓ Entity/DO 文件已 Read（已提取 ≥ 1 个 @TableName 或 @Entity）
+  ✓ ErrorCodeConstants 已 Read（或确认本模块无错误码文件）
+  ✓ codegraph_callers 已对 ≥ 1 个核心 Service 方法执行
+  ✓ codegraph_trace   已对 ≥ 1 个核心流程执行
+
+如果某模块未通过：
+  → 补充执行缺失步骤 → 重新检查 → 通过后才继续
+  → 更新 spec/.progress.md 的完整性校验表格
+
+全部模块通过 → 进入 Phase D
+```
+
 **Phase D：生成规格书**
 
 ```
-每个模块独立生成（SRS/API/Database/Flowcharts），然后汇总到 spec/
+每个模块独立生成，按顺序：SRS → API → Database → 错误码 → 流程图
+最后汇总：HLA → PRD → 用户故事 → 全局概览
+
+# 关键：每生成一个文件后，立即更新 spec/.progress.md 对应条目为 [x]
+# 如果 context 在生成过程中溢出，该文件仍标记为 [ ]（未完成），恢复后重做
+# 宁可重做一个文件，不要留下内容不完整的半成品
+
+# 所有文件生成完成后：
+# 在 spec/00-overview.md 末尾追加一行：
+# > 生成完成：{时间戳}，覆盖 {N} 个模块，{M} 张数据表，{P} 个 API 接口
 ```
 
 ### 4.3 语义归类

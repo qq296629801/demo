@@ -2,6 +2,9 @@
 
 ## 文档体系说明
 
+> **注意**：`spec/` 目录下始终包含 `.progress.md` 进度文件（见本文件最后一节）。
+> 它是断点恢复和完成状态的唯一依据。
+
 ### 小型项目（模块 ≤ 5）— 平铺结构
 
 ```
@@ -468,3 +471,78 @@ CREATE TABLE `{{table_name}}` (
 | `getInfo()` | - | 获取当前用户信息和权限列表 |
 | `logout()` | - | 清除 token，跳转登录页 |
 ```
+
+---
+
+## .progress.md 模板（进度跟踪 + 断点恢复）
+
+> 路径：`spec/.progress.md`
+> 写入时机：Phase B 完成后立即写入。每完成一个步骤后更新对应 `[ ]` 为 `[x]`。
+> 用途：① 记录任务进度；② 上下文溢出后的断点恢复依据；③ 完成状态标志（全 `[x]` = 完成）。
+
+```markdown
+# .progress.md — 生成进度跟踪
+
+最后更新：{{TIMESTAMP}}
+项目：{{PROJECT_NAME}}
+框架：{{FRAMEWORK}}
+模块总数：{{MODULE_COUNT}}
+codegraph class 总数（基线）：{{CLASS_COUNT_BASELINE}}
+
+---
+
+## 数据采集阶段
+
+- [x] Phase A：项目概况（class 总数 {{CLASS_COUNT_BASELINE}}，文件数 {{FILE_COUNT}}）
+- [x] Phase B：模块划分（发现 {{MODULE_COUNT}} 个模块：{{MODULE_LIST}}）
+- [ ] Phase C：{{MODULE_1}} — C1(源码提取) C2(callers) C3(trace)
+- [ ] Phase C：{{MODULE_2}} — C1(源码提取) C2(callers) C3(trace)
+（每个模块一行，Phase B 完成后按实际模块列表生成）
+
+## 完整性校验（Phase C' 填写）
+
+| 模块 | Controllers | Entities | Callers执行 | Trace执行 | 通过 |
+|------|------------|---------|------------|----------|------|
+| {{MODULE_1}} | ✗ | ✗ | ✗ | ✗ | ✗ |
+| {{MODULE_2}} | ✗ | ✗ | ✗ | ✗ | ✗ |
+（Phase C 每个模块完成后填写实际数量，Phase C' 核对后改为 ✓）
+
+---
+
+## Spec 文件生成阶段
+
+### 全局文件
+- [ ] spec/01-hla.md
+- [ ] spec/03-prd.md
+- [ ] spec/04-user-stories.md
+- [ ] spec/00-overview.md（最后生成）
+
+### 模块文件（大型项目，小型项目调整为顶层路径）
+- [ ] spec/modules/{{MODULE_1}}/02-srs.md
+- [ ] spec/modules/{{MODULE_1}}/05-api.md
+- [ ] spec/modules/{{MODULE_1}}/07-database.md
+- [ ] spec/modules/{{MODULE_1}}/08-error-codes.md
+- [ ] spec/modules/{{MODULE_1}}/06-flowcharts/（至少 1 个 .mmd）
+- [ ] spec/modules/{{MODULE_2}}/02-srs.md
+（按模块重复，Phase B 后根据实际模块列表展开）
+
+---
+
+## 完成标志
+
+所有 Spec 文件条目全部变为 [x] → 生成完成
+完成后在 spec/00-overview.md 末尾追加：
+> 生成完成：{时间戳}，覆盖 {N} 个模块，{M} 张数据表，{P} 个 API 接口
+```
+
+---
+
+### .progress.md 使用规则速查
+
+| 事件 | 操作 |
+|------|------|
+| Phase B 完成 | `Write("spec/.progress.md")` 写入完整清单，Phase A/B 标 `[x]`，其余标 `[ ]` |
+| 每个 Phase C 模块完成 | 更新对应 `[ ]` 为 `[x]`，填写完整性校验表格 |
+| 每个 Spec 文件生成完成 | 立即更新对应 `[ ]` 为 `[x]`（生成途中溢出则保留 `[ ]`，恢复后重做） |
+| Skill 被重新调用 | `Read("spec/.progress.md")` → 找第一个 `[ ]` → 从那里继续 |
+| 所有条目变为 `[x]` | 任务完成，写入 00-overview.md 完成时间戳 |
