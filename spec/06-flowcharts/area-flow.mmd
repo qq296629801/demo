@@ -1,0 +1,45 @@
+flowchart TD
+    A([开始]) --> B[前端发起区域操作请求]
+    B --> C{操作类型}
+
+    C -->|查询| D[POST /example_area/search]
+    C -->|新增| E[POST /example_area/create]
+    C -->|启用/禁用| F[POST /example_area/enableDisable]
+    C -->|Excel 导入| G[POST /example_area/excelImport]
+    C -->|Excel 导出| H[POST /example_area/excelExport]
+
+    D --> D1[SNEST Engine 执行 SQL 查询]
+    D1 --> D2[返回 ExampleArea 列表]
+
+    E --> E1{字段校验}
+    E1 -->|areaCode 为空| ERR1[抛出 ValidationException]
+    E1 -->|areaName 为空| ERR1
+    E1 -->|areaType 为空| ERR1
+    E1 -->|校验通过| E2[写入 example_area 表]
+    E2 --> E3[返回新建记录]
+
+    F --> F1[查询 IDs 对应记录]
+    F1 --> F2[批量更新 is_enable 字段]
+    F2 --> F3[返回 true]
+
+    G --> G1[解析 Excel Sheet1]
+    G1 --> G2{数据校验}
+    G2 -->|编码为空或超 6 位| GERR[标记错误行]
+    G2 -->|名称为空| GERR
+    G2 -->|全部通过| G3[调用 example_unit.create 批量写入]
+    G3 --> G4[返回导入结果]
+
+    H --> H1[查询符合条件的区域数据]
+    H1 --> H2{有数据?}
+    H2 -->|否| HERR[抛出 Exception: 没有符合数据]
+    H2 -->|是| H3[生成 ExportInfo 对象]
+    H3 --> H4[返回文件流给 EasyExcel]
+
+    D2 --> Z([结束])
+    E3 --> Z
+    F3 --> Z
+    G4 --> Z
+    H4 --> Z
+    ERR1 --> Z
+    GERR --> Z
+    HERR --> Z

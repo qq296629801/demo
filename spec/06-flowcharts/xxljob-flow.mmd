@@ -1,0 +1,5 @@
+flowchart LR
+    A([XXL-JOB Admin]) -->|触发定时任务| B[XXL-JOB Executor\nsie-iidp-demo-xxljob-executor]
+    B -->|注册执行器| A
+    C([HTTP 客户端]) -->|GET /sayHello| B
+    B -->|返回: hello, xxljob| C
