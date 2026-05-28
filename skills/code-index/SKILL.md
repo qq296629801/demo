@@ -177,27 +177,38 @@ codegraph_impact(symbol_id="<node_id>")   # 变更影响面分析
 > Java 框架详细规则见 `references/java-frameworks.md`  
 > Python/TypeScript/Go/前端框架规则见 `references/multi-framework-patterns.md`
 
-**后端框架检测序列：**
+**Java 项目（通用注解发现，无需枚举框架名）：**
 
 ```
-# Java 快速开发框架
-codegraph_search("JeecgBootApplication")→ 判断 JEECG Boot
-codegraph_search("YudaoApplication")    → 判断 yudao-cloud
-codegraph_search("MakuApplication")     → 判断 maku-boot
-codegraph_search("BaseController")      → 判断 RuoYi 系
+# 第一步：定位代表性源文件
+codegraph_search("@RestController")  → Controller 文件路径
+codegraph_search("@TableName")       → Entity 文件路径
+codegraph_search("@Service")         → Service 文件路径
 
-# 通用 Spring Boot（无特定框架基类）
-codegraph_search("@RestController")     → Spring MVC 入口
-codegraph_search("JpaRepository")       → Spring Data JPA
-codegraph_search("@TableName")          → MyBatis-Plus Entity
+# 第二步：Read 这些文件，收集 import 包前缀
+Read(Controller/Entity/Service 文件) → 提取所有 import 行
+→ 排除 java.*、sun.*，保留第三方包前缀
 
-# Python
-codegraph_search("models.Model")        → Django ORM
-codegraph_search("APIRouter")           → FastAPI
+# 第三步：对比 java-frameworks.md 包前缀映射表
+→ com.baomidou.mybatisplus → MyBatis-Plus
+→ io.swagger.v3.oas.annotations → SpringDoc
+→ cn.dev33.satoken → Sa-Token
+→ org.springframework.cloud.openfeign → OpenFeign/微服务
+→ 未命中包前缀 → 按注解名称模式语义推断
+```
 
-# TypeScript / Go
-codegraph_search("@Controller")         → NestJS
-codegraph_search("router.GET")          → Gin/Echo（Go）
+**Python 后端：**
+
+```
+codegraph_search("models.Model")     → Django ORM
+codegraph_search("APIRouter")        → FastAPI
+```
+
+**TypeScript / Go 后端：**
+
+```
+codegraph_search("@Controller")      → NestJS
+codegraph_search("router.GET")       → Gin/Echo（Go）
 ```
 
 **前端框架检测序列：**

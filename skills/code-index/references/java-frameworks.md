@@ -1,342 +1,237 @@
-# Java 快速开发框架识别与提取规则
+# Java 项目注解发现与提取规则
 
-## 框架识别矩阵
-
-运行以下 codegraph_search 序列，根据命中情况判断框架：
-
-| 搜索词 | 命中 → 判断 |
-|-------|-----------|
-| `JeecgBootApplication` | JEECG Boot |
-| `YudaoApplication` 或 `yudao` | yudao-cloud |
-| `MakuApplication` 或 `maku` | maku-boot |
-| `BaseController` + `BaseServiceImpl` | RuoYi 系 |
-| `com.ruoyi` 包路径 | RuoYi（原版或魔改） |
-| `IService<T>` + `ServiceImpl<M,T>` | MyBatis-Plus（所有框架） |
-| `BaseMapper<T>` | MyBatis-Plus Mapper |
-| `@AutoLog` | JEECG Boot 特有注解 |
-| `@SaCheckPermission` | Sa-Token（maku-boot / yudao） |
-| `SecurityUtils.getUserId()` | Spring Security（RuoYi / JEECG） |
+不依赖预先枚举框架名称。通过分析项目实际使用的 import 包前缀，自动识别框架组合，
+再通过语义推断处理未知注解。适用于任何 Spring 生态项目（包括自研框架）。
 
 ---
 
-## RuoYi 系框架（ruoyi / ruoyi-vue / ruoyi-cloud）
-
-### 代码分层特征
+## 第一节：通用注解发现流程
 
 ```
-com.ruoyi
-├── common/         工具类、注解、常量
-│   ├── annotation  @Log、@RepeatSubmit、@DataScope
-│   ├── core        BaseController、BaseEntity
-│   └── utils       SecurityUtils、StringUtils
-├── framework/      Spring Security 配置、JWT
-├── system/         系统管理模块（用户、角色、菜单、部门）
-│   ├── controller  SysUserController、SysRoleController
-│   ├── service     ISysUserService + SysUserServiceImpl
-│   ├── mapper      SysUserMapper + SysUserMapper.xml
-│   └── domain      SysUser、SysRole、SysMenu
-└── {module}/       业务模块（同结构）
-```
+Step 1 — 提取项目使用的第三方注解包前缀
+  对代表性源文件执行 Read，收集 import 列表
+  重点文件：Controller 类、Service 类、Entity/DO 类、VO/DTO 类
+  排除标准库：java.*、javax.* (非 validation)、sun.*
 
-### codegraph 提取规则
+  或使用 codegraph_search 批量定位：
+  codegraph_search("@RestController")  → 找到 Controller 文件路径
+  codegraph_search("@TableName")       → 找到 Entity 文件路径
+  codegraph_search("@Service")         → 找到 Service 文件路径
+  → Read 这些文件，提取 import 行
 
-```
-1. 搜索所有继承 BaseController 的类 → API Controller 列表
-2. 搜索 @Log(title=...) → 操作日志覆盖的功能点
-3. 搜索 @DataScope → 数据权限控制点
-4. codegraph_trace SysUserController.list() → 用户列表完整链路
-5. 搜索 extends BaseEntity 的类 → 业务数据模型
-6. 搜索 *Mapper.xml 文件 → SQL 查询逻辑
-```
+Step 2 — 对比包前缀映射表（见第二节）
+  → 识别出项目实际使用的框架/库组合
+  → 例：发现 com.baomidou.mybatisplus → 使用 MyBatis-Plus → @TableName=表名
 
-### 典型 Spec 映射
+Step 3 — 对每个命中的框架执行对应提取策略
+  → 按第二节的"Spec 意义"列，决定每种注解写入哪个文档
 
-| 代码元素 | Spec 文档位置 |
-|---------|-------------|
-| `@Log(title="用户管理")` | PRD 功能模块名称 |
-| `@PreAuthorize("@ss.hasPermi('...')")` | API 文档权限说明 |
-| `BaseEntity`（createBy/updateBy/createTime）| 数据库公共字段 |
-| `SysMenu` 菜单树 | 用户故事导航结构 |
-
----
-
-## JEECG Boot（jeecg-boot / JeecgBoot）
-
-### 代码分层特征
-
-```
-org.jeecg
-├── common/
-│   ├── api         Result<T> 统一返回
-│   ├── aspect      @AutoLog 切面
-│   └── system      LoginUser、JwtUtil
-├── modules/
-│   └── {module}/
-│       ├── controller  {Entity}Controller extends JeecgController
-│       ├── service     I{Entity}Service + {Entity}ServiceImpl
-│       ├── mapper      {Entity}Mapper
-│       └── entity      {Entity}.java（@TableName、@ApiModel）
-```
-
-### JEECG 特有注解
-
-```java
-@Api(tags = "模块名称")              // Swagger 标签 → PRD 模块
-@AutoLog(value = "操作描述")         // 操作日志 → 用户故事
-@ApiOperation("接口描述")            // API 文档
-@ApiImplicitParam(name, value, required)  // API 参数
-@TableName("表名")                   // 数据库表名
-@TableField(exist = false)           // 非数据库字段
-@Dict(dicCode = "字典编码")          // 数据字典 → 枚举/下拉
-@JeecgBootApplication                // 应用入口
-```
-
-### codegraph 提取规则
-
-```
-1. 搜索 @Api(tags) 注解 → 提取所有模块名称（直接映射到 PRD 章节）
-2. 搜索继承 JeecgController 的类 → 完整 API Controller 列表
-3. 搜索 @AutoLog → 所有用户可感知的操作（用户故事素材）
-4. 搜索 @ApiOperation → 提取 API 描述（直接写入 API 文档）
-5. 搜索 @TableName → 所有数据库表（数据库结构文档）
-6. codegraph_trace JeecgController.add() → 新增接口完整链路
-7. 搜索 queryWrapper → 了解查询条件（SRS 筛选需求）
-```
-
-### JEECG 特有：Online 报表 / 低代码
-
-```
-搜索 OnlineTable / JimuReport → 说明存在低代码配置，
-在规格书中注明"此功能由低代码配置生成，无业务代码"
+Step 4 — 未命中注解：按第三节规则推断语义
+  → 通过注解名称模式自动归类到对应 Spec 文档
 ```
 
 ---
 
-## yudao-cloud（芋道源码）
+## 第二节：包前缀 → 框架映射表
 
-### 代码分层特征（微服务架构）
+### Web 层
+
+| 包前缀 | 框架/库 | 关键注解 → Spec 意义 |
+|--------|--------|---------------------|
+| `org.springframework.web` | Spring MVC | `@RestController`=API入口、`@RequestMapping/@GetMapping/@PostMapping`=API路由 |
+| `org.springframework.web.bind.annotation` | Spring MVC | `@RequestBody/@RequestParam/@PathVariable`=API参数定义 |
+
+### 安全与权限层
+
+| 包前缀 | 框架/库 | 关键注解 → Spec 意义 |
+|--------|--------|---------------------|
+| `org.springframework.security` | Spring Security | `@PreAuthorize/@PostAuthorize`=权限码（写入 API 权限说明）|
+| `cn.dev33.satoken` | Sa-Token | `@SaCheckPermission`=权限码、`@SaCheckLogin`=需登录、`@SaCheckRole`=角色 |
+| `org.apache.shiro` | Shiro | `@RequiresPermissions`=权限码、`@RequiresRoles`=角色、`@RequiresAuthentication`=需登录 |
+
+### API 文档层
+
+| 包前缀 | 框架/库 | 关键注解 → Spec 意义 |
+|--------|--------|---------------------|
+| `io.swagger.v3.oas.annotations` | SpringDoc（OpenAPI 3） | `@Tag(name)`=模块分组、`@Operation(summary)`=接口描述、`@Schema(description)`=DTO字段说明 |
+| `io.swagger.annotations` | Swagger 2（springfox）| `@Api(tags)`=模块分组、`@ApiOperation`=接口描述、`@ApiModelProperty`=DTO字段说明 |
+
+### 数据访问层
+
+| 包前缀 | 框架/库 | 关键注解 → Spec 意义 |
+|--------|--------|---------------------|
+| `com.baomidou.mybatisplus` | MyBatis-Plus | `@TableName`=数据库表名、`@TableField`=字段映射、`@TableId`=主键 |
+| `jakarta.persistence` / `javax.persistence` | JPA / Hibernate | `@Entity`=数据库表、`@Table(name)`=表名、`@Column`=字段约束（长度/唯一/非空）、`@Index`=索引 |
+| `org.springframework.data` | Spring Data | `extends JpaRepository/CrudRepository`=仓储层 |
+| `org.apache.ibatis` | MyBatis | `@Select/@Insert/@Update/@Delete`=SQL语句（从中提取表操作语义）|
+
+### 校验层
+
+| 包前缀 | 框架/库 | 关键注解 → Spec 意义 |
+|--------|--------|---------------------|
+| `jakarta.validation` | Bean Validation 3（Spring Boot 3.x）| `@NotBlank/@NotNull`=必填、`@Size`=长度约束、`@Pattern(regexp)`=正则校验、`@Email`=邮箱格式、`@Min/@Max`=数值范围 → **全部写入 API 字段校验矩阵** |
+| `javax.validation` | Bean Validation 2（Spring Boot 2.x）| 同上 |
+| `org.hibernate.validator` | Hibernate Validator 扩展 | `@Length`=字符串长度、`@Range`=数值范围、`@URL`=URL格式 → API 字段校验矩阵 |
+
+### 事务与缓存层
+
+| 包前缀 | 框架/库 | 关键注解 → Spec 意义 |
+|--------|--------|---------------------|
+| `org.springframework.transaction` | Spring TX | `@Transactional`=事务边界（写入 SRS 事务说明）|
+| `org.springframework.cache` | Spring Cache | `@Cacheable`=缓存查询接口（写入 HLA 缓存策略）、`@CacheEvict`=缓存失效触发点 |
+
+### 异步与调度层
+
+| 包前缀 | 框架/库 | 关键注解 → Spec 意义 |
+|--------|--------|---------------------|
+| `org.springframework.scheduling` | Spring Scheduling | `@Scheduled`=**定时触发**（写入 SRS 触发方式、HLA 异步流程）|
+| `org.springframework.context.event` | Spring Events | `@EventListener`=**领域事件触发**（写入 SRS 触发方式）|
+| `org.springframework.amqp` | RabbitMQ | `@RabbitListener`=**MQ 消费触发**（写入 SRS 触发方式、HLA 消息流）|
+| `org.springframework.kafka` | Kafka | `@KafkaListener`=**MQ 消费触发**（写入 SRS 触发方式）|
+
+### 微服务层
+
+| 包前缀 | 框架/库 | 关键注解 → Spec 意义 |
+|--------|--------|---------------------|
+| `org.springframework.cloud.openfeign` | OpenFeign | `@FeignClient(name)`=微服务调用（写入 HLA 服务依赖图）|
+| `com.alibaba.dubbo` / `org.apache.dubbo` | Dubbo | `@DubboService`=RPC服务提供方、`@DubboReference`=RPC调用方（写入 HLA RPC 调用图）|
+| `org.springframework.cloud.gateway` | Spring Cloud Gateway | 路由配置 → HLA 网关架构 |
+
+### 无 Spec 意义（忽略）
+
+| 包前缀 | 框架/库 | 处理方式 |
+|--------|--------|---------|
+| `lombok` | Lombok | `@Data/@Builder/@Slf4j` 均无业务语义，**不写入任何 Spec** |
+| `org.mapstruct` | MapStruct | `@Mapper/@Mapping` 为对象转换，**不写入 Spec**（可在 HLA 分层中注明转换层存在）|
+| `org.projectreactor` / `reactor.core` | Reactor | 响应式编程标记，注明"异步响应式"即可 |
+
+---
+
+## 第三节：未命中注解的语义推断规则
+
+当某注解的包前缀**不在上方映射表中**时，通过注解**名称模式**推断其 Spec 意义：
+
+| 名称模式（大小写不敏感）| 推断意义 | 写入哪个 Spec |
+|------------------------|---------|-------------|
+| `*Log*` / `*Audit*` / `*Record*` / `*Operation*` | 操作日志注解 | SRS §审计日志需求 |
+| `*Permission*` / `*Auth*` / `*Check*` / `*Requires*` | 权限控制注解 | API 接口权限说明 |
+| `*Limit*` / `*RateLimit*` / `*Throttle*` / `*RepeatSubmit*` | 接口限流/防重复提交 | API 非功能需求 |
+| `*Idempotent*` / `*Repeat*` | 幂等控制 | API 接口约束 |
+| `*Encrypt*` / `*Decrypt*` / `*Sensitive*` / `*Desensitize*` | 数据脱敏/加密 | SRS 安全需求 |
+| `*DataScope*` / `*DataFilter*` / `*DataPermission*` | 数据权限过滤 | SRS 数据权限约束 |
+| `*Tenant*` / `*MultiTenant*` | 多租户隔离 | HLA 多租户架构 |
+| `*Cache*` / `*Cacheable*` | 自定义缓存注解 | HLA 缓存策略 |
+| `*Valid*` / `*Validate*` / `*Assert*` | 自定义校验 | API 字段校验矩阵 |
+| `*Dict*` / `*Enum*` / `*Select*` | 数据字典/枚举绑定 | 数据库文档数据字典 |
+| `*Version*` / `*OptimisticLock*` | 乐观锁 | SRS 并发约束 |
+| `*Excel*` / `*Export*` / `*Import*` | 导入导出功能 | SRS 功能需求（批量操作）|
+| `*Sign*` / `*Signature*` | 签名验证 | SRS 安全需求 |
+
+**推断置信度标注规则：**
+- 名称完全匹配（如 `@OperationLog`）→ 高置信度，直接写入 Spec
+- 名称部分匹配 → 在 Spec 中标注 `[推断，需确认]`
+- 完全无法推断 → 在 HLA 的"横切关注点"节列出，标注 `[未知注解，需人工确认]`
+
+---
+
+## 第四节：通用 Spring 分层提取规则（与框架无关）
+
+无论使用何种快速开发框架或自研框架，只要基于 Spring，以下规则适用：
+
+### API 入口层
 
 ```
-yudao-cloud
-├── yudao-framework/        公共框架层
-│   ├── yudao-spring-boot-starter-security   OAuth2
-│   ├── yudao-spring-boot-starter-web        WebFilter
-│   └── yudao-spring-boot-starter-mybatis    MyBatis-Plus
-├── yudao-module-system/    系统管理（用户、角色、租户）
-├── yudao-module-infra/     基础设施（代码生成、定时任务）
-├── yudao-module-bpm/       工作流（Flowable）
-├── yudao-module-pay/       支付
-└── yudao-module-{domain}/  业务模块
-    └── yudao-module-{domain}-biz/
-        ├── controller/admin/  管理后台 API
-        ├── controller/app/    App 端 API
-        ├── service/
-        ├── dal/               数据访问层
-        │   ├── mysql/entity/
-        │   └── mysql/mapper/
-        └── convert/           MapStruct 转换
+codegraph_search("@RestController" / "@Controller", kind="class")
+  → 获取所有 Controller 文件路径
+
+Read(Controller 文件)
+  → 提取：
+    - @RequestMapping 路径前缀
+    - 每个方法的 @GetMapping/@PostMapping/@PutMapping/@DeleteMapping 路径
+    - 方法参数中 @RequestBody 对应的 DTO 类名
+    - 权限注解（任意包前缀，按第二节映射或第三节推断）
+    - API 描述注解（@Operation/@ApiOperation 的 summary）
 ```
 
-### yudao 特有注解与模式
-
-```java
-@Tag(name = "管理后台 - 模块名")   // SpringDoc → API 分组
-@Operation(summary = "接口名")     // 接口描述
-@PreAuthorize("@ss.hasPermission('...')")  // 权限注解
-@Schema(description = "字段描述")  // DTO 字段
-// VO / ReqVO / RespVO / CreateReqVO / UpdateReqVO → DTO 命名规范
-// Convert 接口（MapStruct）→ 对象转换层
-// ErrorCodeConstants → 错误码文档
-```
-
-### codegraph 提取规则
+### DTO / VO 层（字段校验矩阵来源）
 
 ```
-1. 搜索 @Tag(name) → 提取所有模块（admin/app 分层）
-2. 搜索 *RespVO → 接口返回结构（直接生成 API 文档 Response）
-3. 搜索 *CreateReqVO / *UpdateReqVO → 接口请求体
-4. 搜索 ErrorCodeConstants → 错误码列表（写入 API 文档）
-5. 搜索 *Mapper extends BaseMapperX → 数据访问层
-6. codegraph_trace admin Controller → 完整调用链
-7. 搜索 BpmTaskService → 了解工作流节点（流程图素材）
+从 Controller 方法的 @RequestBody 参数类型，提取 DTO 类名
+codegraph_search(DTO类名, kind="class") → 获取 DTO 文件路径
+
+Read(DTO 文件)
+  → 提取每个字段上的 Bean Validation 注解（jakarta.validation.*）：
+    @NotBlank(message) → 必填 + 错误提示
+    @Pattern(regexp, message) → 正则约束
+    @Size(min, max, message) → 长度约束
+    @Email(message) → 邮箱格式
+    @Min/@Max → 数值范围
+  → 生成字段校验矩阵（字段名/类型/必填/规则/错误提示）
 ```
 
-### yudao 多模块分析策略
+### 数据库表层
 
 ```
-# 先了解模块拓扑
-codegraph_search("@FeignClient")  → 微服务调用关系（HLA 架构图素材）
-codegraph_search("DubboService")  → RPC 服务（如有）
-# 然后按模块逐个分析
+# MyBatis-Plus 项目
+codegraph_search("@TableName", kind="class") → Entity/DO 文件列表
+Read(Entity 文件) → @TableName(value)=表名、@TableField=字段映射、字段类型和注释
+
+# JPA 项目
+codegraph_search("@Entity", kind="class") → Entity 文件列表
+Read(Entity 文件) → @Table(name)=表名、@Column(name/length/nullable/unique)=字段约束
+                    @Index(columnList/unique)=索引定义
+
+# 公共字段识别（继承自父类）
+codegraph_search("BaseDO" / "BaseEntity" / "TenantBaseDO") → 父类文件
+Read(父类文件) → 提取公共字段列表，在数据库文档中标注"继承自 {父类名}"
+```
+
+### 服务层触发点（callers 发现非 HTTP 入口）
+
+```
+对核心 Service 方法执行：
+codegraph_callers("XxxService.createXxx" / "XxxService.updateXxx")
+  → 结果中按触发类型分类：
+    - Controller 方法 → HTTP 接口触发（正常路径）
+    - @Scheduled 方法 → 定时任务触发 → 写入 SRS"触发方式"
+    - @EventListener 方法 → 领域事件触发 → 写入 SRS"触发方式"
+    - @RabbitListener / @KafkaListener → MQ 消费触发 → 写入 SRS"触发方式" + HLA 消息流
+    - @FeignClient 调用方 → 上游微服务触发 → 写入 HLA 服务调用关系
+```
+
+### 错误码提取
+
+```
+codegraph_search("ErrorCode" / "ErrorCodeConstants", kind="class")
+  → 获取错误码常量文件路径
+
+Read(错误码文件)
+  → 提取格式：static final ErrorCode XXX_YYY = new ErrorCode(编号, "描述");
+  → 生成错误码表（编号/常量名/描述/触发场景）
 ```
 
 ---
 
-## maku-boot（maku 框架）
+## 使用示例：对未知框架的处理
 
-### 代码分层特征
-
-```
-net.maku
-├── framework/          公共框架（Sa-Token、MyBatis-Plus）
-│   ├── common/         BaseEntity、PageResult、Result
-│   ├── security/       SaTokenUtils
-│   └── exception/      ErrorCode
-├── system/             系统模块
-│   └── controller/     SysUserController extends BaseController
-└── {module}/           业务模块
-    ├── controller/
-    ├── service/
-    ├── dao/             extends BaseDao<T>
-    ├── entity/
-    ├── dto/             *Query、*DTO
-    └── convert/         MapStruct
-```
-
-### maku 特有注解与模式
-
-```java
-@SaCheckPermission("system:user:page")   // Sa-Token 权限
-@Operation(summary = "...")              // SpringDoc
-@LogOperation("操作名称")               // 操作日志
-BaseDao<T>                              // 基础 DAO
-PageResult<T>                           // 分页返回
-```
-
-### codegraph 提取规则
+以 **SmartAdmin**（一个不在映射表中的框架）为例：
 
 ```
-1. 搜索 @SaCheckPermission → 权限矩阵（SRS 权限章节）
-2. 搜索 @LogOperation → 审计日志功能清单
-3. 搜索 extends BaseDao → 数据访问层完整列表
-4. 搜索 *Query extends PageQuery → 分页查询条件（SRS 查询需求）
-5. codegraph_callers BaseController.getPage() → 分页接口覆盖面
+Step 1 — Read SmartAdmin 的 Controller 文件，发现 import：
+  import net.lab1024.sa.base.common.annocation.auth.Auth;
+  import net.lab1024.sa.base.common.annocation.log.SaLog;
+  import io.swagger.v3.oas.annotations.Operation;
+
+Step 2 — 包前缀匹配：
+  net.lab1024.sa.* → 不在映射表中（未知框架）
+  io.swagger.v3.oas.annotations → SpringDoc → @Operation=接口描述 ✓
+
+Step 3 — 未命中注解语义推断：
+  @Auth → 匹配 *Auth* 模式 → 推断为权限控制注解 → API 权限说明 [推断，需确认]
+  @SaLog → 匹配 *Log* 模式 → 推断为操作日志注解 → SRS 审计需求 [推断，需确认]
+
+Step 4 — 通用分层规则照常执行：
+  @RestController → Controller 文件，提取路由
+  @TableName → MyBatis-Plus Entity，提取 DDL
+  Bean Validation → DTO 字段校验矩阵
 ```
-
----
-
-## 通用 MyBatis-Plus 提取规则（所有框架适用）
-
-```
-# 数据库表结构提取
-codegraph_search("@TableName") → 所有数据库表
-# 获取 Entity 文件路径后，用 Read 读取源码提取字段定义：
-# codegraph_search("XxxDO", kind="class") → 获取 file 路径
-# Read(file) → 提取 @TableField、字段类型长度、@Column 约束、索引注解
-
-# 枚举/字典
-codegraph_search("@EnumValue") → 枚举字段（写入数据库文档）
-codegraph_search("DictType")   → 数据字典类型
-
-# 数据权限
-codegraph_search("DataScope")  → 多租户/数据隔离模式
-
-# 代码生成器产物识别
-codegraph_search("@Generated") → 自动生成代码，Spec 中标注
-```
-
----
-
-## 通用 Spring Boot（Generic Spring Boot）
-
-适用于不使用特定快速开发框架基类的标准 Spring Boot 项目（覆盖大多数自研项目）。
-
-### 识别信号
-
-```
-# 无特定框架基类，Controller 直接继承 Object
-codegraph_search("@RestController", kind="class")  → Spring MVC 入口
-codegraph_search("@RequestMapping", kind="class")  → 路由前缀
-# 区别于快速开发框架：没有 BaseController / JeecgController 等基类
-```
-
-### 实体层识别
-
-```
-# JPA
-codegraph_search("@Entity", kind="class")          → JPA 实体（对应数据库表）
-codegraph_search("@Table", kind="class")           → 表名映射
-codegraph_search("extends JpaRepository")          → Spring Data JPA 仓储
-codegraph_search("extends CrudRepository")         → 简化 JPA 仓储
-
-# MyBatis-Plus
-codegraph_search("@TableName", kind="class")       → MyBatis-Plus 实体
-codegraph_search("extends BaseMapper")             → MyBatis-Plus Mapper
-codegraph_search("extends IService")               → MyBatis-Plus Service 接口
-codegraph_search("extends ServiceImpl")            → MyBatis-Plus Service 实现
-```
-
-### 服务层与 DTO 识别
-
-```
-codegraph_search("@Service", kind="class")         → 服务类
-codegraph_search("@Transactional", kind="function")→ 事务边界（@Transactional 方法）
-
-# DTO 命名约定（按命中率排序）
-codegraph_search("*Request", kind="class")         → 请求体 DTO
-codegraph_search("*Response", kind="class")        → 响应体 DTO
-codegraph_search("*DTO", kind="class")             → 数据传输对象
-codegraph_search("*VO", kind="class")              → 视图对象
-codegraph_search("*Command", kind="class")         → CQRS 命令
-codegraph_search("*Query", kind="class")           → CQRS 查询
-codegraph_search("*Req", kind="class")             → 简写请求体
-codegraph_search("*Resp", kind="class")            → 简写响应体
-```
-
-### 字段校验注解提取（Read DTO 文件后识别）
-
-```java
-@NotBlank(message = "...")      // 必填字符串，提取到字段校验矩阵
-@NotNull(message = "...")       // 必填对象，提取到字段校验矩阵
-@Size(min=x, max=y)             // 长度约束
-@Pattern(regexp = "...")        // 正则校验，提取 regexp 值
-@Email                          // 邮箱格式
-@Min / @Max                     // 数值范围
-@Valid / @Validated             // 嵌套校验
-```
-
-### 横切关注点识别
-
-```
-codegraph_search("@Cacheable")      → 缓存查询接口
-codegraph_search("@CacheEvict")     → 缓存失效触发点
-codegraph_search("@Async")          → 异步方法（HLA 异步流程）
-codegraph_search("@Scheduled")      → 定时任务（SRS 触发方式）
-codegraph_search("@EventListener")  → 领域事件处理（HLA 事件流）
-```
-
-### codegraph 提取规则
-
-```
-1. codegraph_search("@RestController") → Controller 列表 → 逐一 Read 源文件
-2. Read(Controller 文件) → 提取 @GetMapping/@PostMapping 路径 + @PreAuthorize/@Secured 权限
-3. codegraph_search("*ReqDTO" / "*Request") → Read DTO 文件 → 字段校验矩阵
-4. codegraph_search("@Entity" / "@TableName") → Read Entity 文件 → DDL + 索引
-5. codegraph_callers("XxxService.save") → 找出 Controller + @Scheduled + MQ Consumer
-6. codegraph_trace("XxxController.create", "XxxRepository.save") → 流程图骨架
-```
-
-### Spec 映射
-
-| 代码元素 | Spec 文档位置 |
-|---------|-------------|
-| `@Operation(summary=...)` / `@ApiOperation` | API 文档接口描述 |
-| `@PreAuthorize("hasRole/hasAuthority")` | API 文档权限说明 |
-| `@NotBlank/@Pattern` 字段注解 | API 字段校验矩阵 |
-| `@Entity @Column(unique=true)` | 数据库文档唯一索引 |
-| `@Transactional` 方法 | SRS 事务边界说明 |
-| `@Scheduled` 方法 | SRS 定时触发条件 |
-
----
-
-## 框架对应的 Spec 生成策略差异
-
-| 维度 | RuoYi | JEECG Boot | yudao-cloud | maku-boot |
-|-----|-------|-----------|-------------|-----------|
-| API 文档来源 | @ApiOperation | @ApiOperation | @Operation | @Operation |
-| 权限来源 | @PreAuthorize | @RequiresPermissions | @PreAuthorize | @SaCheckPermission |
-| 模块识别 | 包名 | @Api(tags) | @Tag(name) | 包名 |
-| DTO 命名 | domain/Entity | entity | *ReqVO/*RespVO | *DTO/*Query |
-| 工作流 | 无 | Activiti（可选）| Flowable | 无 |
-| 微服务 | ruoyi-cloud 版 | 否 | 是（Spring Cloud）| 否 |
-| 前端技术 | Vue2/Vue3 | Ant Design Vue | Vue3 + Element Plus | Vue3 |
