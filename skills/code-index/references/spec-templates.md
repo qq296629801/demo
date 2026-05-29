@@ -173,6 +173,34 @@ graph TB
 
 ---
 
+## 服务依赖图模板（追加至 01-hla.md）
+
+在 `spec/01-hla.md` 末尾追加以下章节（由 Prompt 11 生成后追加）：
+
+```markdown
+## 服务依赖关系图
+
+​```mermaid
+graph LR
+    UserServiceImpl --> DeptServiceImpl
+    UserServiceImpl --> PermissionServiceImpl
+    UserServiceImpl --> PasswordEncoder
+    OrderServiceImpl --> UserServiceImpl
+    OrderServiceImpl --> StockServiceImpl
+    OrderServiceImpl --> PayOrderApi
+​```
+
+## 外部依赖说明
+
+| 依赖服务 | 类型 | 用途 |
+|---------|------|------|
+| DeptServiceImpl | 内部 Service | 校验部门是否存在 |
+| PayOrderApi | @FeignClient | 调用支付模块创建支付单 |
+| RedisTemplate | 基础设施 | 缓存用户信息 |
+```
+
+---
+
 ## 02-srs.md 模板
 
 ```markdown
@@ -207,12 +235,16 @@ graph TB
 
 #### FR-001 {{功能名}}
 - **描述**：
-- **输入**：
-- **处理**：
-- **输出**：
-- **业务规则**：
-- **异常处理**：
+- **优先级**：P0/P1/P2（P0=核心流程，P1=辅助功能，P2=配置/管理）
 - **相关 API**：
+- **触发方式**：用户手动触发 / 定时任务 / 事件驱动（从 callers 推断）
+- **前置条件**：
+- **主流程**：[步骤列表]
+- **异常流程**：
+- **字段约束**：（从 VO/DTO 注解提取，每个字段一行）
+  - fieldName：必填，规则描述（正则/长度/枚举）
+- **唯一性约束**：（从 `@Column(unique=true)` 或 UNIQUE INDEX 推断）
+- **删除策略**：软删除（deleted 字段）/ 物理删除
 
 [每个功能一个小节，按 FR-XXX 编号]
 
@@ -319,6 +351,25 @@ graph TB
   "total": 0
 }
 ​```
+
+**业务错误码**（从 ErrorCodeConstants 提取该接口相关错误码）：
+| 错误码 | 常量名 | 说明 | 触发场景 |
+|-------|--------|------|---------|
+| 1002001 | MODULE_ENTITY_EXISTS | 记录已存在 | 创建/更新时数据重复 |
+| 1002004 | MODULE_ENTITY_NOT_EXISTS | 记录不存在 | 查询/更新/删除时 ID 无效 |
+
+**HTTP 状态码**：
+| 状态码 | 说明 |
+|-------|------|
+| 200 | 操作成功 |
+| 400 | 请求参数校验失败 |
+| 401 | 未登录或 Token 失效 |
+| 403 | 权限不足 |
+
+**前端调用层对照**（仅全栈项目，纯后端项目省略此节）：
+| 前端函数名 | HTTP 方法 | 端点 | TS 请求类型 | TS 响应类型 | 使用页面 |
+|-----------|---------|------|-----------|-----------|---------|
+| getXxxPage | GET | /{{path}}/list | XxxQueryReqVO | CommonResult\<PageResult\<XxxRespVO\>\> | Xxx 列表页 |
 ```
 
 ---
@@ -337,14 +388,14 @@ graph TB
 | 表总数 | {{TABLE_COUNT}} |
 | 生成方式 | codegraph 逆向 Entity 类 |
 
-## ER 总览图
+## 1. 数据库表清单
 
-​```mermaid
-erDiagram
-    [从 Entity 关系推断]
-​```
+| 表名 | 中文名 | 模块 | 说明 |
+|-----|-------|------|------|
+| sys_user | 用户信息表 | 系统管理 | 从 @TableName 和类注释提取 |
+| sys_dept | 部门表 | 系统管理 | |
 
-## 表详细说明
+## 2. 表详细说明
 
 ### {{table_name}} — {{表中文名}}
 
@@ -353,15 +404,15 @@ erDiagram
 | 字段名 | 类型 | 长度 | 可空 | 默认值 | 说明 |
 |-------|------|------|------|-------|------|
 | id | bigint | 20 | 否 | 自增 | 主键 |
-| create_by | varchar | 64 | 是 | '' | 创建者 |
-| create_time | datetime | - | 是 | - | 创建时间 |
-| update_by | varchar | 64 | 是 | '' | 更新者 |
-| update_time | datetime | - | 是 | - | 更新时间 |
-| del_flag | char | 1 | 是 | '0' | 删除标志 |
+| create_by | varchar | 64 | 是 | '' | 创建者（继承自 BaseDO）|
+| create_time | datetime | - | 是 | - | 创建时间（继承自 BaseDO）|
+| update_by | varchar | 64 | 是 | '' | 更新者（继承自 BaseDO）|
+| update_time | datetime | - | 是 | - | 更新时间（继承自 BaseDO）|
+| del_flag | char | 1 | 是 | '0' | 删除标志（继承自 BaseDO）|
 
 **索引**：
 - PRIMARY KEY (id)
-- [其他索引]
+- [其他索引，来自 @UniqueConstraint / @TableIndex / 类注释]
 
 **DDL**：
 ​```sql
@@ -369,6 +420,30 @@ CREATE TABLE `{{table_name}}` (
   ...
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='{{表注释}}';
 ​```
+
+## 3. ER 关系图
+
+​```mermaid
+erDiagram
+    SYS_USER {
+        bigint user_id PK
+        varchar username
+        bigint dept_id FK
+    }
+    SYS_DEPT {
+        bigint dept_id PK
+        varchar dept_name
+    }
+    SYS_USER }|--|| SYS_DEPT : "belongs to"
+​```
+
+## 4. 数据字典（枚举/常量）
+
+| 字典名 | 来源 | 键值对 |
+|-------|------|-------|
+| 用户状态 | UserStatusEnum | 0=禁用，1=启用 |
+| 删除标志 | del_flag | 0=正常，2=删除 |
+（来自代码中的枚举类和 @Dict 注解）
 ```
 
 ---
@@ -387,6 +462,57 @@ CREATE TABLE `{{table_name}}` (
 ```
 
 每个 .mmd 文件同时生成对应的 SVG 版本（通过 `show_widget` 渲染后保存）。
+
+---
+
+## 06-flowcharts/ 模板
+
+每个 `.mmd` 文件包含以下两种图之一：
+
+### 用户操作视角流程图（面向产品/业务）
+
+```markdown
+​```mermaid
+flowchart TD
+    A[用户打开功能页] --> B[填写表单/触发操作]
+    B --> C{参数校验}
+    C -->|校验失败| D[提示错误信息]
+    C -->|校验通过| E[调用接口]
+    E --> F{业务处理}
+    F -->|成功| G[返回成功提示]
+    F -->|失败| H[返回业务错误]
+    style D fill:#f96
+    style H fill:#f96
+​```
+```
+
+### 技术调用链时序图（面向开发）
+
+```markdown
+​```mermaid
+sequenceDiagram
+    actor User
+    participant Controller
+    participant Service
+    participant Mapper
+    participant DB as MySQL
+
+    User->>Controller: HTTP Request
+    Controller->>Service: 业务方法调用
+    Service->>Mapper: 数据库查询/写入
+    Mapper->>DB: SQL 执行
+    DB-->>Mapper: 结果集
+    Mapper-->>Service: 返回数据
+    Service-->>Controller: 处理结果
+    Controller-->>User: HTTP Response
+​```
+```
+
+**规则：**
+- 节点名使用业务语言，不要用类名
+- 判断节点用菱形（`{}`）
+- 异常/错误路径标红（`style xxx fill:#f96`）
+- 时序图中参与者不超过 6 个
 
 ---
 
@@ -480,6 +606,40 @@ CREATE TABLE `{{table_name}}` (
 | `login(form)` | `{ username, password, captcha }` | 调用登录接口，存储 token |
 | `getInfo()` | - | 获取当前用户信息和权限列表 |
 | `logout()` | - | 清除 token，跳转登录页 |
+```
+
+---
+
+## 09-ui/ 模板
+
+每个模块生成两个文件：`{module}-list.html`（列表页）和 `{module}-form.html`（表单弹窗）。
+
+### 列表页要素
+
+```markdown
+- 顶部搜索栏（根据查询条件字段生成，每个条件对应输入框/下拉/日期选择器）
+- 操作按钮区（新增 / 批量删除 / 导入 / 导出，按 @PreAuthorize 权限点决定显隐）
+- 数据表格（列：来自 RespVO 字段；最后一列：编辑/删除操作按钮）
+- 分页组件（页码 + 每页条数选择）
+```
+
+### 弹窗表单要素
+
+```markdown
+- 表单字段（根据字段类型自动选择组件：文本框 / 下拉 / 日期选择器 / 开关）
+- 必填标记（* 号）及验证错误提示
+- 确认 / 取消按钮
+```
+
+### 技术约束
+
+```markdown
+- 使用 Tailwind CSS（CDN 引入）
+- 使用 Bootstrap Icons 图标库
+- 配色方案：专业蓝灰（主色 #1d4ed8）
+- 完全静态，无需后端，用 localStorage mock 数据
+- 响应式布局，支持 1280px 以上宽屏
+- 代码内嵌 CSS 和 JS，单文件交付
 ```
 
 ---
