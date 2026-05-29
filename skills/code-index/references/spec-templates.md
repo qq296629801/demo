@@ -659,6 +659,7 @@ sequenceDiagram
 前端框架：{{FRONTEND_FRAMEWORK}}（无则填"无"，恢复时据此决定是否生成 10-13 号文件）
 模块总数：{{MODULE_COUNT}}
 codegraph class 总数（基线）：{{CLASS_COUNT_BASELINE}}
+各模块接口数：{{MODULE_1}}={{N1}} 个，{{MODULE_2}}={{N2}} 个（Phase C C1 建立 ENDPOINT_LIST 后填写）
 
 ---
 
@@ -672,11 +673,11 @@ codegraph class 总数（基线）：{{CLASS_COUNT_BASELINE}}
 
 ## 完整性校验（Phase C' 填写）
 
-| 模块 | Controllers | Entities | Callers执行 | Trace执行 | 通过 |
-|------|------------|---------|------------|----------|------|
-| {{MODULE_1}} | ✗ | ✗ | ✗ | ✗ | ✗ |
-| {{MODULE_2}} | ✗ | ✗ | ✗ | ✗ | ✗ |
-（Phase C 每个模块完成后填写实际数量，Phase C' 核对后改为 ✓）
+| 模块 | Controller文件数 | 接口总数(ENDPOINT_LIST) | Entities | Callers覆盖 | Trace覆盖 | 通过 |
+|------|----------------|----------------------|---------|------------|----------|------|
+| {{MODULE_1}} | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ |
+| {{MODULE_2}} | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ |
+（Phase C 每个模块完成后填写实际数量；"接口总数"= ENDPOINT_LIST 长度，需与 Controller 源码注解数吻合；Phase C' 全部核对后改为 ✓）
 
 ---
 

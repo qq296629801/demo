@@ -85,8 +85,13 @@
 {{CALLERS}}
 （格式：调用方类名.方法名 + 触发类型：Controller/Scheduler/EventListener/MQ）
 
+## 接口功能清单（ENDPOINT_LIST，Phase C C1 建立）
+{{ENDPOINT_LIST}}
+（格式：HTTP方法 + 路径 + 功能名称 + 权限码，每行一条；FR 条目数必须与此清单一一对应，不得遗漏）
+
 > 输出格式：见 spec-templates.md § 02-srs.md 模板
 输出 Markdown，按业务模块分章节，每个功能需求一个独立章节。
+**每个 ENDPOINT_LIST 条目必须对应一个 FR-XXX 节，不得合并或省略。**
 不要编造代码中不存在的需求，遇到不确定的地方用 [需确认] 标注。
 ```
 
@@ -165,6 +170,10 @@
 ## 错误码常量
 {{ERROR_CODES_SOURCE}}
 （来自 Read(ErrorCodeConstants.java)，格式：常量名 = 错误码编号; // 描述）
+
+## 接口功能清单（ENDPOINT_LIST，Phase C C1 建立）
+{{ENDPOINT_LIST}}
+（格式：HTTP方法 + 路径 + 功能名称 + 权限码，每行一条；接口章节数必须与此清单一一对应，不得遗漏）
 
 ## 前端 API 调用源码（全栈项目填写，纯后端项目填"无"）
 {{FRONTEND_API_SOURCE}}
