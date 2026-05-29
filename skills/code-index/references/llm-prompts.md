@@ -51,21 +51,8 @@
 ## 识别到的 Entity 类（数据模型）
 {{ENTITIES}}
 
-## 请生成以下内容：
-
-1. **系统定位**（1-2 段，描述系统是什么、解决什么问题）
-
-2. **技术架构图**（Mermaid graph TB，包含：前端/移动端 → 网关 → 各服务模块 → 数据库）
-
-3. **模块职责表**（Markdown 表格，列：模块名 | 职责描述 | 核心类）
-
-4. **分层架构说明**（Controller → Service → Mapper → DB，加框架特有层如 Convert/VO）
-
-5. **非功能性特征**（安全机制、权限模型、日志审计、缓存策略——从代码注解推断）
-
-6. **外部依赖**（从 import 分析：第三方服务、中间件、OSS 等）
-
-输出格式：Markdown，使用中文，专业规范，不要猜测未在代码中体现的功能。
+> 输出格式：见 spec-templates.md § 01-hla.md 模板
+输出使用中文，专业规范，不要猜测未在代码中体现的功能。
 ```
 
 ---
@@ -98,36 +85,8 @@
 {{CALLERS}}
 （格式：调用方类名.方法名 + 触发类型：Controller/Scheduler/EventListener/MQ）
 
-## 请生成以下内容：
-
-### 1. 功能需求列表（每条格式如下）
-
-**FR-001 用户登录**
-- 描述：用户通过用户名/密码登录系统，验证通过后返回 JWT Token
-- 优先级：P0（核心功能）
-- 相关 API：POST /system/user/login
-- 触发方式：用户手动触发 / 定时任务 / 事件驱动（从 callers 推断）
-- 前置条件：用户账号未被禁用
-- 主流程：[步骤列表]
-- 异常流程：账号不存在 / 密码错误 / 账号锁定
-- **字段约束**：（从 VO/DTO 注解提取，每个字段一行）
-  - username：必填，4-30 位字母数字（正则：^[a-zA-Z0-9]{4,30}$）
-  - password：必填，4-16 位
-- **唯一性约束**：username 不允许重复（从 @Column(unique=true) 或 UNIQUE INDEX 推断）
-- **删除策略**：软删除（deleted 字段）/ 物理删除
-
-### 2. 非功能需求（从代码推断）
-- 安全性需求（认证方式、权限粒度）
-- 数据验证需求（从 @NotNull/@Pattern/@Size 等注解逐字段列出具体规则）
-- 日志审计需求（@Log / @AutoLog 覆盖范围）
-- 事务范围（@Transactional 方法列表）
-
-### 3. 约束条件
-- 框架约束（如 JEECG 的 Online 低代码功能限制）
-- 数据权限约束（@DataScope 规则）
-- 异步处理约束（@Async 方法、MQ 消费者）
-
-输出：Markdown，按业务模块分章节，每个功能需求一个独立章节。
+> 输出格式：见 spec-templates.md § 02-srs.md 模板
+输出 Markdown，按业务模块分章节，每个功能需求一个独立章节。
 不要编造代码中不存在的需求，遇到不确定的地方用 [需确认] 标注。
 ```
 
@@ -154,27 +113,8 @@
 ## 数据实体关系
 {{ENTITY_RELATIONSHIPS}}
 
-## 请生成以下内容：
-
-### 1. 产品背景与目标（1页）
-
-### 2. 用户角色与权限矩阵
-| 角色 | 模块 | 可执行操作 |
-（从权限注解提取角色名称和权限点）
-
-### 3. 功能模块详述
-每个模块：
-- **功能概述**（1-2 句）
-- **核心功能列表**（Bullet，来自 API 方法）
-- **业务规则**（来自 Service 层逻辑和注解）
-- **数据展示**（列表页字段、表单字段——来自 VO/Entity）
-
-### 4. 业务流程描述（文字 + Mermaid 流程图）
-针对核心业务流程（如订单创建、审批流、用户注册）
-
-### 5. 数据字典（来自 @Dict、枚举类）
-
-输出：面向非技术读者，避免使用代码术语，用业务语言描述。
+> 输出格式：按产品文档惯例，4 节：背景与目标 / 用户角色矩阵 / 模块详述 / 业务流程描述
+输出面向非技术读者，避免使用代码术语，用业务语言描述。
 ```
 
 ---
@@ -196,25 +136,8 @@
 ## 角色定义
 {{ROLES}}
 
-## 请为每个主要功能生成用户故事，格式如下：
-
-**US-001**
-- 作为 [角色]
-- 我希望 [功能描述]
-- 以便 [业务价值]
-
-**验收标准（Acceptance Criteria）**：
-- Given [前置条件]
-- When [用户操作]
-- Then [系统响应]
-
-**优先级**：P0/P1/P2
-**关联 API**：POST /xxx/xxx
-
-## 额外要求：
-- 按业务模块分组
-- P0 = 核心流程（登录、主业务 CRUD），P1 = 辅助功能，P2 = 配置/管理功能
-- 使用中文，语言简洁清晰
+> 输出格式：见 spec-templates.md § 04-user-stories.md 模板
+按业务模块分组；P0=核心流程，P1=辅助功能，P2=配置/管理功能；使用中文，语言简洁清晰。
 ```
 
 ---
@@ -247,62 +170,8 @@
 {{FRONTEND_API_SOURCE}}
 （来自 Read(src/api/*.ts)，TypeScript 函数签名 + 请求/响应类型；无前端则填"无"）
 
-## 请为每个 API 生成以下格式：
-
----
-### POST /system/user/create
-**描述**：创建用户  
-**权限**：`system:user:create`（从 @PreAuthorize 提取）
-
-**请求体字段校验矩阵**：
-| 字段 | 类型 | 必填 | 规则/约束 | 错误提示 |
-|------|------|------|-----------|---------|
-| username | string | 是 | 4-30位，仅字母数字（^[a-zA-Z0-9]{4,30}$） | 用户账号由数字、字母组成 |
-| password | string | 创建必填 | 4-16位 | 密码长度为 4-16 位 |
-| nickname | string | 是 | 1-30位 | 用户昵称不能为空 |
-| mobile | string | 否 | 手机号格式 | 手机号格式错误 |
-
-**请求体示例**：
-```json
-{
-  "username": "string（必填）",
-  "password": "string（创建必填）",
-  "nickname": "string（必填）"
-}
-```
-
-**响应**（区分创建/查询/列表接口的响应结构）：
-```json
-{
-  "code": 200,
-  "msg": "操作成功",
-  "data": 1001
-}
-```
-
-**业务错误码**（从 ErrorCodeConstants 提取该模块的错误码）：
-| 错误码 | 常量名 | 说明 | 触发场景 |
-|-------|--------|------|---------|
-| 1002001 | USER_USERNAME_EXISTS | 用户账号已存在 | 创建/更新时用户名重复 |
-| 1002002 | USER_MOBILE_EXISTS | 手机号已存在 | 创建/更新时手机号重复 |
-| 1002004 | USER_NOT_EXISTS | 用户不存在 | 查询/更新/删除时 ID 无效 |
-
-**HTTP 状态码**：
-| 状态码 | 说明 |
-|-------|------|
-| 200 | 操作成功 |
-| 400 | 请求参数校验失败 |
-| 401 | 未登录或 Token 失效 |
-| 403 | 权限不足 |
-
-**前端调用层对照**（仅当 FRONTEND_API_SOURCE 非空时生成，纯后端项目省略）：
-| 前端函数名 | HTTP 方法 | 端点 | TS 请求类型 | TS 响应类型 | 使用页面 |
-|-----------|---------|------|-----------|-----------|---------|
-| createUser | POST | /system/user/create | UserSaveReqVO | CommonResult\<Long\> | 用户创建弹窗 |
-
----
-
-输出格式：Markdown，按模块分组，每个接口用 --- 分隔。
+> 输出格式：见 spec-templates.md § 05-api.md 模板 及 § 字段校验矩阵模板
+输出 Markdown，按模块分组，每个接口用 `---` 分隔。
 **强制要求**：
 1. Request Body 必须用字段校验矩阵表格（字段名/类型/必填/规则/错误提示）
 2. 创建接口和更新接口的必填字段可能不同，必须分别标注
@@ -327,41 +196,7 @@
 ## 业务场景名称
 {{SCENARIO_NAME}}（例如：用户登录流程、订单创建流程、审批流程）
 
-## 请生成：
-
-### 1. 用户操作视角流程图（面向产品/业务）
-
-```mermaid
-flowchart TD
-    A[用户打开登录页] --> B[输入用户名/密码]
-    B --> C{参数校验}
-    C -->|校验失败| D[提示错误信息]
-    C -->|校验通过| E[调用登录接口]
-    ...
-```
-
-### 2. 技术调用链时序图（面向开发）
-
-```mermaid
-sequenceDiagram
-    actor User
-    participant Controller as LoginController
-    participant Service as SysLoginService  
-    participant Mapper as SysUserMapper
-    participant DB as MySQL
-    
-    User->>Controller: POST /login {username, password}
-    Controller->>Service: login(username, password)
-    Service->>Mapper: selectUserByUserName(username)
-    Mapper->>DB: SELECT * FROM sys_user WHERE...
-    ...
-```
-
-## 规则：
-- 节点名使用业务语言，不要用类名
-- 判断节点用菱形（{}）
-- 异常/错误路径用红色标记（style xxx fill:#f96）
-- 时序图中参与者不超过 6 个
+> 输出格式：见 spec-templates.md § 06-flowcharts/ 模板（含用户操作视角流程图 + 技术调用链时序图两种格式及绘制规则）
 ```
 
 ---
@@ -377,45 +212,7 @@ sequenceDiagram
 {{ENTITY_SOURCE}}
 （来自 codegraph_search("XxxDO/XxxEntity", kind="class") → Read(file) 获取实际源码）
 
-## 请生成：
-
-### 1. 数据库表清单
-| 表名 | 中文名 | 模块 | 说明 |
-（从 @TableName 和类注释提取）
-
-### 2. 每张表的详细结构
-
-#### sys_user — 用户信息表
-| 字段名 | 类型 | 长度 | 可空 | 默认值 | 说明 |
-|-------|------|------|------|-------|------|
-| user_id | bigint | 20 | 否 | 自增 | 用户ID（主键）|
-| username | varchar | 30 | 否 | - | 用户账号 |
-...
-
-**索引**：
-- PRIMARY KEY (user_id)
-- UNIQUE INDEX idx_username (username)
-
-### 3. ER 关系图（Mermaid）
-
-```mermaid
-erDiagram
-    SYS_USER {
-        bigint user_id PK
-        varchar username
-        varchar password
-        bigint dept_id FK
-    }
-    SYS_DEPT {
-        bigint dept_id PK
-        varchar dept_name
-    }
-    SYS_USER }|--|| SYS_DEPT : "belongs to"
-```
-
-### 4. 数据字典（枚举/常量）
-（来自代码中的枚举类和 @Dict 注解）
-
+> 输出格式：见 spec-templates.md § 07-database.md 模板（4节：表清单 / 表详情 / ER图 / 数据字典）
 规则：
 - 字段类型/长度必须来自实际 DO 源码（如 `@Schema(description="...", example="...")`、`varchar(100)` 注释），不得推测
 - DDL 必须包含所有索引：UNIQUE 索引、普通索引、联合索引（从 @UniqueConstraint 或 @TableIndex 或类注释提取）
@@ -440,27 +237,8 @@ erDiagram
 - 表单字段：{{FORM_FIELDS}}（来自 CreateReqVO 或表单 Entity）
 - 操作按钮：{{OPERATIONS}}（来自 @PreAuthorize 权限点分析）
 
-## 请生成完整的静态 HTML 页面，包含：
-
-1. **列表页**
-   - 顶部搜索栏（根据查询条件生成搜索表单）
-   - 操作按钮区（新增/批量删除/导入/导出）
-   - 数据表格（列：从列表字段生成，最后一列：操作按钮）
-   - 分页组件
-
-2. **新增/编辑弹窗**
-   - 表单字段（根据类型自动选择组件：文本框/下拉/日期/开关）
-   - 必填验证提示
-
-## 技术规范：
-- 使用 Tailwind CSS（CDN）
-- 使用 Bootstrap Icons 图标
-- 配色方案：专业蓝灰（#1d4ed8 主色）
-- 完全静态，无需后端，用 localStorage mock 数据
-- 响应式布局，支持 1280px 以上屏幕
-- 代码内嵌 CSS 和 JS，单文件交付
-
-输出：完整 HTML 文件内容。
+> 输出格式：见 spec-templates.md § 09-ui/ 模板（列表页要素 + 弹窗表单要素 + 技术约束）
+输出完整 HTML 文件内容。
 ```
 
 ---
@@ -503,16 +281,7 @@ erDiagram
 {{ERROR_CODES_SOURCE}}
 （来自 Read(ErrorCodeConstants.java 或 *ErrorCode.java) 实际源码）
 
-## 请生成：
-
-### 模块错误码表
-
-| 错误码编号 | 常量名 | 中文描述 | 触发场景 |
-|-----------|--------|---------|---------|
-| 1002001 | USER_USERNAME_EXISTS | 用户账号已存在 | 创建/更新用户时，传入的用户名已被其他用户使用 |
-| 1002002 | USER_MOBILE_EXISTS | 手机号已存在 | 创建/更新用户时，传入的手机号已被其他用户绑定 |
-| 1002004 | USER_NOT_EXISTS | 用户不存在 | 通过 ID 查询/更新/删除用户，该 ID 对应记录不存在 |
-
+> 输出格式：见 spec-templates.md § 错误码表模板（08-error-codes.md）
 规则：
 - 错误码编号和常量名必须与源码完全一致，不得推断
 - 触发场景从常量名含义推断，标注 [需确认] 如不确定
@@ -533,28 +302,7 @@ erDiagram
 {{SERVICE_IMPL_SOURCE}}
 （来自 Read(XxxServiceImpl.java) 实际源码）
 
-## 请生成：
-
-### 1. 服务依赖关系图（Mermaid）
-
-```mermaid
-graph LR
-    UserServiceImpl --> DeptServiceImpl
-    UserServiceImpl --> PermissionServiceImpl
-    UserServiceImpl --> PasswordEncoder
-    OrderServiceImpl --> UserServiceImpl
-    OrderServiceImpl --> StockServiceImpl
-    OrderServiceImpl --> PayOrderApi
-```
-
-### 2. 外部依赖说明表
-
-| 依赖服务 | 类型 | 用途 |
-|---------|------|------|
-| DeptServiceImpl | 内部 Service | 校验部门是否存在 |
-| PayOrderApi | @FeignClient | 调用支付模块创建支付单 |
-| RedisTemplate | 基础设施 | 缓存用户信息 |
-
+> 输出格式：见 spec-templates.md § 服务依赖图模板（Mermaid graph LR + 外部依赖说明表格）
 规则：
 - 只提取 @Autowired/@Resource/@Inject 注入的字段
 - 区分：内部 Service / @FeignClient 远程调用 / 基础设施（Redis/MQ/OSS）
@@ -588,31 +336,7 @@ graph LR
 {{API_SOURCE}}
 （来自 Read(src/api/*.ts)）
 
-## 请生成以下内容：
-
-### 1. spec/10-pages.md — 页面路由表
-
-| 路径 | 组件文件 | 布局 | 权限守卫 | 功能描述 |
-|-----|---------|------|---------|---------|
-| /login | views/Login.vue | 空布局 | 无 | 用户登录页 |
-| /system/user | views/system/user/index.vue | 管理布局 | 需登录 + system:user:list | 用户列表管理 |
-
-### 2. spec/11-components.md — 核心组件树
-
-列出核心复用组件（排除单纯页面组件），格式：组件名 | 文件路径 | Props | Emits | 说明
-
-### 3. spec/12-state.md — Store 模块
-
-#### useUserStore（Pinia）
-- **State 字段**：
-  | 字段 | 类型 | 初始值 | 说明 |
-  |-----|------|-------|------|
-  | token | string | '' | 登录 Token |
-  | roles | string[] | [] | 用户角色列表 |
-- **Actions**：
-  - `login(loginForm)` → 调用登录接口，存储 token
-  - `logout()` → 清除 token 和用户信息
-
+> 输出格式：见 spec-templates.md § 前端页面路由表模板（10-pages.md）+ § 前端 Store 模块模板（12-state.md）
 > **注意**：API 调用层对照表已在 Prompt 5 的 `spec/05-api.md` 中按接口逐条生成（"前端调用层对照"章节），此处不重复输出。
 
 规则：
