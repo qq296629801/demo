@@ -339,33 +339,64 @@ Write("spec/.progress.md") → 写入完整任务清单（见 spec-templates.md 
 **Phase C：逐模块深挖（对每个模块执行以下步骤）**
 
 ```
-【C1 — codegraph_search + Read：读取源码，提取字段/注解】
-  codegraph_search("XxxController", kind="class")
-    → 结果含 file 路径 + line 行号
-  Read(result.file) → 完整 Controller 源码
-    → 提取：endpoint 列表（HTTP方法+路径）、@PreAuthorize 权限码、@Operation/@ApiOperation 注解
+【C1 — 遍历模块内所有 Controller 文件，建立接口功能清单（ENDPOINT_LIST）】
 
-  codegraph_search("XxxSaveReqVO") / codegraph_search("XxxRespVO")
-    → 获取 VO/DTO 文件路径
-  Read(VO file) → 提取字段类型、@NotBlank/@Pattern/@Size/@Schema 注解
-    → 生成字段校验矩阵
+# Step 1：找出本模块所有 Controller 文件（一个模块可能有多个 Controller）
+codegraph_search("{module}*Controller", kind="class") → 得到文件列表（≥1 个）
+# 如模块名不明确，改用包路径过滤：
+codegraph_search("Controller", kind="class") → 按包前缀过滤出本模块的结果
 
-  codegraph_search("XxxDO" / "XxxEntity", kind="class")
-  Read(Entity file) → @TableName/@Table 表名、字段类型长度、@Column 约束、@Index 定义
+# Step 2：对每个 Controller 文件执行 Read（不得跳过任何一个）
+for each ControllerFile in 文件列表：
+  Read(ControllerFile) → 从源码中提取所有 endpoint：
+    - HTTP 方法 + 路径（@GetMapping / @PostMapping / @PutMapping / @DeleteMapping）
+    - 方法名 + @Operation/@ApiOperation 注解描述
+    - @PreAuthorize / @SaCheckPermission 权限码
 
-  codegraph_search("ErrorCodeConstants") / codegraph_search("*ErrorCode.java")
-  Read(错误码文件) → 错误码编号 + 常量名 + 中文描述
+# Step 3：汇总为本模块「接口功能清单」（ENDPOINT_LIST）
+ENDPOINT_LIST = [
+  { method: "POST",   path: "/system/user/create",  name: "创建用户",   permission: "system:user:create" },
+  { method: "PUT",    path: "/system/user/update",  name: "更新用户",   permission: "system:user:update" },
+  { method: "DELETE", path: "/system/user/{id}",    name: "删除用户",   permission: "system:user:delete" },
+  { method: "GET",    path: "/system/user/list",    name: "查询用户列表", permission: "system:user:list"   },
+  ...（穷举，不遗漏）
+]
+→ ENDPOINT_LIST 是后续 SRS/API/流程图/UI 遍历生成的驱动依据
+→ 将"本模块接口数 = N"记录到 spec/.progress.md
 
-【C2 — codegraph_callers：发现所有触发点】
-  codegraph_callers("XxxService.createXxx")
+# Step 4：读取其余关联源码
+codegraph_search("XxxSaveReqVO") / codegraph_search("XxxRespVO")
+  → 获取 VO/DTO 文件路径
+Read(VO file) → 提取字段类型、@NotBlank/@Pattern/@Size/@Schema 注解 → 字段校验矩阵
+
+codegraph_search("XxxDO" / "XxxEntity", kind="class")
+Read(Entity file) → @TableName/@Table 表名、字段类型长度、@Column 约束、@Index 定义
+
+codegraph_search("ErrorCodeConstants") / codegraph_search("*ErrorCode.java")
+Read(错误码文件) → 错误码编号 + 常量名 + 中文描述
+
+# Step 5：打包 Prompt 8（UI）所需变量 → UI_CONTEXT（Phase D 直接注入，无需重新查找）
+UI_CONTEXT[{module}] = {
+  LIST_FIELDS:  来自 RespVO 或 Entity 字段列表（作为列表页的表格列）
+  QUERY_FIELDS: 来自 Controller @RequestParam 或 *QueryReqVO 字段（作为搜索栏条件）
+  FORM_FIELDS:  来自 CreateReqVO/UpdateReqVO 字段 + @NotBlank/@Size 等校验注解（作为表单字段）
+  OPERATIONS:   来自 ENDPOINT_LIST 权限码，归类为：新增/编辑/删除/导出/导入
+}
+
+【C2 — 按 ENDPOINT_LIST 遍历触发点（写操作优先）】
+for each endpoint in ENDPOINT_LIST where method in [POST, PUT, DELETE, PATCH]：
+  codegraph_callers("{ServiceImpl}.{对应Service方法名}")
     → 找出：Controller / @Scheduled 定时任务 / @EventListener 事件 / MQ Consumer
     → 补充到 SRS"触发方式"和 HLA"异步流程"节点
+# 注：GET 查询接口通常无异步触发，可跳过；如有疑问则同样执行
 
-【C3 — codegraph_trace：生成流程图骨架】
-  codegraph_trace(from="XxxController.create", to="XxxMapper.insert")
+【C3 — 按 ENDPOINT_LIST 遍历调用链，每个写操作生成一条 trace 骨架】
+for each endpoint in ENDPOINT_LIST where method in [POST, PUT, DELETE, PATCH]：
+  codegraph_trace(from="{Controller}.{methodName}", to="{Mapper}.{insertOrUpdate}")
     → Controller → Service → Mapper 完整调用路径
     → 发现事务边界、权限校验、缓存访问、消息发送等横切关注点
-    → 直接作为 06-flowcharts/ 流程图的节点序列
+    → 记录为流程图 {operation}-{entity}-flow.mmd 的节点序列
+GET 列表/详情查询：执行一次代表性 trace，作为 query-{entity}-flow.mmd 的骨架
 ```
 
 **Phase C 补充步骤 CF（识别到前端框架时追加执行，全栈项目在 C1-C3 后继续）：**
@@ -394,11 +425,15 @@ CF5. codegraph_trace(from="LoginPage.submit", to="useUserStore.setToken")
 
 ```
 for each 模块 in 模块列表：
-  ✓ Controller 文件已 Read（已提取 ≥ 1 个 endpoint）
+  ✓ 模块内所有 Controller 文件已 Read（不仅第一个，全部遍历）
+  ✓ ENDPOINT_LIST 已建立，条目数 == Controller 源码中
+    @GetMapping/@PostMapping/@PutMapping/@DeleteMapping 注解总数
+    （允许 ±1 误差，处理 @RequestMapping 在类级别的情况）
+    如不一致 → 重新 Read 遗漏的 Controller 文件，补全 ENDPOINT_LIST
   ✓ Entity/DO 文件已 Read（已提取 ≥ 1 个 @TableName 或 @Entity）
   ✓ ErrorCodeConstants 已 Read（或确认本模块无错误码文件）
-  ✓ codegraph_callers 已对 ≥ 1 个核心 Service 方法执行
-  ✓ codegraph_trace   已对 ≥ 1 个核心流程执行
+  ✓ codegraph_callers 已对 ENDPOINT_LIST 中每个 POST/PUT/DELETE 接口的 Service 方法执行
+  ✓ codegraph_trace   已对 ENDPOINT_LIST 中每个 POST/PUT/DELETE 接口执行（每写操作一条 trace）
 
 如果识别到前端框架（FRONTEND_FRAMEWORK != "无"）：
   ✓ 路由配置文件已 Read（CF1，已提取 ≥ 1 个 path）
@@ -407,7 +442,7 @@ for each 模块 in 模块列表：
 
 如果某模块未通过：
   → 补充执行缺失步骤 → 重新检查 → 通过后才继续
-  → 更新 spec/.progress.md 的完整性校验表格
+  → 更新 spec/.progress.md 的完整性校验表格（含"接口数"列）
 
 全部模块通过 → 进入 Phase D
 ```
@@ -415,9 +450,38 @@ for each 模块 in 模块列表：
 **Phase D：生成规格书**
 
 ```
-每个模块独立生成，按顺序：SRS → API（含前端调用对照，如有 CF3 数据）→ Database → 错误码 → 流程图
+每个模块独立生成，按顺序：SRS → API（含前端调用对照，如有 CF3 数据）→ Database → 错误码 → UI → 流程图
 最后汇总：HLA → PRD → 用户故事 → 全局概览
 如识别到前端框架，追加生成：10-pages.md → 11-components.md → 12-state.md → 13-i18n.md（如有 i18n）
+
+# SRS 生成规则：
+# 将 ENDPOINT_LIST 作为 FR 清单骨架传入 Prompt 2
+# 要求 LLM 为每个 endpoint 生成一个 FR-XXX 条目（不得合并多个接口为一个 FR）
+# SRS 中 FR 条目数必须 == ENDPOINT_LIST 长度（Phase D 结束后校验）
+
+# API 文档生成规则：
+# 将 ENDPOINT_LIST 作为接口清单骨架传入 Prompt 5
+# 要求 LLM 为每个 endpoint 生成一个独立章节（### METHOD /path）
+# 05-api.md 中接口章节数必须 == ENDPOINT_LIST 长度（Phase D 结束后校验）
+
+# 流程图生成规则（06-flowcharts/）：
+# for each endpoint in ENDPOINT_LIST where method in [POST, PUT, DELETE, PATCH]：
+#   生成 spec/06-flowcharts/{operation}-{entity}-flow.mmd（用 C3 trace 数据驱动）
+# GET 列表查询/详情查询：生成一个 query-{entity}-flow.mmd
+# 最少生成：N 个写操作 → N 个 .mmd 文件（不得将多个操作合并为 1 个流程图）
+
+# 09-ui/ 生成规则（所有项目均生成，不限于前端项目，只要有业务 Entity 和 CRUD 接口即生成）：
+# 将 UI_CONTEXT[{module}]（Phase C C1 已打包）注入 Prompt 8
+# for each 业务 Entity in 模块（来自 C1 的 Entity 读取结果）：
+#   小型项目：生成 spec/09-ui/{entity}-list.html + spec/09-ui/{entity}-form.html
+#   大型项目：生成 spec/modules/{module}/09-ui/{entity}-list.html + {entity}-form.html
+# 多个 Entity 不合并，各自独立生成
+
+# 流程图 SVG 渲染规则（在所有 .mmd 写完后执行）：
+# for each .mmd 文件（已 Write 完毕）：
+#   show_widget(mermaid_code) → 渲染为 SVG 图像
+#   Write("spec/06-flowcharts/{name}.svg", svg_content)
+# 每个 .mmd 对应一个同名 .svg，两者成对出现
 
 # 关键：每生成一个文件后，立即更新 spec/.progress.md 对应条目为 [x]
 # 如果 context 在生成过程中溢出，该文件仍标记为 [ ]（未完成），恢复后重做
@@ -460,8 +524,9 @@ spec/
 ├── 03-prd.md               产品需求文档
 ├── 04-user-stories.md      用户故事列表
 ├── 05-api.md               API 规格（含字段校验矩阵 + 前端调用对照）
-├── 06-flowcharts/          流程图（Mermaid）
+├── 06-flowcharts/          流程图（Mermaid + SVG）
 │   ├── login-flow.mmd
+│   ├── login-flow.svg
 │   └── ...
 ├── 07-database.md          数据库结构（DDL + ER 图）
 ├── 08-error-codes.md       错误码表
@@ -486,8 +551,12 @@ spec/
     │   ├── 05-api.md           模块 API（含字段校验矩阵 + 错误码）
     │   ├── 07-database.md      模块 DDL + ER 图（含索引定义）
     │   ├── 08-error-codes.md   模块错误码表
+    │   ├── 09-ui/              UI 静态原型（HTML）
+    │   │   ├── {entity}-list.html
+    │   │   └── {entity}-form.html
     │   └── 06-flowcharts/
-    │       └── *.mmd
+    │       ├── *.mmd
+    │       └── *.svg
     ├── {module-b}/
     └── ...
 ```

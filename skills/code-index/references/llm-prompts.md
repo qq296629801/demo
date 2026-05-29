@@ -51,7 +51,6 @@
 ## 识别到的 Entity 类（数据模型）
 {{ENTITIES}}
 
-> 输出格式：见 spec-templates.md § 01-hla.md 模板
 输出使用中文，专业规范，不要猜测未在代码中体现的功能。
 ```
 
@@ -85,8 +84,12 @@
 {{CALLERS}}
 （格式：调用方类名.方法名 + 触发类型：Controller/Scheduler/EventListener/MQ）
 
-> 输出格式：见 spec-templates.md § 02-srs.md 模板
+## 接口功能清单（ENDPOINT_LIST，Phase C C1 建立）
+{{ENDPOINT_LIST}}
+（格式：HTTP方法 + 路径 + 功能名称 + 权限码，每行一条；FR 条目数必须与此清单一一对应，不得遗漏）
+
 输出 Markdown，按业务模块分章节，每个功能需求一个独立章节。
+**每个 ENDPOINT_LIST 条目必须对应一个 FR-XXX 节，不得合并或省略。**
 不要编造代码中不存在的需求，遇到不确定的地方用 [需确认] 标注。
 ```
 
@@ -136,7 +139,6 @@
 ## 角色定义
 {{ROLES}}
 
-> 输出格式：见 spec-templates.md § 04-user-stories.md 模板
 按业务模块分组；P0=核心流程，P1=辅助功能，P2=配置/管理功能；使用中文，语言简洁清晰。
 ```
 
@@ -166,11 +168,14 @@
 {{ERROR_CODES_SOURCE}}
 （来自 Read(ErrorCodeConstants.java)，格式：常量名 = 错误码编号; // 描述）
 
+## 接口功能清单（ENDPOINT_LIST，Phase C C1 建立）
+{{ENDPOINT_LIST}}
+（格式：HTTP方法 + 路径 + 功能名称 + 权限码，每行一条；接口章节数必须与此清单一一对应，不得遗漏）
+
 ## 前端 API 调用源码（全栈项目填写，纯后端项目填"无"）
 {{FRONTEND_API_SOURCE}}
 （来自 Read(src/api/*.ts)，TypeScript 函数签名 + 请求/响应类型；无前端则填"无"）
 
-> 输出格式：见 spec-templates.md § 05-api.md 模板 及 § 字段校验矩阵模板
 输出 Markdown，按模块分组，每个接口用 `---` 分隔。
 **强制要求**：
 1. Request Body 必须用字段校验矩阵表格（字段名/类型/必填/规则/错误提示）
@@ -196,7 +201,9 @@
 ## 业务场景名称
 {{SCENARIO_NAME}}（例如：用户登录流程、订单创建流程、审批流程）
 
-> 输出格式：见 spec-templates.md § 06-flowcharts/ 模板（含用户操作视角流程图 + 技术调用链时序图两种格式及绘制规则）
+请生成两种图：
+1. **用户操作视角流程图**（flowchart TD，面向产品/业务，节点用业务语言，判断节点用菱形 {}，异常路径标红 style xxx fill:#f96）
+2. **技术调用链时序图**（sequenceDiagram，面向开发，参与者不超过 6 个）
 ```
 
 ---
@@ -212,7 +219,8 @@
 {{ENTITY_SOURCE}}
 （来自 codegraph_search("XxxDO/XxxEntity", kind="class") → Read(file) 获取实际源码）
 
-> 输出格式：见 spec-templates.md § 07-database.md 模板（4节：表清单 / 表详情 / ER图 / 数据字典）
+请按 4 节结构生成：① 数据库表清单（表名/中文名/模块/说明）② 每张表详细结构（字段/类型/长度/可空/索引/DDL）③ ER 关系图（Mermaid erDiagram）④ 数据字典（枚举/常量）
+
 规则：
 - 字段类型/长度必须来自实际 DO 源码（如 `@Schema(description="...", example="...")`、`varchar(100)` 注释），不得推测
 - DDL 必须包含所有索引：UNIQUE 索引、普通索引、联合索引（从 @UniqueConstraint 或 @TableIndex 或类注释提取）
@@ -237,7 +245,12 @@
 - 表单字段：{{FORM_FIELDS}}（来自 CreateReqVO 或表单 Entity）
 - 操作按钮：{{OPERATIONS}}（来自 @PreAuthorize 权限点分析）
 
-> 输出格式：见 spec-templates.md § 09-ui/ 模板（列表页要素 + 弹窗表单要素 + 技术约束）
+请生成完整的静态 HTML 页面，包含：
+1. **列表页**：顶部搜索栏 / 操作按钮区（新增/批量删除/导入/导出）/ 数据表格 / 分页组件
+2. **新增/编辑弹窗**：表单字段（按类型选择组件：文本框/下拉/日期/开关）/ 必填验证提示
+
+技术规范：Tailwind CSS（CDN）/ Bootstrap Icons / 配色 #1d4ed8 主色 / 完全静态 localStorage mock / 响应式 1280px+ / 单文件交付（CSS+JS 内嵌）
+
 输出完整 HTML 文件内容。
 ```
 
@@ -281,7 +294,8 @@
 {{ERROR_CODES_SOURCE}}
 （来自 Read(ErrorCodeConstants.java 或 *ErrorCode.java) 实际源码）
 
-> 输出格式：见 spec-templates.md § 错误码表模板（08-error-codes.md）
+请生成错误码表，格式：`| 错误码编号 | 常量名 | 中文描述 | 触发场景 |`
+
 规则：
 - 错误码编号和常量名必须与源码完全一致，不得推断
 - 触发场景从常量名含义推断，标注 [需确认] 如不确定
@@ -302,7 +316,10 @@
 {{SERVICE_IMPL_SOURCE}}
 （来自 Read(XxxServiceImpl.java) 实际源码）
 
-> 输出格式：见 spec-templates.md § 服务依赖图模板（Mermaid graph LR + 外部依赖说明表格）
+请生成：
+1. **服务依赖关系图**（Mermaid graph LR，节点为 ServiceImpl/Client/基础设施类名）
+2. **外部依赖说明表**（`| 依赖服务 | 类型 | 用途 |`，类型区分：内部 Service / @FeignClient / 基础设施）
+
 规则：
 - 只提取 @Autowired/@Resource/@Inject 注入的字段
 - 区分：内部 Service / @FeignClient 远程调用 / 基础设施（Redis/MQ/OSS）
@@ -336,7 +353,11 @@
 {{API_SOURCE}}
 （来自 Read(src/api/*.ts)）
 
-> 输出格式：见 spec-templates.md § 前端页面路由表模板（10-pages.md）+ § 前端 Store 模块模板（12-state.md）
+请生成以下内容：
+1. **spec/10-pages.md** — 页面路由表：`| 路径 | 组件文件 | 布局 | 权限守卫 | 功能描述 |`
+2. **spec/11-components.md** — 核心复用组件树：`组件名 | 文件路径 | Props | Emits | 说明`
+3. **spec/12-state.md** — Store 模块：State 字段表（字段/类型/初始值/说明）+ Actions 表（方法/参数/说明）
+
 > **注意**：API 调用层对照表已在 Prompt 5 的 `spec/05-api.md` 中按接口逐条生成（"前端调用层对照"章节），此处不重复输出。
 
 规则：

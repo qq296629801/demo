@@ -15,10 +15,10 @@ spec/
 ├── 03-prd.md               产品需求文档（PRD）
 ├── 04-user-stories.md      用户故事（User Stories）
 ├── 05-api.md               API 规格文档（含字段校验矩阵 + 前端调用对照）
-├── 06-flowcharts/          流程图（Mermaid 源码）
+├── 06-flowcharts/          流程图（Mermaid .mmd + 渲染后 .svg，成对出现）
 ├── 07-database.md          数据库结构文档（DDL + 索引 + ER 图）
 ├── 08-error-codes.md       错误码表（从 ErrorCodeConstants 提取）
-├── 09-ui/                  UI/UX 静态原型（HTML）
+├── 09-ui/                  UI/UX 静态原型（HTML，所有项目均生成）
 ├── 10-pages.md             前端页面路由表              ← 仅前端项目生成
 ├── 11-components.md        核心组件树（Props/Emits）   ← 仅前端项目生成
 ├── 12-state.md             状态管理（Store 模块）       ← 仅前端项目生成
@@ -42,8 +42,12 @@ spec/
     │   ├── 05-api.md           模块 API（含字段校验矩阵 + 前端调用对照）
     │   ├── 07-database.md      模块 DDL + ER 图（含所有索引定义）
     │   ├── 08-error-codes.md   模块错误码表
+    │   ├── 09-ui/              UI 静态原型（HTML）
+    │   │   ├── {entity}-list.html
+    │   │   └── {entity}-form.html
     │   └── 06-flowcharts/
-    │       └── *.mmd
+    │       ├── *.mmd
+    │       └── *.svg
     └── {module-b}/
         └── ...
 ```
@@ -612,7 +616,9 @@ sequenceDiagram
 
 ## 09-ui/ 模板
 
-每个模块生成两个文件：`{module}-list.html`（列表页）和 `{module}-form.html`（表单弹窗）。
+> **生成范围**：所有项目均生成（不限于纯前端项目），只要识别到业务 Entity 和 CRUD 接口即生成。
+
+每个模块生成两个文件：`{entity}-list.html`（列表页）和 `{entity}-form.html`（表单弹窗）。多个 Entity 各自独立生成，不合并。
 
 ### 列表页要素
 
@@ -659,6 +665,7 @@ sequenceDiagram
 前端框架：{{FRONTEND_FRAMEWORK}}（无则填"无"，恢复时据此决定是否生成 10-13 号文件）
 模块总数：{{MODULE_COUNT}}
 codegraph class 总数（基线）：{{CLASS_COUNT_BASELINE}}
+各模块接口数：{{MODULE_1}}={{N1}} 个，{{MODULE_2}}={{N2}} 个（Phase C C1 建立 ENDPOINT_LIST 后填写）
 
 ---
 
@@ -672,11 +679,11 @@ codegraph class 总数（基线）：{{CLASS_COUNT_BASELINE}}
 
 ## 完整性校验（Phase C' 填写）
 
-| 模块 | Controllers | Entities | Callers执行 | Trace执行 | 通过 |
-|------|------------|---------|------------|----------|------|
-| {{MODULE_1}} | ✗ | ✗ | ✗ | ✗ | ✗ |
-| {{MODULE_2}} | ✗ | ✗ | ✗ | ✗ | ✗ |
-（Phase C 每个模块完成后填写实际数量，Phase C' 核对后改为 ✓）
+| 模块 | Controller文件数 | 接口总数(ENDPOINT_LIST) | Entities | Callers覆盖 | Trace覆盖 | 通过 |
+|------|----------------|----------------------|---------|------------|----------|------|
+| {{MODULE_1}} | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ |
+| {{MODULE_2}} | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ |
+（Phase C 每个模块完成后填写实际数量；"接口总数"= ENDPOINT_LIST 长度，需与 Controller 源码注解数吻合；Phase C' 全部核对后改为 ✓）
 
 ---
 
@@ -687,6 +694,7 @@ codegraph class 总数（基线）：{{CLASS_COUNT_BASELINE}}
 - [ ] spec/03-prd.md
 - [ ] spec/04-user-stories.md
 - [ ] spec/00-overview.md（最后生成）
+- [ ] spec/09-ui/（每个模块各生成：{entity}-list.html + {entity}-form.html）
 - [ ] spec/10-pages.md             ← 如有前端框架
 - [ ] spec/11-components.md        ← 如有前端框架
 - [ ] spec/12-state.md             ← 如有前端框架
@@ -697,7 +705,8 @@ codegraph class 总数（基线）：{{CLASS_COUNT_BASELINE}}
 - [ ] spec/modules/{{MODULE_1}}/05-api.md
 - [ ] spec/modules/{{MODULE_1}}/07-database.md
 - [ ] spec/modules/{{MODULE_1}}/08-error-codes.md
-- [ ] spec/modules/{{MODULE_1}}/06-flowcharts/（至少 1 个 .mmd）
+- [ ] spec/modules/{{MODULE_1}}/09-ui/（{entity}-list.html + {entity}-form.html）
+- [ ] spec/modules/{{MODULE_1}}/06-flowcharts/（每个写操作一个 .mmd + 对应同名 .svg）
 - [ ] spec/modules/{{MODULE_2}}/02-srs.md
 （按模块重复，Phase B 后根据实际模块列表展开）
 
