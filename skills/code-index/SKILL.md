@@ -20,7 +20,7 @@ description: |
 
 1. [总体流程](#总体流程)
 2. [第一步：安装与初始化 codegraph](#第一步安装与初始化-codegraph)
-3. [第二步：三条核心命令](#第二步三条核心命令)
+3. [第二步：核心命令](#第二步核心命令)
 4. [第三步：框架自动识别](#第三步框架自动识别)
 5. [第四步：规格书生成流程](#第四步规格书生成流程)
 6. [输出规格书结构](#输出规格书结构)
@@ -129,48 +129,64 @@ codegraph status
 
 ---
 
-## 第二步：三条核心命令
+## 第二步：核心命令
 
 > 完整输出格式与字段说明见 `references/codegraph-setup.md`
+>
+> **铁律**：枚举/清点 → `codegraph_files`（确定完整）；定位单个已知符号 → `codegraph_search`（模糊、会截断）。
 
-### `codegraph_search` — 符号搜索
+### `codegraph_search` — 符号定位（不是枚举器）
 
-**用途**：按名称/关键词快速定位函数、类、接口、变量  
-**典型场景**：找入口点、找服务类、找 Controller
+**用途**：当你**已知一个符号名**（类名/方法名）时，快速拿到它的位置和 node id，供 callers/callees/trace 使用。
+**典型场景**：定位 `OrderService.createOrder` 拿 id 再追踪调用链。
 
 ```
 # MCP 工具调用（Claude Code 内）
 codegraph_search(query="UserController", kind="class", limit=10)
 codegraph_search(query="login", kind="function")
-codegraph_search(query="SysUser")        # 搜索所有相关符号
-
-# CLI 等价命令
-codegraph query "UserController" --kind class --json
+codegraph_search(query="SysUser")        # 搜索相关符号
 ```
 
 **输出字段**：`id`, `name`, `kind`, `file`, `line`, `signature`, `docstring`
 
-**大型项目分页策略（重要）：**
+> ⚠️ **关键限制：`codegraph_search` 是相关性排序的模糊搜索，且受 `limit` 截断。**
+> 它**不是子串过滤器，不能用于"枚举某一类的全部符号"或计数**。实测：项目实有 35 个
+> Controller，`codegraph_search("Controller", kind="class")` 只回 2 个；`kind="route"`
+> 搜索也同样模糊+截断（`query="admin"` 回 100/195）。对任何 kind 都如此。
+>
+> **要"找出全部 / 清点数量"，一律改用 `codegraph_files`（文件枚举，确定且完整）+
+> `codegraph_status`（各 kind 计数，作为完整性 oracle）。`codegraph_search` 只用于"查单个已知符号"。**
+
+---
+
+### `codegraph_files` — 文件枚举（穷举的唯一可靠工具）
+
+**用途**：按目录 + 文件名 glob 精确列出**全部**匹配文件，一个不漏（走文件系统索引）。
+**典型场景**：列出全部 Controller / Entity / Service / 前端页面，作为后续遍历 Read 的驱动清单。
 
 ```
-# 问题：单次查询有 limit 上限，大型项目（800+ 类）会截断
-# 解决：用命名模式分批精确查询，代替空字符串全量查询
-
-# 正确做法：分批查询 + 截断检测
-codegraph_search("Controller", kind="class", limit=200)
-codegraph_search("ServiceImpl", kind="class", limit=200)
-codegraph_search("Mapper",      kind="class", limit=200)
-codegraph_search("DO",          kind="class", limit=200)   # MyBatis-Plus 实体
-codegraph_search("Entity",      kind="class", limit=200)   # JPA 实体
-codegraph_search("ErrorCode",   kind="class", limit=200)
-
-# 截断检测：如果 len(results) == limit（返回数 = 上限值）
-#   → 说明可能被截断，需换更精确的 query 重查
-#   → 例：query="system" + kind="class" 缩小到单个包
-
-# 完整性校验：各批结果数之和 ≈ codegraph status 的 class 总数（允许 ±20% 误差）
-# 如差距 > 20%，补充查询直到覆盖全部
+# MCP 工具调用（推荐）
+codegraph_files(path="src/main/java/.../system", pattern="*Controller.java", format="flat")
+codegraph_files(path="src/api", pattern="*.ts", format="flat")
+codegraph_files(path="src/views", pattern="*.vue", format="flat")
 ```
+
+实测：`codegraph_files(pattern="*Controller.java")` 精确返回全部 35 个控制器（与 `find` 一致）。
+这是**枚举/清点的唯一可靠入口**。CLI 的 `codegraph files --filter`（glob）实测可能返回空，
+优先用 MCP `codegraph_files(pattern=...)`。
+
+---
+
+### codegraph 节点类型（kind）速查
+
+| kind | 含义 | 用法 |
+|------|------|------|
+| `class` / `method` / `interface` | 结构符号 | 定位类/方法；计数看 `codegraph_status` |
+| `route` | **后端 HTTP 端点**（Spring `@xxxMapping`、Express 等服务端注解抽取，**前端没有**）| 拿单条端点 file:line 很准，可**交叉核对**后端接口；但 search 截断，不能作唯一来源 |
+| `component` | **前端组件**（Vue SFC / React 组件）| 定位单个组件；枚举页面仍用 `codegraph_files(pattern="*.vue")` |
+
+> 端点穷举仍以"`codegraph_files` 枚举 Controller 文件 → 逐个 Read 解析 @xxxMapping"为准，
+> 用 `codegraph_status` 的 `route` 计数（如 `route: 195`）兜底校验是否有遗漏。
 
 ---
 
@@ -261,10 +277,11 @@ Read("package.json") → 对比依赖键映射表
   → pinia/vuex → 状态管理；vue-router/react-router-dom → 路由
   → axios → HTTP 层；element-plus/antd → UI 组件库
 
-# package.json 缺失时退回符号搜索
+# package.json 缺失时退回符号搜索（仅用于"判断用了哪个框架"，不要用它枚举 store/页面）
 codegraph_search("defineStore")         → Vue + Pinia
 codegraph_search("createSlice")         → React + Redux
 codegraph_search("@NgModule")           → Angular
+# 确认框架后，枚举页面/store/api 一律用 codegraph_files(pattern=...)，见 Phase CF
 ```
 
 识别框架后，使用对应的 **框架提取规则** 理解代码分层，再进入第四步。
@@ -290,7 +307,8 @@ codegraph_search("@NgModule")           → Angular
 
 | 命令 | 用途 | 驱动哪些 Spec |
 |------|------|-------------|
-| `codegraph_search` + `Read` | 定位类文件，读取源码提取字段/注解 | API 字段校验矩阵、DDL、错误码表 |
+| `codegraph_files` | 枚举各层文件全集（Controller/Entity/页面/api），作为遍历驱动清单 | 模块划分、ENDPOINT_LIST、完整性校验 |
+| `codegraph_search` + `Read` | 定位已知类文件，读取源码提取字段/注解 | API 字段校验矩阵、DDL、错误码表 |
 | `codegraph_callers` | 向上追踪——发现定时任务/MQ/事件等非 Controller 触发点 | SRS 触发条件、HLA 异步架构 |
 | `codegraph_trace` | 两点间完整调用路径（Controller → Mapper）| 06-flowcharts/ 业务流程图骨架 |
 
@@ -300,19 +318,18 @@ codegraph_search("@NgModule")           → Angular
 
 ```
 codegraph status → 记录总量基线（后续用于完整性校验）：
-  文件总数 F、节点总数 N、class 节点数 C（关键：作为后续查询完整性的参照基线）
+  文件总数 F、节点总数 N、各 kind 计数（class 数 C、route 数 R 等）
   语言分布（判断是 Java/Python/Go/TS/前端）
 
-# 用命名模式分批查询（禁止空字符串全量查询，会截断）
-codegraph_search("Controller", kind="class", limit=200) → 控制器列表
-codegraph_search("ServiceImpl", kind="class", limit=200) → 服务列表
-codegraph_search("DO",          kind="class", limit=200) → 实体列表（MyBatis-Plus）
-codegraph_search("Entity",      kind="class", limit=200) → 实体列表（JPA）
-# 如 len(results) == 200 → 截断，改用更精确 query 分包查询
+# 用 codegraph_files 枚举各层文件（禁止用 codegraph_search 枚举——它会截断、漏掉大半）
+codegraph_files(path=源码根, pattern="*Controller.java", format="flat") → 控制器全集
+codegraph_files(pattern="*ServiceImpl.java", format="flat")            → 服务全集
+codegraph_files(pattern="*DO.java",          format="flat")            → 实体全集（MyBatis-Plus）
+codegraph_files(pattern="*Entity.java",      format="flat")            → 实体全集（JPA）
 
-各批结果数之和是否接近 class 总数 C：
-  差距 ≤ 20% → 继续
-  差距 > 20% → 补充查询（按包名前缀细分）
+# 完整性校验（用文件数与状态计数对账，不再用 search 之和）：
+#   codegraph_files 返回的 Controller 数 = 期望控制器数（确定值，非估算）
+#   与 codegraph_status 的 class 计数 C 互相印证；如某层为空，确认是命名差异还是真的没有
 ```
 
 **Phase B：模块划分**
@@ -341,10 +358,10 @@ Write("spec/.progress.md") → 写入完整任务清单（见 spec-templates.md 
 ```
 【C1 — 遍历模块内所有 Controller 文件，建立接口功能清单（ENDPOINT_LIST）】
 
-# Step 1：找出本模块所有 Controller 文件（一个模块可能有多个 Controller）
-codegraph_search("{module}*Controller", kind="class") → 得到文件列表（≥1 个）
-# 如模块名不明确，改用包路径过滤：
-codegraph_search("Controller", kind="class") → 按包前缀过滤出本模块的结果
+# Step 1：用文件枚举找出本模块所有 Controller 文件（精确、不漏）
+codegraph_files(path="…/{module}/…/controller", pattern="*Controller.java", format="flat")
+  → 本模块控制器全集（≥1 个）；按模块包目录过滤，确定值
+# 不要用 codegraph_search("{module}*Controller") —— 会模糊截断，漏掉大半
 
 # Step 2：对每个 Controller 文件执行 Read（不得跳过任何一个）
 for each ControllerFile in 文件列表：
@@ -352,6 +369,11 @@ for each ControllerFile in 文件列表：
     - HTTP 方法 + 路径（@GetMapping / @PostMapping / @PutMapping / @DeleteMapping）
     - 方法名 + @Operation/@ApiOperation 注解描述
     - @PreAuthorize / @SaCheckPermission 权限码
+
+# Step 2.5：route 节点交叉校验（发现 Read 可能漏掉的端点）
+codegraph_search("{模块关键词}", kind="route", limit=300) → 拿到该模块部分端点的 file:line
+  → 与 Step 2 解析出的 ENDPOINT_LIST 比对：route 里有、ENDPOINT_LIST 没有的 → 复核对应 Controller
+  → 全局兜底：ENDPOINT_LIST 总数应与 codegraph_status 的 route 计数大致吻合（route 含 app/admin 多端）
 
 # Step 3：汇总为本模块「接口功能清单」（ENDPOINT_LIST）
 ENDPOINT_LIST = [
@@ -402,16 +424,25 @@ GET 列表/详情查询：执行一次代表性 trace，作为 query-{entity}-fl
 **Phase C 补充步骤 CF（识别到前端框架时追加执行，全栈项目在 C1-C3 后继续）：**
 
 ```
-CF1. codegraph_search("router" / "routes", kind="variable")
-     Read(src/router/index.ts 或等价文件) → 路由表（path + component + meta.auth）
+CF1. 前端页面与路由（注意：前端没有 route 节点，vue-router 是 TS 配置对象，不能用 route 搜索）
+     a) 页面清单：codegraph_files(path="src/views", pattern="*.vue", format="flat") → 穷举页面
+        （实测 src/views/system/user 精确返回 7 个）
+     b) 静态路由：Read(src/router/modules/*.ts) → 配置数组里的 path + component + meta
+     c) 动态路由识别：检测 src/store/modules/permission.ts 是否有 generateRoutes()、
+        是否从后端菜单接口（/system/menu 等）构建路由。若是 →
+        注明"业务路由运行时由后端菜单生成，页面↔路由映射需结合后端菜单种子数据"
      → 输出字段供 Prompt 12（spec/10-pages.md）使用
 
-CF2. codegraph_search("defineStore") → Pinia store 文件
-     Read(store 文件) → store name、state 字段类型、actions 方法签名
+CF2. Pinia/状态管理 store
+     codegraph_files(path="src/store/modules" 或 "src/stores", pattern="*.ts", format="flat") → store 全集
+     for each store 文件：Read → store name、state 字段类型、actions 方法签名
      → 输出字段供 Prompt 12（spec/12-state.md）使用
 
-CF3. codegraph_search("request" / "axios", kind="function") → API 服务文件
-     Read(src/api/ 目录) → API 函数 → 调用端点 + 参数类型 + 返回类型
+CF3. API 服务层
+     codegraph_files(path="src/api", pattern="*.ts", format="flat") → API 模块全集
+        （实测 src/api/system 精确返回 28 个）
+     for each API 文件：Read → 提取 request.get/post/put/delete({url}) → 端点 + 参数 + 返回类型
+     → 与后端 ENDPOINT_LIST 做前后端契约对照
      → 作为 {{FRONTEND_API_SOURCE}} 变量注入 Prompt 5（spec/05-api.md 前端调用对照）
 
 CF4. codegraph_callers("useUserStore" / "usePermissionStore")
@@ -425,10 +456,11 @@ CF5. codegraph_trace(from="LoginPage.submit", to="useUserStore.setToken")
 
 ```
 for each 模块 in 模块列表：
-  ✓ 模块内所有 Controller 文件已 Read（不仅第一个，全部遍历）
+  ✓ 已 Read 的 Controller 数 == codegraph_files(pattern="*Controller.java") 返回数（全部遍历，非仅第一个）
   ✓ ENDPOINT_LIST 已建立，条目数 == Controller 源码中
     @GetMapping/@PostMapping/@PutMapping/@DeleteMapping 注解总数
     （允许 ±1 误差，处理 @RequestMapping 在类级别的情况）
+    并与 codegraph_status 的 route 计数对账，明显差异需逐 Controller 复核
     如不一致 → 重新 Read 遗漏的 Controller 文件，补全 ENDPOINT_LIST
   ✓ Entity/DO 文件已 Read（已提取 ≥ 1 个 @TableName 或 @Entity）
   ✓ ErrorCodeConstants 已 Read（或确认本模块无错误码文件）
@@ -436,9 +468,10 @@ for each 模块 in 模块列表：
   ✓ codegraph_trace   已对 ENDPOINT_LIST 中每个 POST/PUT/DELETE 接口执行（每写操作一条 trace）
 
 如果识别到前端框架（FRONTEND_FRAMEWORK != "无"）：
-  ✓ 路由配置文件已 Read（CF1，已提取 ≥ 1 个 path）
-  ✓ Store 文件已 Read（CF2，已提取 ≥ 1 个 defineStore/createSlice）
-  ✓ API 服务文件已 Read（CF3，已提取 ≥ 1 个 HTTP 调用函数，将作为 {{FRONTEND_API_SOURCE}}）
+  ✓ 页面已用 codegraph_files(path="src/views", pattern="*.vue") 枚举；路由配置（router/modules）
+    或动态路由生成（permission.ts generateRoutes）已识别（CF1）
+  ✓ Store 文件已用 codegraph_files 枚举并 Read（CF2，已提取 ≥ 1 个 store）
+  ✓ API 服务文件已用 codegraph_files 枚举并 Read（CF3，已提取 HTTP 调用，将作为 {{FRONTEND_API_SOURCE}}）
 
 如果某模块未通过：
   → 补充执行缺失步骤 → 重新检查 → 通过后才继续
