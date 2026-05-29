@@ -99,6 +99,17 @@ specs/
 ```markdown
 # IIDP 技术栈与约束
 
+## 项目类型
+- 类型：全新工程（greenfield）/ 存量接入（brownfield）
+- 初始化方式：
+  - 全新工程：由 `skills/backend/greenfield/SKILL.md` 克隆父工程后，从父工程 `pom.xml` 确认版本，团队协商命名约定
+  - 存量接入：由 `/sdd-brownfield-init` 通过 code-index 从现有代码自动提取
+- 初始化时间：[YYYY-MM-DD]
+
+> **大模型读取规则**：
+> - `存量接入` → 下方版本约束和命名规范为**从现有代码提取的强制规范**，新增代码必须严格遵循，不得偏离现有命名风格
+> - `全新工程` → 下方内容来自克隆父工程 `pom.xml` 和团队约定；如有 `待确认` 项，须在步骤 2 宪法阶段补全后才进入步骤 3
+
 ## 后端工程
 - 目标工程：`iidp-backend-demo-ai`
 - Java：主工程 Java 8；特殊模块按当前 POM 约束执行
@@ -133,6 +144,41 @@ specs/
 - 每个 feature 对应一个分支和一个 PR，从主干（main/master）创建
 - 合并策略：Squash merge，PR 描述引用对应 `specs/features/` 规格目录
 - **写代码前必须切换到 feature 分支**，不得在主干直接修改工程文件
+
+## 版本约束
+> 存量项目由 `/sdd-brownfield-init` 自动填充；全新工程由团队在宪法阶段手动确认。
+
+- IIDP 引擎（sie-snest-engine）：[待确认]
+- IIDP SDK（sie-snest-sdk / sie-iidp-sdk）：[待确认]
+- IIDP Maven 插件（sie-snest-maven-plugin）：[待确认]
+- Spring Boot：[待确认]
+- Java：[待确认]
+- XXL-Job（如启用）：[待确认 / N/A]
+- 前端框架（@sie/iidp-* / vue / element）：[待确认 / N/A]
+
+## 命名规范
+> 存量项目由 `/sdd-brownfield-init` 从现有代码提取后填入，为**强制规范**；
+> 全新工程由团队在宪法阶段协商后填入，为**设计约定**。
+
+| 对象 | 规则 | 示例（来自现有代码） | 来源 |
+|------|------|---------------------|------|
+| 模型 name（`@Model.name`） | [待确认 \| 如 `{app_prefix}_{entity}`] | [如 `demo_student`] | `@Model` 注解 |
+| 表名（`@Model.tableName`） | [待确认 \| 如 `{entity_snake_case}`] | [如 `example_student`] | `@Model` 注解 |
+| 视图 key | [待确认 \| 如 `{model_name}_{type}`] | [如 `demo_student_grid`] | `*_view.json` |
+| 菜单 key（功能菜单） | [待确认 \| 如 `{prefix}_{entity}_menu`] | [如 `demo_student_menu`] | `menus.json` |
+| 菜单 key（根菜单） | [待确认 \| 如 `{prefix}_{module}_root_menu`] | [如 `demo_example_menu`] | `menus.json` |
+| 种子数据文件名 | [待确认 \| 如 `{model_name}.json`] | [如 `example_student.json`] | `data/` 目录 |
+| 字典种子文件名 | [待确认 \| 如 `{typeCode}_dict.json`] | [如 `yes_no.json`] | `data/` 目录 |
+| appPkg（`@Model` 所在包） | [待确认 \| 如 `com.sie.iidp.{domain}`] | [如 `com.sie.iidp.example`] | Java 包名 |
+| Maven 模块名 | [待确认 \| 如 `sie-iidp-demo-{feature}`] | [如 `sie-iidp-demo-student`] | 目录名 |
+| `@MethodService` description | [待确认 \| 内置名或中文描述] | [如 `"create"` / `"启用禁用"`] | `@MethodService` |
+
+## 现有 App 清单（存量项目必填，全新工程在步骤 2 填写）
+> 存量项目由 `/sdd-brownfield-init` 从 `apps/apps.json` 提取。
+
+| appName | resolved 包 | 职责 | 依赖 App |
+|---------|------------|------|---------|
+| [待填充] | | | |
 ```
 
 ## ui-constitution.md 模板
