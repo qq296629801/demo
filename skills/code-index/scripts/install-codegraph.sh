@@ -70,16 +70,16 @@ EOF
     echo "✅ 已创建 .codegraph/config.json（已优化 Java 项目排除规则）"
 fi
 
-# 初始化并建立索引
+# 初始化并建立索引（-i = index immediately）
 echo ""
-echo "🔍 建立代码索引（大型项目可能需要 1-2 分钟）..."
-codegraph index . --quiet
+echo "🔍 初始化并建立代码索引（大型项目可能需要 1-2 分钟）..."
+codegraph init -i
 echo "✅ 索引完成"
 
 # 输出统计
 echo ""
 echo "📊 索引统计："
-codegraph status .
+codegraph status
 
 echo ""
 echo "========================================"

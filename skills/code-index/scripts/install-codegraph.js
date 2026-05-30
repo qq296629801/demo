@@ -63,16 +63,16 @@ if (!fs.existsSync(configDir)) {
   say('✅ 已创建 .codegraph/config.json（已优化 Java 项目排除规则）');
 }
 
-// 初始化并建立索引
+// 初始化并建立索引（-i = index immediately）
 say('');
-say('🔍 建立代码索引（大型项目可能需要 1-2 分钟）...');
-run('codegraph index . --quiet');
+say('🔍 初始化并建立代码索引（大型项目可能需要 1-2 分钟）...');
+run('codegraph init -i');
 say('✅ 索引完成');
 
 // 输出统计
 say('');
 say('📊 索引统计：');
-run('codegraph status .');
+run('codegraph status');
 
 say('');
 say('========================================');
