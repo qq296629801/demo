@@ -2,6 +2,8 @@
 
 生成后端规格时，先读取 `skills/backend/SKILL.md`，再按能力域读取对应专题。本文只提供 `create-project` 侧的 SDD 输出结构，不替代 backend skill 的硬性规则。
 
+**生成任何后端内容前，同时必须先读取 `skills/backend/references/core/platform-standards.md`**（项目宪法），确保命名、代码规范、异常处理、SQL 访问等所有约定符合 IIDP 平台强制要求。
+
 **输出文件路径**：`specs/features/<phase>-<feature>/backend-spec.md`
 
 ```markdown
@@ -42,13 +44,17 @@
 | `[fieldName]` | `String/Long/Integer/Boolean/Date` | `displayName="[中文名]"` | 是/否 | `@Validate.NotBlank` / `@Validate.Size(max=N)` / `@Validate.Unique` | 是/否 | [说明] |
 | `[dictField]` | `String` / `Integer` | `displayName="[中文名]"` | 是/否 | — | 否 | 配合 `@Selection(values={...})` / `@Selection(model="...")` / `@Selection(method="[svcName]", linkageFields="...")` 或 `@Dict`；`widget` 仅在需要特定组件（如 `"radio-group"`）时才写 |
 | `[dateField]` | `Date` | `displayName="[中文名]", dataType=DataType.DATE, dateFormat="yyyy-MM-dd"` | 否 | — | 否 | 仅日期；含时间改用 `dataType=DataType.DATE_TIME, dateFormat="yyyy-MM-dd HH:mm:ss"` |
-| `[erField]` | ManyToOne | `@ManyToOne` + `@JoinColumn(name="[col]")` | 是/否 | — | 是 | 同 App ER 关联 |
+| `[entityId]` | `String` | `@Selection(model="[model_name]", properties={"id","[displayField]"})` + `@Property(displayName="[中文名]")` + `@Validate.NotBlank(message="[中文名]不能为空")` | 是 | `@Validate.NotBlank` | 是 | FK ID 字段，与下方 ManyToOne 成对出现，存库 |
+| `[entity]` | `[EntityClass]` | `@ManyToOne(displayName="[中文名]", cascade=CascadeType.DEL_SET_NULL)` + `@JoinColumn(name="[col_id]", referencedProperty="id")` | — | — | — | ORM 关联对象，不存库，与上方 FK ID 字段成对，`@JoinColumn(name)` 与 FK 字段的数据库列名一致 |
 
 > **生成任何模型字段前必须先读取以下文件**：
 > - `skills/backend/references/core/model.md`：`@Property` 完整参数（`store`、`readonly`、`dataType`、`dateFormat`、`widget`、`contentType`、`multiple`、`computeMethod`、`defaultMethod` 等）、`@Model` 声明、`@Selection`、`@Dict` 用法
 > - `skills/backend/references/core/model-property-advanced.md`：`@ManyToOne`、`@OneToMany`、`@ManyToMany`、`@JoinColumn`、`@JoinTable` 等高级 ER 注解的完整参数和示例
+> - `skills/backend/references/core/platform-standards.md`：命名规范（appName/appPkg/模型名/字段名/常量命名）、Java 代码规范（禁止手动声明审计字段、camelCase 字段名严格区分大小写、禁止 Spring Boot 原生写法替代 IIDP 平台体系）、模型设计规范（OneToMany/ManyToOne/ManyToMany 字段名/目标模型/级联策略必须完整）、异常与事务规范
 >
 > **不得凭记忆或推断填写注解参数**；对照以上文件中的实际代码示例生成，缺参数就补，错参数就改。
+
+> **ManyToOne 必须成对声明**：FK ID 字段（String 类型）负责前端选择器绑定和数据库存储；ManyToOne 对象字段负责 ORM 加载和 related 带出。两者缺一不可，且 `@JoinColumn(name)` 与 FK ID 字段对应的数据库列名一致。
 
 模型规则：
 - 模型类使用 `@StaticVar @Getter @Setter @Model`，需要日志时加 `@Slf4j`。`@StaticVar`/`@Getter`/`@Setter` 是 **IIDP 平台元插件**（`com.sie.meta.plugin.*`），**不是 Lombok**，两者不可混用。
@@ -56,6 +62,9 @@
 - 业务字段必须有 `@Property(displayName = "...")`。
 - 选项、字典、关联字段用 `@Selection`、`@Dict` 或 ORM 注解。
 - 唯一编码、外键、高频过滤字段和排序字段要考虑索引。
+- **审计字段（create_user/create_date/update_user/update_date）由 `@Model(isAutoLog = Bool.True)` 自动维护，禁止在模型类中手动声明这四个字段或对应的 getter/setter。**
+- **字段名大小写严格一致**：`@Property`、`set()`、`getStr()` 等 Map 操作中的属性名字符串，必须与 Java `private` 字段声明完全相同（区分大小写）。例如字段声明为 `subClass`，所有引用处都必须写 `"subClass"`，不能写 `"subclass"` 或 `"SubClass"`。
+- **所有 id 字段类型为 String**（IIDP 平台雪花算法转字符串），包括主键 id 和外键 FK 字段，禁止使用 Long 类型表示平台 id。
 
 > **注解作用域禁止事项**：以下注解**只能标注在字段上，严禁标注在类上**：`@Property`、`@Validate.*`（`NotBlank`/`Size`/`Pattern`/`Unique`）、`@Selection`/`@Option`、`@Dict`、`@ManyToOne`/`@OneToMany`/`@ManyToMany`、`@JoinColumn`/`@JoinTable`。类上只允许 `@StaticVar`、`@Getter`、`@Setter`、`@Slf4j`、`@Model`。
 
@@ -65,7 +74,7 @@
 
 | 字段 | 类型 | 注解 | 说明 |
 |---|---|---|---|
-| `[externalId]` | `Long` | `@Property(displayName="[外部对象]ID")` | 存外部模型主键，弱引用 |
+| `[externalId]` | `String` | `@Property(displayName="[外部对象]ID")` | 存外部模型主键，弱引用；IIDP 平台 id 均为 String，若外部系统 id 确实为 Long 需在注释中明确说明原因 |
 | `[externalName]` | `String` | `@Property(displayName="[外部对象]名称")` | 创建/编辑时从外部接口冗余，防止外部改名影响本表 |
 | `[externalCode]` | `String` | `@Property(displayName="[外部对象]编码")` | 同上，按需冗余 |
 
@@ -134,8 +143,8 @@
 
 | 服务 | 类型 | 前置状态 | 后置状态 | 入参 | 权限 | 副作用 |
 |---|---|---|---|---|---|---|
-| `[action1]` | 自定义 | `[FROM]` | `[TO]` | `id: Long` | `{model_name}:[action1]` | [如：写 actualStartTime] |
-| `[action2]` | 自定义 | `[TO]` | `[NEXT]` | `id: Long` | `{model_name}:[action2]` | [如：写 actualEndTime] |
+| `[action1]` | 自定义 | `[FROM]` | `[TO]` | `id: String` | `{model_name}:[action1]` | [如：写 actualStartTime] |
+| `[action2]` | 自定义 | `[TO]` | `[NEXT]` | `id: String` | `{model_name}:[action2]` | [如：写 actualEndTime] |
 
 > 完整状态机契约（状态 × 服务映射、按钮显示规则、异常分层）在 `contracts.md` 状态机章节维护，backend-spec.md 只声明服务清单和副作用，不重复状态机规则。
 
@@ -188,7 +197,7 @@
 
 | 参数 | 类型 | 校验规则 | 不满足时 |
 |---|---|---|---|
-| `id` | `Long` | 非空 | 抛 `ValidationException("id 不能为空")` |
+| `id` | `String` | 非空 | 抛 `ValidationException("id 不能为空")` |
 | `[param]` | `[类型]` | [规则] | 抛 `ValidationException("[提示]")` |
 
 **查询逻辑**：
@@ -206,7 +215,7 @@ List<?> children = meta.get("[child_model]").find(
     Filter.equal("[fk_field]", id), null, null, null, null)
 
 // 方式三：N+1 禁止，超过 1 条记录时批量查询后在内存组装
-List<Long> ids = records.stream().map(...).collect(...)
+List<String> ids = records.stream().map(...).collect(...)
 List<?> related = meta.get("[model]").find(Filter.in("id", ids), ...)
 ```
 

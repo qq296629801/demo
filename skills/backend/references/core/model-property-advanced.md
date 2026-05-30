@@ -221,6 +221,8 @@ OneToMany：
 
 ### OneToMany 指令集 JSON-RPC 示例
 
+> **id 类型**：IIDP 所有模型主键均为 String 类型（雪花算法转字符串），JSON-RPC 中传 id 时必须使用字符串形式，如 `"id": "abc123"`，不得使用整数。
+
 以 `ExampleItem`（主）→ `ExampleItemCate`（子，`@OneToMany itemCateList`）为例：
 
 **新建主记录同时新建子记录 `(0, 0, values)`**
@@ -248,18 +250,18 @@ OneToMany：
   "model": "example_item",
   "service": "update",
   "args": {
-    "id": 100,
+    "id": "abc100",
     "itemName": "更新后物料名",
     "itemCateList": [
-      [1, 201, {"cateName": "分类A-修改"}],
+      [1, "abc201", {"cateName": "分类A-修改"}],
       [0, 0, {"cateCode": "C003", "cateName": "新增分类C", "cateType": "type3"}],
-      [2, 202]
+      [2, "abc202"]
     ]
   }
 }
 ```
 
-> `[1, 201, {...}]`：更新 id=201 的子记录；`[0, 0, {...}]`：新建子记录；`[2, 202]`：删除 id=202 的子记录。
+> `[1, "abc201", {...}]`：更新 id=abc201 的子记录；`[0, 0, {...}]`：新建子记录；`[2, "abc202"]`：删除 id=abc202 的子记录。
 
 ### ManyToMany 指令集 JSON-RPC 示例
 
@@ -274,8 +276,8 @@ OneToMany：
   "args": [{
     "name": "张三",
     "classList": [
-      [4, 10],
-      [4, 11]
+      [4, "abc10"],
+      [4, "abc11"]
     ]
   }]
 }
@@ -288,17 +290,17 @@ OneToMany：
   "model": "example_student",
   "service": "update",
   "args": {
-    "id": 50,
+    "id": "abc50",
     "classList": [
-      [4, 12],
-      [3, 10],
-      [6, 0, [11, 12, 13]]
+      [4, "abc12"],
+      [3, "abc10"],
+      [6, 0, ["abc11", "abc12", "abc13"]]
     ]
   }
 }
 ```
 
-> `[4, 12]`：关联已有 class id=12；`[3, 10]`：断开与 id=10 的关系（不删记录）；`[6, 0, [11,12,13]]`：用 ids 替换全量关系。
+> `[4, "abc12"]`：关联已有 class id=abc12；`[3, "abc10"]`：断开与 id=abc10 的关系（不删记录）；`[6, 0, ["abc11","abc12","abc13"]]`：用 ids 替换全量关系。
 
 **清空所有关系 `(5)`**
 
@@ -307,7 +309,7 @@ OneToMany：
   "model": "example_student",
   "service": "update",
   "args": {
-    "id": 50,
+    "id": "abc50",
     "classList": [[5]]
   }
 }
