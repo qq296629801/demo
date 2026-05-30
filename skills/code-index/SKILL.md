@@ -96,12 +96,11 @@ codegraph init -i
 codegraph status
 ```
 
-> **Windows 用户**：使用 PowerShell 脚本代替（需要 PowerShell 5.1+）：
-> ```powershell
-> Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
-> .\skills\code-index\scripts\install-codegraph.ps1 -ProjectPath .
+> **跨平台一键安装**（Windows / macOS / Linux 均可，只需 Node.js ≥ 18）：
+> ```bash
+> node skills/code-index/scripts/install-codegraph.js /path/to/your-project
 > ```
-> 若在 WSL2 环境中，可直接使用 `install-codegraph.sh` 脚本。
+> Linux/macOS 也可使用 Shell 脚本：`bash skills/code-index/scripts/install-codegraph.sh /path/to/your-project`
 
 ### 配置 MCP（Claude Code 环境）
 
