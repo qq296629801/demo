@@ -96,6 +96,13 @@ codegraph init -i
 codegraph status
 ```
 
+> **Windows 用户**：使用 PowerShell 脚本代替（需要 PowerShell 5.1+）：
+> ```powershell
+> Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+> .\skills\code-index\scripts\install-codegraph.ps1 -ProjectPath .
+> ```
+> 若在 WSL2 环境中，可直接使用 `install-codegraph.sh` 脚本。
+
 ### 配置 MCP（Claude Code 环境）
 
 ```json
@@ -292,7 +299,7 @@ codegraph_search("@NgModule")           → Angular
 # 当 package.json 不存在且符号搜索也无法命中任何已知框架时
 → 在 spec/00-overview.md 中注明"技术栈未能自动识别"
 → 列出扫描到的文件扩展名分布（.java / .py / .go / .ts / .vue 等）
-→ 列出顶层目录结构（ls -d */ 输出）
+→ 列出顶层目录结构（Linux/macOS: `ls -d */`，Windows: `Get-ChildItem -Directory`，或用 `codegraph_files` 工具代替，跨平台推荐）
 → 由人工根据目录结构和文件扩展名判断框架类型，再手动指定重新运行
 ```
 
