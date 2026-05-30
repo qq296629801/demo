@@ -18,7 +18,7 @@ spec/
 ├── 06-flowcharts/          流程图（Mermaid .mmd + 渲染后 .svg，成对出现）
 ├── 07-database.md          数据库结构文档（DDL + 索引 + ER 图）
 ├── 08-error-codes.md       错误码表（从 ErrorCodeConstants 提取）
-├── 09-ui/                  UI/UX 静态原型（HTML，所有项目均生成）
+├── 09-ui/                  UI/UX 静态原型（HTML，所有项目均生成，含 list/detail/workflow/dashboard 四种页面）
 ├── 10-pages.md             前端页面路由表              ← 仅前端项目生成
 ├── 11-components.md        核心组件树（Props/Emits）   ← 仅前端项目生成
 ├── 12-state.md             状态管理（Store 模块）       ← 仅前端项目生成
@@ -43,8 +43,10 @@ spec/
     │   ├── 07-database.md      模块 DDL + ER 图（含所有索引定义）
     │   ├── 08-error-codes.md   模块错误码表
     │   ├── 09-ui/              UI 静态原型（HTML）
-    │   │   ├── {entity}-list.html
-    │   │   └── {entity}-form.html
+    │   │   ├── dashboard.html               ← 模块仪表板（必须生成）
+    │   │   ├── {entity}-list.html           ← 列表页（必须生成）
+    │   │   ├── {entity}-detail.html         ← 详情页（条件生成：有子表或状态字段）
+    │   │   └── {entity}-workflow.html       ← 状态流转页（条件生成：有状态枚举字段）
     │   └── 06-flowcharts/
     │       ├── *.mmd
     │       └── *.svg
@@ -173,6 +175,72 @@ graph TB
 ## 部署架构
 
 [从配置文件和 Docker 文件推断，若无则注明"未识别到部署配置"]
+
+## 关键业务流程图
+
+> 每个核心业务场景各生成一个 flowchart TD，直接嵌入此文档。节点用业务语言，异常路径标红。
+
+### 用户登录流程（示例）
+
+​```mermaid
+flowchart TD
+    A[用户输入账号密码] --> B{格式校验}
+    B -- 失败 --> C[返回校验错误]
+    style C fill:#f96
+    B -- 通过 --> D[查询用户记录]
+    D --> E{账号是否存在}
+    E -- 否 --> F[返回账号不存在]
+    style F fill:#f96
+    E -- 是 --> G{密码是否正确}
+    G -- 否 --> H[记录失败次数并返回]
+    style H fill:#f96
+    G -- 是 --> I[生成 JWT Token]
+    I --> J[返回登录成功]
+​```
+
+[按项目实际 CORE_SCENARIOS 替换以上示例，2-4 个场景]
+
+## 核心服务方法设计
+
+> 每个 ServiceImpl 的关键 @Transactional 方法。方法体 ≤20 行的简单 CRUD 省略。
+> 详细实现见源代码；此处为业务逻辑摘要，便于快速理解业务意图。
+
+### UserServiceImpl（示例）
+
+#### createUser(UserSaveReqVO reqVO) → Long
+**事务**：@Transactional(rollbackFor = Exception.class)
+**业务步骤**：
+1. 校验用户名唯一性，已存在则抛 USER_USERNAME_EXISTS
+2. 校验手机号唯一性，已存在则抛 USER_MOBILE_EXISTS
+3. 密码加密（PasswordEncoder.encode）
+4. 插入 sys_user 表，返回自增 id
+5. 关联角色（批量插入 sys_user_role）
+6. 发布 UserCreatedEvent（Spring 事件，异步，不影响主事务）
+
+**异常**：ServiceException(USER_USERNAME_EXISTS / USER_MOBILE_EXISTS)
+**副作用**：写入 sys_user、sys_user_role；发布 UserCreatedEvent
+
+[按项目实际 SERVICE_SOURCE 替换，每个 Service 不超过 5 个方法]
+
+## 数据模型概览
+
+> 精简 ER 图，只含主要实体间的关联关系。字段详情和 DDL 见 [07-database.md](./07-database.md)
+
+​```mermaid
+erDiagram
+    SYS_USER ||--o{ SYS_USER_ROLE : "拥有"
+    SYS_ROLE ||--o{ SYS_USER_ROLE : "属于"
+    SYS_ROLE ||--o{ SYS_ROLE_MENU : "关联"
+    SYS_MENU }o--|| SYS_MENU : "父子"
+​```
+
+| 实体 | 说明 | 关键关系 |
+|-----|------|---------|
+| SYS_USER | 系统用户 | 多对多 → ROLE（通过 USER_ROLE） |
+| SYS_ROLE | 角色 | 多对多 → MENU（通过 ROLE_MENU） |
+| SYS_MENU | 菜单/权限节点 | 自关联树形结构 |
+
+[按项目实际实体替换以上示例]
 ```
 
 ---
@@ -618,34 +686,68 @@ sequenceDiagram
 
 > **生成范围**：所有项目均生成（不限于纯前端项目），只要识别到业务 Entity 和 CRUD 接口即生成。
 
-每个模块生成两个文件：`{entity}-list.html`（列表页）和 `{entity}-form.html`（表单弹窗）。多个 Entity 各自独立生成，不合并。
+每个模块最多生成 4 种文件，按触发条件决定生成哪些：
 
-### 列表页要素
+| 文件名 | 页面类型 | 触发条件 |
+|-------|---------|---------|
+| `{entity}-list.html` | 列表页（含内嵌新增/编辑弹窗） | **必须生成** |
+| `{entity}-detail.html` | 详情页（Tab 结构，含子表/操作历史） | `HAS_CHILD_TABLES=true` 或有 status 状态字段时生成 |
+| `{entity}-workflow.html` | 状态流转/审批页（SVG 步骤条 + 时间线） | 实体含 status/state/auditStatus 等枚举状态字段时生成 |
+| `dashboard.html` | 模块仪表板（统计卡片 + SVG 折线图） | **每模块固定生成一个** |
+
+多个 Entity 各自独立生成，不合并。
+
+### 文件 1：{entity}-list.html 要素（必须生成）
 
 ```markdown
 - 顶部搜索栏（根据查询条件字段生成，每个条件对应输入框/下拉/日期选择器）
-- 操作按钮区（新增 / 批量删除 / 导入 / 导出，按 @PreAuthorize 权限点决定显隐）
-- 数据表格（列：来自 RespVO 字段；最后一列：编辑/删除操作按钮）
+- 操作按钮区（新增 / 批量删除 / 导入 / 导出，按权限点决定显隐）
+- 数据表格（列：来自 RespVO 字段；最后一列含：查看详情 / 编辑 / 删除 操作按钮）
 - 分页组件（页码 + 每页条数选择）
+- 新增/编辑弹窗（表单字段按类型选择组件：文本框/下拉/日期选择器/开关，含必填验证提示）
 ```
 
-### 弹窗表单要素
+### 文件 2：{entity}-detail.html 要素（条件生成）
 
 ```markdown
-- 表单字段（根据字段类型自动选择组件：文本框 / 下拉 / 日期选择器 / 开关）
-- 必填标记（* 号）及验证错误提示
-- 确认 / 取消按钮
+- 顶部面包屑导航 + 返回列表按钮
+- 顶部状态 Badge（若有 WORKFLOW_STATES）+ 操作按钮栏（审批/提交/撤回等，按状态决定显隐）
+- Tab 标签页（纯 JS 切换，无 jQuery/Vue）：
+  - Tab 1"基本信息"：左右双栏卡片，只读展示 DETAIL_FIELDS
+  - Tab 2"关联记录"（HAS_CHILD_TABLES=true）：子表数据表格
+  - Tab 3"操作历史"（有 WORKFLOW_STATES）：时间线展示
 ```
 
-### 技术约束
+### 文件 3：{entity}-workflow.html 要素（条件生成）
 
 ```markdown
-- 使用 Tailwind CSS（CDN 引入）
-- 使用 Bootstrap Icons 图标库
-- 配色方案：专业蓝灰（主色 #1d4ed8）
-- 完全静态，无需后端，用 localStorage mock 数据
-- 响应式布局，支持 1280px 以上宽屏
-- 代码内嵌 CSS 和 JS，单文件交付
+- 顶部 SVG 内联步骤条（水平，节点含图标：待处理=灰色圆/当前=蓝色高亮/已完成=绿色勾）
+- 中部当前节点详情卡片（状态说明 / 责任人 / 截止时间）
+- 操作区（审批意见 textarea + 通过/拒绝按钮，按当前状态决定是否渲染）
+- 底部竖向时间线（每条记录含时间 / 操作人头像缩写 / 操作类型 / 备注）
+```
+
+### 文件 4：dashboard.html 要素（每模块必须生成）
+
+```markdown
+- 顶部 4 宫格统计卡片（总数/今日新增/待处理/已完成，每张卡含趋势箭头和百分比）
+- 中部内联 SVG 折线图（近 7 天数据趋势，含 X/Y 轴、网格线、数据点、悬停 tooltip）
+  ⚠️ 必须用内联 SVG 实现，禁止引入 ECharts/Chart.js/D3 等第三方图表 CDN
+- 右侧快捷操作入口（2-4 个入口卡片，带图标和跳转链接）
+- 底部最新 5 条记录表格（LIST_FIELDS 前 4 列）
+```
+
+### 通用技术约束
+
+```markdown
+- CSS：Tailwind CSS CDN（`https://cdn.tailwindcss.com`）
+- 图标：Bootstrap Icons CDN（`https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css`）
+- 配色：主色 #1d4ed8，成功绿 #16a34a，危险红 #dc2626，警告黄 #d97706，背景 #f8fafc
+- 图表/步骤条：内联 SVG 实现，禁止引入第三方图表库
+- 交互：纯原生 JS，禁止引入 jQuery / Vue / React 等框架
+- 数据：localStorage mock，页面加载时初始化，操作后更新
+- 响应式：1280px+ 宽屏，侧边导航固定宽 240px
+- 交付：单文件，CSS 和 JS 全部内嵌
 ```
 
 ---
@@ -694,7 +796,7 @@ codegraph class 总数（基线）：{{CLASS_COUNT_BASELINE}}
 - [ ] spec/03-prd.md
 - [ ] spec/04-user-stories.md
 - [ ] spec/00-overview.md（最后生成）
-- [ ] spec/09-ui/（每个模块各生成：{entity}-list.html + {entity}-form.html）
+- [ ] spec/09-ui/（每个模块各生成：dashboard.html + {entity}-list.html；条件生成：{entity}-detail.html / {entity}-workflow.html）
 - [ ] spec/10-pages.md             ← 如有前端框架
 - [ ] spec/11-components.md        ← 如有前端框架
 - [ ] spec/12-state.md             ← 如有前端框架
@@ -705,7 +807,7 @@ codegraph class 总数（基线）：{{CLASS_COUNT_BASELINE}}
 - [ ] spec/modules/{{MODULE_1}}/05-api.md
 - [ ] spec/modules/{{MODULE_1}}/07-database.md
 - [ ] spec/modules/{{MODULE_1}}/08-error-codes.md
-- [ ] spec/modules/{{MODULE_1}}/09-ui/（{entity}-list.html + {entity}-form.html）
+- [ ] spec/modules/{{MODULE_1}}/09-ui/（dashboard.html + {entity}-list.html；条件生成：{entity}-detail.html / {entity}-workflow.html）
 - [ ] spec/modules/{{MODULE_1}}/06-flowcharts/（每个写操作一个 .mmd + 对应同名 .svg）
 - [ ] spec/modules/{{MODULE_2}}/02-srs.md
 （按模块重复，Phase B 后根据实际模块列表展开）

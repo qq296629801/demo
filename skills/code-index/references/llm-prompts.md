@@ -51,7 +51,79 @@
 ## 识别到的 Entity 类（数据模型）
 {{ENTITIES}}
 
-输出使用中文，专业规范，不要猜测未在代码中体现的功能。
+## 核心业务场景（从 @Transactional 方法名提取，2-4 个）
+{{CORE_SCENARIOS}}
+（格式：场景1, 场景2, ... ← 如：用户登录, 订单创建, 审批流转）
+
+## Service Impl 关键源码（每个最多前 200 行）
+{{SERVICE_SOURCE}}
+（来自 codegraph_search("ServiceImpl", kind="class") → Read 获取，包含 @Transactional 方法）
+
+请按以下结构输出完整 HLA 文档，使用中文，专业规范，不要猜测未在代码中体现的功能：
+
+### 必须包含以下章节（按顺序）：
+
+**§1 系统定位** — 1-2 段描述系统是什么、服务于哪些用户、解决什么核心问题
+
+**§2 系统架构图** — Mermaid graph TB，含客户端层/接入层/应用层/数据层
+
+**§3 技术选型** — 表格：层次/技术/版本/说明
+
+**§4 模块职责** — 表格：模块/包路径/职责/核心类
+
+**§5 安全架构** — 从 Security 配置和权限注解推断
+
+**§6 部署架构** — 从配置文件和 Docker 文件推断，若无则注明"未识别到部署配置"
+
+**§7 关键业务流程图** — 针对 CORE_SCENARIOS 中每个场景，各生成一个 Mermaid flowchart TD 图，直接嵌入本文档。
+格式要求：
+- 节点使用业务语言，不使用类名/方法名
+- 判断节点用菱形 {}
+- 异常/错误路径用 style xxx fill:#f96 标红
+- 每个场景单独一个 ```mermaid 代码块，前面加三级标题"### {场景名}"
+- 例：
+  ### 用户登录流程
+  ```mermaid
+  flowchart TD
+    A[用户输入账号密码] --> B{格式校验}
+    B -- 失败 --> C[返回校验错误]
+    style C fill:#f96
+    B -- 通过 --> D[查询用户记录]
+    D --> E{账号是否存在}
+    E -- 否 --> F[返回账号不存在]
+    style F fill:#f96
+    E -- 是 --> G{密码是否正确}
+    G -- 否 --> H[返回密码错误]
+    style H fill:#f96
+    G -- 是 --> I[生成 Token]
+    I --> J[返回登录成功]
+  ```
+
+**§8 核心服务方法设计** — 针对 SERVICE_SOURCE 中每个 ServiceImpl，提取所有带 @Transactional 注解或方法体超过 20 行的关键业务方法，按以下格式输出：
+
+### {ServiceImplName}
+
+#### {methodName}({params}) → {returnType}
+**事务**：@Transactional（传播级别/rollbackFor 如有）/ 无事务
+**业务步骤**：
+1. [步骤1，伪代码级别，描述做什么而非怎么做]
+2. [步骤2]
+3. ...
+**异常**：[抛出的业务异常类型和条件]
+**副作用**：[写入哪些表/发送哪些事件/调用哪些外部服务]
+
+每个 ServiceImpl 只输出关键方法（@Transactional 优先，其次是复杂查询方法），不超过 5 个方法/Service，不输出简单 getter/setter 方法。
+
+**§9 数据模型概览** — 基于 ENTITIES 信息，输出精简 ER 图（只含主要实体和主要关联关系，不含字段详情），并说明关键聚合边界：
+
+```mermaid
+erDiagram
+  USER ||--o{ USER_ROLE : "拥有"
+  ROLE ||--o{ ROLE_MENU : "关联"
+  ...（只列主要实体间的 1:N 或 N:N 关系）
+```
+
+> 详细字段定义和 DDL 见 [07-database.md](./07-database.md)
 ```
 
 ---
@@ -233,25 +305,83 @@
 
 ## Prompt 8 — UI/UX 静态页面
 
-> 执行顺序：第 8 步 | 依赖：Prompt 5（API 字段 → 表单/列表字段）| 输出：`spec/09-ui/{module}-list.html` + `spec/09-ui/{module}-form.html`
+> 执行顺序：第 8 步 | 依赖：Prompt 5（API 字段 → 表单/列表字段）| 输出：`spec/09-ui/` 目录下多个 HTML 文件
 
 ```
-请根据以下业务模块信息，生成标准 CRUD 管理页面的静态 HTML 原型。
+请根据以下业务模块信息，生成完整的静态 HTML 管理页面原型集。
 
 ## 模块信息
 - 模块名称：{{MODULE_NAME}}（例如：用户管理）
 - 列表字段：{{LIST_FIELDS}}（来自 RespVO 或 Entity 字段）
 - 搜索条件：{{QUERY_FIELDS}}（来自 *Query 或 @RequestParam）
 - 表单字段：{{FORM_FIELDS}}（来自 CreateReqVO 或表单 Entity）
+- 详情字段：{{DETAIL_FIELDS}}（来自 RespVO 全量字段，包含只读字段和关联字段）
 - 操作按钮：{{OPERATIONS}}（来自 @PreAuthorize 权限点分析）
+- 状态流转：{{WORKFLOW_STATES}}（枚举值列表，如 PENDING/APPROVED/REJECTED；无状态字段则填"无"）
+- 是否有子表：{{HAS_CHILD_TABLES}}（true = 有 @OneToMany 或外键关联子表；false = 无）
 
-请生成完整的静态 HTML 页面，包含：
-1. **列表页**：顶部搜索栏 / 操作按钮区（新增/批量删除/导入/导出）/ 数据表格 / 分页组件
-2. **新增/编辑弹窗**：表单字段（按类型选择组件：文本框/下拉/日期/开关）/ 必填验证提示
+请生成以下页面文件（根据条件决定是否生成）：
 
-技术规范：Tailwind CSS（CDN）/ Bootstrap Icons / 配色 #1d4ed8 主色 / 完全静态 localStorage mock / 响应式 1280px+ / 单文件交付（CSS+JS 内嵌）
+---
 
-输出完整 HTML 文件内容。
+### 文件 1：{entity}-list.html（列表页）— 必须生成
+
+包含：
+- 顶部搜索栏（根据 QUERY_FIELDS 生成：文本框 / 下拉 / 日期选择器）
+- 操作按钮区（新增 / 批量删除 / 导入 / 导出，按 OPERATIONS 决定显隐）
+- 数据表格（列来自 LIST_FIELDS；最后一列含：查看详情 / 编辑 / 删除 操作按钮）
+- 分页组件（页码 + 每页条数）
+- 新增/编辑弹窗（包含 FORM_FIELDS 表单，支持必填验证提示）
+
+---
+
+### 文件 2：{entity}-detail.html（详情页）— 当 HAS_CHILD_TABLES=true 或 WORKFLOW_STATES≠"无" 时生成
+
+包含：
+- 顶部面包屑导航 + 返回按钮
+- 顶部状态 Badge（若有 WORKFLOW_STATES）+ 操作按钮栏（审批/提交/撤回等，按状态决定显隐）
+- 标签页（Tab）结构：
+  - Tab 1"基本信息"：卡片布局，左右双栏展示 DETAIL_FIELDS（只读）
+  - Tab 2"关联记录"（HAS_CHILD_TABLES=true 时显示）：子表数据表格，支持展开行
+  - Tab 3"操作历史"（WORKFLOW_STATES≠"无" 时显示）：时间线展示操作记录
+- Tab 切换用纯 JS 实现（不依赖 jQuery/Vue）
+
+---
+
+### 文件 3：{entity}-workflow.html（状态流转页）— 仅当 WORKFLOW_STATES≠"无" 时生成
+
+包含：
+- 顶部 SVG 步骤条（水平进度条，显示全部状态节点，当前节点高亮蓝色，已完成绿色，未到达灰色）
+  - 步骤条使用内联 SVG 实现，不依赖第三方图表库
+- 中部当前节点详情卡片（显示当前状态说明、责任人、操作截止时间）
+- 操作区（审批意见输入框 + 通过/拒绝按钮，按当前状态决定是否显示）
+- 底部操作历史时间线（竖向 timeline，每条记录含：时间 / 操作人 / 操作类型 / 备注）
+
+---
+
+### 文件 4：dashboard.html（模块仪表板）— 每个模块固定生成一个
+
+包含：
+- 顶部 4 宫格统计卡片（总数 / 今日新增 / 待处理数 / 其他关键指标，带趋势箭头）
+- 中部折线图（近 7 天数据趋势，用内联 SVG 绘制，不依赖 ECharts/Chart.js 等 CDN 库）
+  - SVG 折线图要求：有 X/Y 轴、网格线、数据点圆圈、悬停 tooltip（纯 JS 实现）
+- 右侧快捷操作入口（按 OPERATIONS 生成 2-4 个入口卡片）
+- 底部最近记录表格（显示最新 5 条记录，来自 LIST_FIELDS 的前 4 列）
+
+---
+
+## 通用技术规范（所有页面统一）
+
+- **CSS 框架**：Tailwind CSS CDN（`https://cdn.tailwindcss.com`）
+- **图标**：Bootstrap Icons CDN（`https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css`）
+- **配色**：主色 #1d4ed8，成功绿 #16a34a，危险红 #dc2626，警告黄 #d97706，背景灰 #f8fafc
+- **数据**：完全静态，localStorage mock 数据（页面加载时初始化，操作后更新 localStorage）
+- **图表**：折线图、步骤条进度条均使用内联 SVG 实现，**禁止引入 ECharts / Chart.js / D3 等第三方图表 CDN**
+- **交互**：Tab 切换、折叠面板、弹窗、tooltip 均用原生 JS 实现（**禁止引入 jQuery / Vue / React**）
+- **布局**：响应式，支持 1280px+ 宽屏，侧边导航固定宽 240px
+- **交付**：单文件，CSS 和 JS 全部内嵌，无外部依赖（除 Tailwind CSS 和 Bootstrap Icons CDN）
+
+输出每个 HTML 文件的完整内容，文件之间用 `---FILE: {filename}---` 分隔。
 ```
 
 ---
