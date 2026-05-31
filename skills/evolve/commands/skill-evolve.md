@@ -48,10 +48,28 @@ git checkout -b ${EVOLVE_BRANCH}
 
 **步骤 0.2 — 初始化结果记录**
 
-创建 `skill-evolve-results.tsv`（不提交 git，参考 autoresearch 的 results.tsv 设计）：
+创建以下两个本地文件（均不提交 git）：
+
+**`skill-evolve-results.tsv`**（每轮打分记录，可机器解析）：
 
 ```
-timestamp	branch	round	dimension	old_score	new_score	delta	status	file_changed	commit_short
+timestamp	branch	round	dimension	old_score	new_score	delta	status	file_changed	commit_short	judge_diagnosis	change_reason
+```
+
+新增 2 列说明：
+- `judge_diagnosis`：法官重评后对该维度的 1 句核心诊断（为什么分数变了）
+- `change_reason`：本轮修改的 1 句理由（为什么选这个改法）
+
+**`skill-evolve-evidence.md`**（人类可读的完整证据链，供 PR body 引用）：
+
+```markdown
+# Skill 进化证据链
+
+**分支**：${EVOLVE_BRANCH}
+**基线分**：[待填入]/100
+**开始时间**：[ISO 8601 timestamp]
+
+---
 ```
 
 **步骤 0.3 — 召唤两个独立法官 sub-agent（并行）**
@@ -62,6 +80,10 @@ timestamp	branch	round	dimension	old_score	new_score	delta	status	file_changed	c
 1. 读取指定的 create-project skill 文档
 2. 用 test-scenarios.md 场景 1 实际模拟 `/sdd-spec` 流程（D10 实测）
 3. 按格式输出 D1-D10 各维度得分和诊断
+4. 对**得分最低的 2 个维度**额外输出扩展诊断（3-5 句），包含：
+   - 具体扣分位置（哪个文件哪个 § 节）
+   - 1 个具体反例（如"§3 模型表第 5 行写了 `Long id`"）
+   - 期望的正确写法
 
 **步骤 0.4 — 计算基线分**
 
@@ -88,6 +110,22 @@ timestamp	branch	round	dimension	old_score	new_score	delta	status	file_changed	c
 
 **最低分维度**：D[X]（[维度名]，[分数]/[满分]）
 **次低分维度**：D[X]（[维度名]，[分数]/[满分]）
+```
+
+将最低分 2 个维度的扩展诊断写入 `skill-evolve-evidence.md`：
+
+```markdown
+## 基线诊断（最低分维度）
+
+### D[X] [维度名]（法官平均 [X]/[满分]）
+
+**法官 A 诊断**：[具体文件 + § 节 + 反例 + 期望正确写法，3-5 句]
+
+**法官 B 诊断**：[同格式]
+
+**综合诊断**：[两位法官共同指出的核心问题，1-2 句]
+
+---
 ```
 
 [🔴 **CHECKPOINT**]：展示基线报告，等待用户确认后进入 Phase 1。
@@ -132,7 +170,38 @@ MAX_ROUNDS = 5（或用户指定值）
 - 如果目标是 D4（失败机制）：在某个 command 文件中把"注意..."改为"若 X 则 Y，否则 Z"的显式分支
 - 如果目标是 D5（可操作性）：扫描并替换"建议/可以考虑/根据情况"等软化措辞为具体指令
 
-应用修改后：
+**改前快照**（在 Edit 工具修改文件之前）：
+
+用 Read 工具读取目标修改位置上下 15 行，记录为 `BEFORE_SNAPSHOT`，写入 `skill-evolve-evidence.md`：
+
+```markdown
+## 第 [ROUND] 轮 — D[X]（[维度名]）
+
+### 改动目标
+[1-2 句：当前问题是什么，预期改成什么]
+
+### 改前（before）
+文件：`[filename]`，位置：[§节 + 行描述]
+
+\`\`\`
+[改前相关段落原文，10-15 行]
+\`\`\`
+
+### 改动理由
+[法官扩展诊断中的核心问题 + 本次修改如何解决它]
+```
+
+应用修改后，将改后内容也追加写入 `skill-evolve-evidence.md`：
+
+```markdown
+### 改后（after）
+
+\`\`\`
+[改后相关段落，与改前对比]
+\`\`\`
+```
+
+然后提交：
 
 ```bash
 git add [修改的文件]
@@ -156,15 +225,35 @@ COMMIT_HASH=$(git rev-parse --short HEAD)
 IF DELTA > 0:
   → KEEP（保留 commit）
   → CURRENT_SCORE = NEW_SCORE
-  → 记录到 results.tsv: [timestamp] [branch] [ROUND] D[X] [CURRENT_SCORE] [NEW_SCORE] [DELTA] keep [file] [COMMIT_HASH]
+  → 记录到 results.tsv: [timestamp] [branch] [ROUND] D[X] [CURRENT_SCORE] [NEW_SCORE] [DELTA] keep [file] [COMMIT_HASH] [judge_diagnosis] [change_reason]
   → CONSECUTIVE_SMALL_DELTA = 0（若 DELTA >= 2）或 CONSECUTIVE_SMALL_DELTA + 1（若 DELTA < 2）
 
 ELSE（DELTA <= 0）:
   → REVERT（丢弃本轮 commit）
   → git revert HEAD --no-edit
   → CURRENT_SCORE 不变
-  → 记录到 results.tsv: [timestamp] [branch] [ROUND] D[X] [CURRENT_SCORE] [NEW_SCORE] [DELTA] revert [file] [COMMIT_HASH]
+  → 记录到 results.tsv: [timestamp] [branch] [ROUND] D[X] [CURRENT_SCORE] [NEW_SCORE] [DELTA] revert [file] [COMMIT_HASH] [judge_diagnosis] [change_reason]
   → CONSECUTIVE_SMALL_DELTA + 1
+```
+
+无论 KEEP 还是 REVERT，将重评结果追加到 `skill-evolve-evidence.md` 当前轮节：
+
+```markdown
+### 重评结果
+
+| 法官 | D[X] 改前 | D[X] 改后 | Δ | 重评诊断摘要 |
+|---|---|---|---|---|
+| 法官 C | X | X | +X/-X | [1句：为什么分数变了] |
+| 法官 D | X | X | +X/-X | [1句] |
+| **平均** | X | X | **+X/-X** | |
+
+**总分变化**：[CURRENT_SCORE] → [NEW_SCORE]（Δ = [DELTA]）
+
+### 决策：KEEP ✅ / REVERT ❌
+
+**原因**：[KEEP → "分数提升 +[DELTA]pt，保留 commit [COMMIT_HASH]" / REVERT → "分数未提升（Δ=[DELTA]），已执行 git revert"]
+
+---
 ```
 
 [🔴 **CHECKPOINT**]：展示本轮结果（修改内容摘要 + Δ 分），等待用户确认继续。
@@ -173,12 +262,23 @@ ELSE（DELTA <= 0）:
 ```markdown
 ## 第 [ROUND] 轮结果
 
-**修改**：[文件名] — [1句描述]
-**评分变化**：[CURRENT_SCORE] → [NEW_SCORE]（Δ = [DELTA]）
+**目标维度**：D[X]（[维度名]）
+**修改文件**：[filename] — [1句描述]
+**评分变化**：[OLD_SCORE] → [NEW_SCORE]（Δ = [DELTA]）
 **决策**：[KEEP ✅ / REVERT ❌]
 
-[如果 KEEP，展示 git diff 摘要]
-[如果 REVERT，说明原因]
+### 改前
+\`\`\`
+[BEFORE_SNAPSHOT 核心段落]
+\`\`\`
+
+### 改后
+\`\`\`
+[改后对应段落]
+\`\`\`
+
+### 法官重评理由
+[judge_diagnosis：为什么分数变了 / 为什么没变]
 ```
 
 #### 步骤 1.5 — Early Stop 检查
@@ -223,9 +323,32 @@ PR 内容：
 | ... | | | |
 | **总分 (/100)** | [BASELINE] | [CURRENT] | +[TOTAL_DELTA] |
 
+## 证据链（逐轮 Before → After，仅展示 KEEP 的轮次）
+
+[对每个 KEEP 轮次，从 skill-evolve-evidence.md 摘取：]
+
+### 第 [N] 轮：D[X] [维度名]（+[Δ]pt）
+
+**问题（法官诊断）**：[综合诊断 1-2 句]
+
+**改前**（`[filename]` § 节位置）：
+\`\`\`
+[BEFORE_SNAPSHOT 核心段落]
+\`\`\`
+
+**改后**：
+\`\`\`
+[改后对应段落]
+\`\`\`
+
+**评分变化**：[old]/[满分] → [new]/[满分]（+[Δ]）
+**法官重评理由**：[judge_diagnosis]
+
+---
+
 ## 修改内容（共 [N] 次成功 commit）
 
-[按时间列出每次 keep 的 commit：文件 + 1句描述]
+[按时间列出每次 keep 的 commit：文件 + 1句描述 + commit hash]
 
 ## 测试场景验证
 
@@ -239,6 +362,13 @@ PR 内容：
 
 **此 PR 需要人工审核后才能合并，不允许自动合并。**
 请检查每次 commit 的 diff，确认修改符合 IIDP 平台规范。
+
+<details>
+<summary>📋 完整证据文档（skill-evolve-evidence.md 全文）</summary>
+
+[将 skill-evolve-evidence.md 的全部内容粘贴到此处]
+
+</details>
 
 https://claude.ai/code/session_01W68642RteUKXT5UwES3bBp
 ```
@@ -274,7 +404,8 @@ git branch -D ${EVOLVE_BRANCH}
 
 **情况 A（分数提升）**：
 - PR 已创建，URL 已输出
-- `skill-evolve-results.tsv` 已记录所有轮次数据
+- `skill-evolve-results.tsv` 已记录所有轮次数据（含 `judge_diagnosis` 和 `change_reason` 列）
+- `skill-evolve-evidence.md` 包含每轮 before/after 快照和法官诊断（已嵌入 PR body）
 - 进化分支已推送到远程
 - 未自动合并（等待人工审核）
 
@@ -282,4 +413,4 @@ git branch -D ${EVOLVE_BRANCH}
 - 进化分支已本地删除
 - 工作区已回到 `BASE_BRANCH`
 - 原因报告已输出
-- `skill-evolve-results.tsv` 保留记录（不提交 git）
+- `skill-evolve-results.tsv` 和 `skill-evolve-evidence.md` 保留记录（不提交 git）
