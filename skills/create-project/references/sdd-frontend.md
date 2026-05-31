@@ -211,9 +211,23 @@ page: [菜单或页面 key]
 > - 自定义 `@MethodService` 的 args **必须从 `contracts.md` 对应模型的服务契约表 `args 参数（名称: 类型）` 列读取**，不得自行推断或凭按钮文案猜测。
 > - 若契约中该服务 args 列为空或"待确认"，**先补全契约再填写本节**。
 
-| 操作 | 入口 | 触发条件         | 前端行为 | 后端服务 | args（来自契约） | 成功结果 | 失败处理     |
+> **按钮级权限控制规范**：IIDP 平台通过视图 JSON 的按钮 `auth` 字段控制按钮显示。每个操作按钮必须在本表"触发条件"列明确写出所需权限码，格式为 `{model_name}:{action}`（与 contracts.md 服务契约表中的"权限码"列完全一致）。
+>
+> | 操作类型 | 标准权限码格式 | 说明 |
+> |---|---|---|
+> | 新增 | `{model_name}:create` | tbar 新增按钮 auth |
+> | 编辑 | `{model_name}:update` | grid 行编辑按钮 auth |
+> | 删除 | `{model_name}:delete` | grid 行删除按钮 auth |
+> | 自定义操作 | `{model_name}:{customAuth}` | 与 `@MethodService(auth=...)` 一致 |
+> | 导出 | `{model_name}:export` | tbar 导出按钮（若有） |
+>
+> 无权限时按钮**隐藏**（不是 disabled），由平台 auth 字段自动控制，无需前端额外判断。
+
+| 操作 | 入口 | 触发条件（权限码） | 前端行为 | 后端服务 | args（来自契约） | 成功结果 | 失败处理     |
 | ---- | ---- | ---------------- | -------- | -------- | ---------------- | -------- | ------------ |
-| 新增 | tbar | 有 `create` 权限 | 打开表单 | `create` | `valuesList`     | 刷新列表 | 显示平台错误 |
+| 新增 | tbar | `{model_name}:create` | 打开表单 | `create` | `valuesList`     | 刷新列表 | 显示平台错误 |
+| 编辑 | grid 行 | `{model_name}:update` | 打开编辑表单 | `update` | `values` | 刷新列表 | 显示平台错误 |
+| 删除 | grid 行 | `{model_name}:delete` | 确认弹窗→删除 | `delete` | `ids` | 刷新列表 | 显示平台错误 |
 
 ## 9. IIDP 实现分支 [核心]
 

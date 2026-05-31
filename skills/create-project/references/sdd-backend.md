@@ -46,6 +46,8 @@
 | `[dateField]` | `Date` | `displayName="[中文名]", dataType=DataType.DATE, dateFormat="yyyy-MM-dd"` | 否 | — | 否 | 仅日期；含时间改用 `dataType=DataType.DATE_TIME, dateFormat="yyyy-MM-dd HH:mm:ss"` |
 | `[entityId]` | `String` | `@Selection(model="[model_name]", properties={"id","[displayField]"})` + `@Property(displayName="[中文名]")` + `@Validate.NotBlank(message="[中文名]不能为空")` | 是 | `@Validate.NotBlank` | 是 | FK ID 字段，与下方 ManyToOne 成对出现，存库 |
 | `[entity]` | `[EntityClass]` | `@ManyToOne(displayName="[中文名]", cascade=CascadeType.DEL_SET_NULL)` + `@JoinColumn(name="[col_id]", referencedProperty="id")` | — | — | — | ORM 关联对象，不存库，与上方 FK ID 字段成对，`@JoinColumn(name)` 与 FK 字段的数据库列名一致 |
+| `[children]` | `List<[ChildClass]>` | `@OneToMany(model="[child_model_name]", mappedBy="[fk_field_in_child]", cascade=CascadeType.ALL)` | — | — | — | 子表集合，不存库；级联删除子表时用 `CascadeType.ALL`，仅级联查询用 `CascadeType.NONE` |
+| `[tags]` | `List<[TagClass]>` | `@ManyToMany(model="[tag_model_name]")` + `@JoinTable(name="[join_table_name]", joinColumn="[this_fk]", inverseJoinColumn="[other_fk]")` | — | — | — | 多对多关联，详细参数必须读取 `model-property-advanced.md` §ManyToMany；中间表 `[join_table_name]` 由平台维护，无需手动建表 |
 
 > **生成任何模型字段前必须先读取以下文件**：
 > - `skills/backend/references/core/model.md`：`@Property` 完整参数（`store`、`readonly`、`dataType`、`dateFormat`、`widget`、`contentType`、`multiple`、`computeMethod`、`defaultMethod` 等）、`@Model` 声明、`@Selection`、`@Dict` 用法
@@ -217,6 +219,18 @@ List<?> children = meta.get("[child_model]").find(
 // 方式三：N+1 禁止，超过 1 条记录时批量查询后在内存组装
 List<String> ids = records.stream().map(...).collect(...)
 List<?> related = meta.get("[model]").find(Filter.in("id", ids), ...)
+
+// 分页查询标准契约（search/query 类服务）
+// IIDP 平台内置分页由 RecordSet 自动处理，通过 JSON-RPC Filter 传入 pageNum/pageSize
+// 自定义查询服务若需手动分页，入参签名如下：
+// (RecordSet rs, Integer pageNum, Integer pageSize, String orderBy)
+// 返回结构固定为 Map 含以下 key（不得自定义返回结构）：
+// {
+//   "total": Long,       // 总记录数
+//   "list": List<Map>,   // 当前页数据
+//   "pageNum": Integer,  // 当前页码（从 1 开始）
+//   "pageSize": Integer  // 每页条数
+// }
 ```
 
 **业务步骤**：
