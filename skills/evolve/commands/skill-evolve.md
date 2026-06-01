@@ -39,22 +39,30 @@ $ARGUMENTS
 
 ### Phase 0：建立基线评分
 
-**步骤 0.0 — 动态实体提取（优先于静态场景）**
+**步骤 0.0 — 动态实体提取（仅影响 D2/D6/D10/F4）**
 
-> **设计原则**：test-scenarios.md 是静态快照，OSS 系统才是持续更新的真实业务基准。实测维度（D10/F1-F4）优先用动态提取的实体，保证测试不退化为"背答案"。
+> **作用域说明**：动态实体只对"数据模型层"维度有价值，其余维度考察 skill 文档本身的写法，与业务实体无关：
+>
+> | 维度 | 是否使用动态实体 | 原因 |
+> |---|---|---|
+> | D2 字段规范性 | ✅ 是 | 用动态实体的字段验证 ID 类型/审计字段/ManyToOne 成对 |
+> | D6 ER 关系设计 | ✅ 是 | 用动态实体的 Lookup 关系验证 FK+ORM 配对规则 |
+> | D10 后端实测 | ✅ 是 | 动态实体作为 /sdd-spec 输入，检查生成产物 |
+> | F4 权限契约 | ✅ 是 | 用动态实体的按钮名推断 auth 格式是否合规 |
+> | D1/D3/D4/D5/D7/D8/D9/F1/F2/F3 | ❌ 否 | 考察 skill 文档结构/措辞/一致性，静态读文档即可，传入实体无意义 |
 
 ```
 IF --oss-url 已提供:
-  → 执行以下步骤提取动态实测实体，结果写入 DYNAMIC_ENTITY（内存，不提交 git）
-  → 若提取成功：后续 D10/F实测步骤使用 DYNAMIC_ENTITY，不用 test-scenarios.md 中的对应场景
-  → 若提取失败（网络/登录/超时）：记录失败原因，降级使用 test-scenarios.md 静态场景，继续执行
+  → 执行动态提取，结果写入 DYNAMIC_ENTITY（内存，不提交 git）
+  → 提取成功：D2/D6/D10/F4 的法官使用 DYNAMIC_ENTITY；其余 10 个维度的法官忽略此数据
+  → 提取失败：降级使用 test-scenarios.md 静态场景，在基线报告注明失败原因
 
 ELSE:
-  → 直接使用 test-scenarios.md 静态场景（场景 1 用于 D10，场景 5 用于 F实测）
-  → 在基线报告中注明"使用静态场景，建议提供 --oss-url 获取动态实体"
+  → D2/D6/D10/F4 使用 test-scenarios.md 静态场景（场景 1 用于 D10，场景 5 用于 F4）
+  → 在基线报告注明"使用静态场景，建议提供 --oss-url 以避免评分固化"
 ```
 
-**动态提取步骤（仅当 --oss-url 提供时执行）：**
+**动态提取步骤（仅当 --oss-url 提供时执行，只为 D2/D6/D10/F4 服务）：**
 
 读取 `skills/evolve/references/oss-validation-guide.md`，按其标准访问流程执行：
 
@@ -69,6 +77,7 @@ ELSE:
 {
   "source": "<oss-url>",
   "module": "功能模块名",
+  "used_by_dimensions": ["D2", "D6", "D10", "F4"],
   "entities": [
     {
       "name": "IIDP 适配后实体名（UpperCamelCase）",
@@ -84,15 +93,14 @@ ELSE:
     }
   ],
   "d10_checks": [
-    "检查项1：id 类型是否转为 String",
-    "检查项2：xxxId FK String 是否与 ManyToOne 成对",
-    "检查项3：审计字段是否不出现在模型字段列表",
-    "检查项4：status 枚举值是否用英文常量而非 0/1"
+    "id 类型是否转为 String（原项目为 Long）",
+    "xxxId FK String 是否与 ManyToOne ORM 对象成对",
+    "审计字段（createTime/updateTime）是否不出现在模型字段列表",
+    "status 枚举值是否用英文常量而非 0/1"
   ],
-  "f_checks": [
-    "前端检查项1：数据源类型是否为 meta/api",
-    "前端检查项2：按钮 auth 格式是否为 {model_name}:{action}",
-    "前端检查项3：节点 id 来源是否有明确标注"
+  "f4_checks": [
+    "新增/编辑/删除按钮 auth 格式是否为 {model_name}:{action}",
+    "auth 值是否与 contracts.md 权限码列完全一致"
   ]
 }
 ```
@@ -135,24 +143,43 @@ timestamp	branch	round	dimension	old_score	new_score	delta	status	file_changed	c
 
 > 关键：两个 sub-agent 独立运行，不共享上下文，防止 LLM 自评偏差（自评准确率仅 46.4%，独立法官提升到 73.8%）
 
-向每个 sub-agent 发送 `skills/evolve/references/skill-rubric.md` 中的「独立法官 Prompt 模板」。
+向每个 sub-agent 发送 `skills/evolve/references/skill-rubric.md` 中的「独立法官 Prompt 模板」，并按下方说明注入差异化上下文：
 
-**D10/F实测的实体来源（按优先级）：**
+**法官 Prompt 的两段上下文（分开注入，不混用）：**
+
+**① D2/D6/D10/F4 实体上下文（数据模型层）：**
 
 ```
 IF DYNAMIC_ENTITY 提取成功:
-  → 在法官 Prompt 中附加 DYNAMIC_ENTITY 的实体描述和检查点
-  → 指示法官："用以下动态提取的实体模拟运行 /sdd-spec 和 /sdd-spec（前端），检查生成产物"
-  → 说明实体来源（OSS系统名、功能模块名）
+  附加到 Prompt：
+  "【D2/D6/D10 实测实体（动态）】来源：<oss-url> - <module>
+   请用以下实体替代 test-scenarios.md 场景 1 模拟运行 /sdd-spec：
+   <DYNAMIC_ENTITY.entities 描述>
+   检查点：<DYNAMIC_ENTITY.d10_checks>
+   【F4 按钮 auth 检查（动态）】
+   检查点：<DYNAMIC_ENTITY.f4_checks>"
 
 ELSE（静态降级）:
-  → 使用 test-scenarios.md 场景 1（D10 后端）和场景 5（F前端）
-  → 在基线报告中注明"使用静态降级场景，动态提取失败原因：[原因]"
+  附加到 Prompt：
+  "【D2/D6/D10 实测实体（静态）】使用 test-scenarios.md 场景 1（RuoYi-Vue-Pro 用户管理）
+   【F4 检查（静态）】使用 test-scenarios.md 场景 5 的 F4 检查点"
+```
+
+**② D1/D3/D4/D5/D7/D8/D9/F1/F2/F3 文档层上下文：**
+
+```
+不注入任何业务实体数据。
+附加到 Prompt：
+"以下维度只需阅读 skill 文档本身，不依赖业务实体：
+ D1/D4/D5/D7：读 commands/*.md + sdd-workflow.md，按场景 6/7 检查点评分
+ D3/D8：读 sdd-backend.md + sdd-contracts.md，按场景 7/8 检查点评分
+ D9：读 sdd-validate.md + sdd-tasks.md
+ F1/F2/F3：读 sdd-frontend.md，按场景 9/10 检查点评分"
 ```
 
 具体要求：
-1. 读取指定的 create-project skill 文档
-2. 用上述来源的实体实际模拟 `/sdd-spec` 流程（D10 实测）和 `/sdd-spec`（前端）流程（F实测）
+1. 读取 skill-rubric.md 中指定的所有 create-project skill 文档
+2. 按上方两段上下文分别完成 D2/D6/D10/F4（实体驱动）和 D1/D3/D4/D5/D7/D8/D9/F1/F2/F3（文档静态）的评分
 3. 按格式输出 D1-D10 + F1-F4 各维度得分和诊断
 4. 对**得分最低的 2 个维度**额外输出扩展诊断（3-5 句），包含：
    - 具体扣分位置（哪个文件哪个 § 节）
