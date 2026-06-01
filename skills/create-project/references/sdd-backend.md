@@ -64,7 +64,7 @@
 - 业务字段必须有 `@Property(displayName = "...")`。
 - 选项、字典、关联字段用 `@Selection`、`@Dict` 或 ORM 注解。
 - 唯一编码、外键、高频过滤字段和排序字段要考虑索引。
-- **审计字段（create_user/create_date/update_user/update_date）由 `@Model(isAutoLog = Bool.True)` 自动维护，禁止在模型类中手动声明这四个字段或对应的 getter/setter。**
+- **审计字段（create_user/create_date/update_user/update_date）由 `@Model(isAutoLog = Bool.True)` 自动维护，禁止在模型类中手动声明这四个字段或对应的 getter/setter。** 违反后果：与平台自动维护列发生 ORM 映射冲突，平台启动时报 `column already exists` 错误，或审计字段值被业务代码意外覆盖导致数据异常。
 - **字段名大小写严格一致**：`@Property`、`set()`、`getStr()`、`getInt()` 等 Map 操作中的属性名字符串，必须与 Java `private` 字段声明完全相同（区分大小写）。
 
   | 字段声明 | ✅ 正确引用 | ❌ 错误写法 |
@@ -76,7 +76,7 @@
   上表中每一行都是强制约束：字段声明驼峰写法必须与 Map 操作字符串完全一致，任何大小写变体均为错误。
 - **所有 id 字段类型为 String**（IIDP 平台雪花算法转字符串），包括主键 id 和外键 FK 字段，禁止使用 Long 类型表示平台 id。
 
-> **注解作用域禁止事项**：以下注解**只能标注在字段上，严禁标注在类上**：`@Property`、`@Validate.*`（`NotBlank`/`Size`/`Pattern`/`Unique`）、`@Selection`/`@Option`、`@Dict`、`@ManyToOne`/`@OneToMany`/`@ManyToMany`、`@JoinColumn`/`@JoinTable`。类上只允许 `@StaticVar`、`@Getter`、`@Setter`、`@Slf4j`、`@Model`。
+> **注解作用域禁止事项**：以下注解**只能标注在字段上，严禁标注在类上**：`@Property`、`@Validate.*`（`NotBlank`/`Size`/`Pattern`/`Unique`）、`@Selection`/`@Option`、`@Dict`、`@ManyToOne`/`@OneToMany`/`@ManyToMany`、`@JoinColumn`/`@JoinTable`。类上只允许 `@StaticVar`、`@Getter`、`@Setter`、`@Slf4j`、`@Model`。违反后果：平台注解处理器**静默忽略**标注在类上的字段级注解，功能不生效且无编译报错，导致运行时行为与预期不符且难以定位原因。
 
 **跨 App 外部模型引用（弱引用 + 冗余字段模式）**：
 
