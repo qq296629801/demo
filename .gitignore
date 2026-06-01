@@ -37,6 +37,4 @@ build/
 ### Mac OS ###
 .DS_Store
 .codegraph/
-/docs/
 /.cursor2/
-/docs/
