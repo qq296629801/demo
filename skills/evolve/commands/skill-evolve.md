@@ -24,6 +24,7 @@ $ARGUMENTS
 - `--max-rounds N`：最多 N 轮 hill-climbing（默认 5）
 - `--eval-only`：只运行 Phase 0 评分，不修改任何文件
 - `--target-branch <branch>`：指定 PR 的目标分支（默认 `claude/practical-cray-ZIZ7P`，当 dev 分支就绪后改为 `dev`）
+- `--oss-url <url>`：指定开源系统 Demo URL，用于动态提取实测实体（如 `http://dashboard.yudao.iocoder.cn`）；不提供则降级使用静态 test-scenarios.md
 
 ## 前置检查
 
@@ -37,6 +38,64 @@ $ARGUMENTS
 ## 执行步骤
 
 ### Phase 0：建立基线评分
+
+**步骤 0.0 — 动态实体提取（优先于静态场景）**
+
+> **设计原则**：test-scenarios.md 是静态快照，OSS 系统才是持续更新的真实业务基准。实测维度（D10/F1-F4）优先用动态提取的实体，保证测试不退化为"背答案"。
+
+```
+IF --oss-url 已提供:
+  → 执行以下步骤提取动态实测实体，结果写入 DYNAMIC_ENTITY（内存，不提交 git）
+  → 若提取成功：后续 D10/F实测步骤使用 DYNAMIC_ENTITY，不用 test-scenarios.md 中的对应场景
+  → 若提取失败（网络/登录/超时）：记录失败原因，降级使用 test-scenarios.md 静态场景，继续执行
+
+ELSE:
+  → 直接使用 test-scenarios.md 静态场景（场景 1 用于 D10，场景 5 用于 F实测）
+  → 在基线报告中注明"使用静态场景，建议提供 --oss-url 获取动态实体"
+```
+
+**动态提取步骤（仅当 --oss-url 提供时执行）：**
+
+读取 `skills/evolve/references/oss-validation-guide.md`，按其标准访问流程执行：
+
+1. `mcp__playwright__navigate(<oss-url>)`，检测登录状态并登录（使用 oss-validation-guide.md §三 策略A/B/C）
+2. 从导航菜单提取 2-3 个含 ManyToOne 关系的功能模块（优先选有"外键选择器"字段和"状态枚举"的模块）
+3. 对每个模块点击"新增"按钮，从表单 snapshot 提取字段清单（label + 必填标记 + 下拉选项）
+4. 将提取到的实体结构转换为 IIDP 适配描述，格式参考 test-scenarios.md 的实体描述格式
+
+**DYNAMIC_ENTITY 数据结构：**
+
+```json
+{
+  "source": "<oss-url>",
+  "module": "功能模块名",
+  "entities": [
+    {
+      "name": "IIDP 适配后实体名（UpperCamelCase）",
+      "original_fields": ["原始字段列表（含原始类型）"],
+      "iidp_fields": [
+        {"name": "id", "type": "String", "note": "原 Long → IIDP String"},
+        {"name": "xxxId", "type": "String", "annotation": "@Selection(model='yyy')"},
+        {"name": "xxx", "type": "YyyEntity", "annotation": "@ManyToOne"},
+        {"name": "status", "type": "String", "values": ["枚举值1", "枚举值2"]}
+      ],
+      "relations": ["ManyToOne → 关联实体"],
+      "audit_fields_present": true
+    }
+  ],
+  "d10_checks": [
+    "检查项1：id 类型是否转为 String",
+    "检查项2：xxxId FK String 是否与 ManyToOne 成对",
+    "检查项3：审计字段是否不出现在模型字段列表",
+    "检查项4：status 枚举值是否用英文常量而非 0/1"
+  ],
+  "f_checks": [
+    "前端检查项1：数据源类型是否为 meta/api",
+    "前端检查项2：按钮 auth 格式是否为 {model_name}:{action}",
+    "前端检查项3：节点 id 来源是否有明确标注"
+  ]
+}
+```
 
 **步骤 0.1 — 创建进化分支**
 
@@ -76,10 +135,25 @@ timestamp	branch	round	dimension	old_score	new_score	delta	status	file_changed	c
 
 > 关键：两个 sub-agent 独立运行，不共享上下文，防止 LLM 自评偏差（自评准确率仅 46.4%，独立法官提升到 73.8%）
 
-向每个 sub-agent 发送 `skills/evolve/references/skill-rubric.md` 中的「独立法官 Prompt 模板」，要求：
+向每个 sub-agent 发送 `skills/evolve/references/skill-rubric.md` 中的「独立法官 Prompt 模板」。
+
+**D10/F实测的实体来源（按优先级）：**
+
+```
+IF DYNAMIC_ENTITY 提取成功:
+  → 在法官 Prompt 中附加 DYNAMIC_ENTITY 的实体描述和检查点
+  → 指示法官："用以下动态提取的实体模拟运行 /sdd-spec 和 /sdd-spec（前端），检查生成产物"
+  → 说明实体来源（OSS系统名、功能模块名）
+
+ELSE（静态降级）:
+  → 使用 test-scenarios.md 场景 1（D10 后端）和场景 5（F前端）
+  → 在基线报告中注明"使用静态降级场景，动态提取失败原因：[原因]"
+```
+
+具体要求：
 1. 读取指定的 create-project skill 文档
-2. 用 test-scenarios.md 场景 1 实际模拟 `/sdd-spec` 流程（D10 实测）
-3. 按格式输出 D1-D10 各维度得分和诊断
+2. 用上述来源的实体实际模拟 `/sdd-spec` 流程（D10 实测）和 `/sdd-spec`（前端）流程（F实测）
+3. 按格式输出 D1-D10 + F1-F4 各维度得分和诊断
 4. 对**得分最低的 2 个维度**额外输出扩展诊断（3-5 句），包含：
    - 具体扣分位置（哪个文件哪个 § 节）
    - 1 个具体反例（如"§3 模型表第 5 行写了 `Long id`"）

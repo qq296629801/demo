@@ -1,6 +1,21 @@
 # Skill 进化标准测试场景
 
-> 基于 Gitee 后端热门开源项目（芋道源码/RuoYi-Vue-Pro、macrozheng/mall、jeecgboot/JeecgBoot、stylefeng/Guns）的真实实体设计。
+> **定位：静态降级场景（fallback）**
+>
+> 本文是 `skill-evolve` 的**静态备用测试输入**，仅在以下情况使用：
+> - 运行 `/skill-evolve` 时未提供 `--oss-url` 参数
+> - Playwright MCP 不可用或 OSS 系统登录失败
+>
+> **优先使用动态场景**：提供 `--oss-url`（如 `http://dashboard.yudao.iocoder.cn`）时，
+> `skill-evolve` 会通过 `oss-validation-guide.md` 实时从 OSS Demo 抓取真实实体，
+> 将其作为 D10/F实测的输入——这样测试不会退化为"背答案"，评分随 skill 文档真实变化而变化。
+>
+> 本文的场景基于 2024 年抓取的真实实体快照，核心价值在于：
+> 1. **静态维度（D1/D4/D5/D7/D8）**：这些维度不依赖运行输出，需要法官阅读 skill 文档本身，静态场景足够
+> 2. **离线/CI 环境**：无网络时的保底测试输入
+> 3. **反模式锚定**：明确列出各维度的错误模式，帮助法官校准评分标准
+
+> 原始来源：Gitee 后端热门开源项目（芋道源码/RuoYi-Vue-Pro、macrozheng/mall、jeecgboot/JeecgBoot、stylefeng/Guns）。
 > 这些项目均使用 Long 类型 ID，与 IIDP 平台要求的 String（雪花）形成对比，是检验 skill 能否正确指导类型转换的核心依据。
 
 ---
