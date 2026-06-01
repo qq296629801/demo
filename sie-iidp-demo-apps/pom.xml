@@ -14,7 +14,6 @@
     <modules>
         <module>sie-iidp-demo-example</module>
         <module>sie-iidp-demo-xxljob-executor</module>
-        <module>sie-iidp-demo-trace</module>
     </modules>
 
     <dependencies>
