@@ -170,13 +170,14 @@ mkdir -p ${PROJECT_DIR}/{backend,frontend,oss-screenshots}
 
 ```
 执行 /skill-evolve 命令的所有步骤，参数：
+  --requirements ${PROJECT_DIR}
   --max-rounds <max-rounds>（默认 3）
-  --target-branch claude/practical-cray-ZIZ7P
 ```
 
-输入参考：
-- Phase 1 Gap 扫描结果（用于 Phase 0 基线评分的优先级）
-- Phase 2 OSS 合规报告中的 Gap 清单（额外输入给法官 sub-agent）
+说明：
+- `${PROJECT_DIR}` 已经包含 Phase 1 生成的 `requirements.md`（含 US + AC），skill-evolve 将基于此直接进入 Phase 0.3（跳过 OSS 重新抓取）
+- 若用户提供了 `--oss-url`，也可改用 `--oss-url <oss-url>` 让 skill-evolve 重新动态提取需求（适合想换模块测试时）
+- Phase 1 的 P0 Gap 扫描结果（G1-1/G1-2/G1-3）可作为 Phase 1 步骤 1.1 的优先诊断提示，直接告知 skill-evolve 跳过冒烟测试先解决静态 P0 Gap
 
 每轮 hill-climbing 的 CHECKPOINT 照常执行（见 skill-evolve.md）。
 
@@ -206,9 +207,9 @@ mkdir -p ${PROJECT_DIR}/{backend,frontend,oss-screenshots}
 
 ## Phase 3：Skill 进化结果
 
-- 评分变化：[BASELINE] → [CURRENT]（+[DELTA]pt）
-- 修复的维度：[D列表]
-- PR 状态：[PR URL 或 "未创建（分数未提升）"]
+- 冒烟通过率变化：[BASELINE]% → [FINAL]%（Δ = +[DELTA]%）
+- 修复的 TC：[TC-ID 列表]
+- PR 状态：[PR URL 或 "未创建（通过率未提升）"]
 
 ## 产出物清单
 

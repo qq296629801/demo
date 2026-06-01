@@ -1,13 +1,42 @@
-# create-project Skill 质量评分 Rubric（14 维，140 分）
+# create-project Skill 诊断 Rubric（14 维，D1-D10/F1-F4）
 
-> 改编自 darwin-skill 9 维 rubric（arXiv 2605.23899 SkillLens），针对 IIDP create-project 具体问题域定制。
-> 实证基础：LLM 自评准确率 46.4%，使用独立法官 + meta-skill 维度后提升到 73.8%。
+> **使用定位（v3）**：本文件是 **失败 TC 根因定位工具**，不再是主评分指标。
 >
-> **v2**：新增 F1-F4 前端评分维度（40pt），总分从 100pt 扩展至 140pt。
+> 主指标是 `smoke_test.py` 通过率（见 `skill-evolve.md`）。
+> 当冒烟测试出现失败 TC 时，用下方"TC 失败模式 → 诊断维度 → 对应 skill 文件"快速表定位修改目标。
+> 修改决策仍由通过率 Δ > 0 决定，不由 rubric 分数驱动。
+>
+> （原评分功能已降级为可选的定性参考，独立法官 prompt 保留在文末供回归分析使用。）
 
 ---
 
-## 后端评分维度（D1-D10，满分 100pt）
+## 快速诊断表：TC 失败模式 → 维度 → 修改目标
+
+| TC 失败现象 | 诊断维度 | 对应 skill 文件 §位置 |
+|---|---|---|
+| 生成的 backend-spec 有 `Long id` / `List<Long>` | D2 字段规范性 | `sdd-backend.md` §3 模型设计表 |
+| 生成的 backend-spec 有 `create_user`/`create_date` 字段声明 | D2 字段规范性 | `sdd-backend.md` §3 审计字段规则 |
+| ManyToOne 只有 ORM 对象字段，无 FK String 字段 | D6 ER 关系设计 | `sdd-backend.md` §3 ManyToOne 规则 |
+| 生成代码用 Spring `@Service` 而非 `@MethodService` | D3 平台合规性 | `sdd-backend.md` §4 服务注解规范 |
+| 生成代码用 Spring `@Autowired`/`@Component` | D3 平台合规性 | `sdd-backend.md` §4 注解黑名单 |
+| contracts.md 缺失时流程无停止提示 | D4 失败机制编码 | `sdd-contracts.md` / `sdd-spec.md` 前置检查 |
+| smoke_test 的 search/create/update/delete 返回非预期结构 | D8 跨步骤一致性 | `sdd-backend.md` ↔ `sdd-contracts.md` 入参签名对比 |
+| 缺少 approve/reject 等状态变更服务，状态 TC 全失败 | D9 测试可验性 | `sdd-backend.md` §4 状态机服务 |
+| 分页查询返回 List 而非 `{total,list,pageNum,pageSize}` | D8 跨步骤一致性 | `sdd-backend.md` §4 查询返回结构 |
+| 生成的 frontend-spec 直接写 Vue2 组件跳过 hook/扩展视图 | F1 实现分支合规性 | `sdd-frontend.md` §9 决策链 |
+| 节点 id 凭按钮文案自拼，未标记"待确认" | F2 节点规范性 | `sdd-frontend.md` §6 节点 id 来源 |
+| 数据源使用 axios/fetch，非 IIDP meta/api 数据源 | F3 数据源规范 | `sdd-frontend.md` §10 数据源规范 |
+| 按钮缺 auth 字段，或格式不是 `{model_name}:{action}` | F4 权限契约一致性 | `sdd-frontend.md` §8 按钮权限表 |
+| 指令文字有"建议/可以/根据情况"等软化措辞导致 AI 行为不确定 | D5 可操作性 | 对应 `commands/*.md` 失败步骤 |
+| 生成的 backend-spec 字段驼峰大小写与 `set()`/`getStr()` 不一致 | D2 字段规范性 | `sdd-backend.md` §3 驼峰规则 |
+
+---
+
+---
+
+## 诊断维度详表（仅供根因分析参考）
+
+### 后端维度（D1-D10，满分 100pt）
 
 | # | 维度 | 权重 | 满分条件 | 常见扣分场景 |
 |---|---|---|---|---|
@@ -26,7 +55,7 @@
 
 ---
 
-## 前端评分维度（F1-F4，满分 40pt）
+### 前端维度（F1-F4，满分 40pt）
 
 | # | 维度 | 权重 | 满分条件 | 常见扣分场景 |
 |---|---|---|---|---|
@@ -47,12 +76,12 @@
 
 ---
 
-## 评分规则
+---
 
-- 每个维度打 0 到满分整数分
-- **D10 / F-实测**：必须实际运行测试场景（不允许只凭文档推断），运行结果即证据
-- 改进后总分必须**严格高于**改进前（Δ > 0）才保留，Δ = 0 视为未改进，丢弃
-- 连续 2 轮 Δ < 2pt → Early Stop（局部最优）
+## 独立法官 Prompt 模板（可选，用于回归分析）
+
+> **说明**：以下 prompt 不再是 hill-climbing 的主决策依据。仅在需要对 skill 文档做全量诊断（如月度回归）时使用。
+> 日常进化循环直接用上方快速诊断表定位失败 TC 的根因即可。
 
 ---
 

@@ -90,6 +90,35 @@ sdd-implement → 按 tasks.md 逐个 task 生成代码（backend-model / backen
 
 记录生成的文件列表为 `GENERATED_FILES`。
 
+**步骤 0.3.5 — 生成 JSON-RPC 冒烟测试文件**
+
+> smoke_test.py 依赖 `tests/functional/jsonrpc/*.json`，必须在运行校准前生成。
+
+从 `${PROJECT_DIR}/requirements.md` 的用户故事（US）和验收标准（AC）生成测试文件：
+
+对每个用户故事，创建 `tests/functional/jsonrpc/{us-id}.json`，格式如下（参考 `sdd-validation.md` §JSON-RPC 测试文件格式）：
+
+```
+规则：
+- 每个 US 一个 JSON 文件，storyId = US-xxx
+- 每条 AC 至少对应 1 个正常路径 case + 1 个异常路径 case
+- 正常路径：expectedResult: true（期望返回 result 字段）
+- 异常路径：expectedError: true（期望返回 error 字段，如必填校验失败）
+- model/service/app 取自 contracts.md 中对应 US 的服务契约
+- args 取自 contracts.md 的入参定义（filter/valuesList/ids/values）
+
+US-001 列表查询 → service: search，args: {filter:[], properties:[...], limit:10}
+US-002 新增      → service: create，args: {valuesList:[{...正常数据...}]}
+                   + 异常 case：valuesList:[{}]（必填字段为空）
+US-003 编辑      → service: update，args: {ids:["test-id"], values:{...}}
+US-004 删除      → service: delete，args: {ids:["test-id"]}
+US-005 状态变更  → service: <状态服务名>，args: {ids:["test-id"]}
+```
+
+确认 `tests/functional/smoke_test.py` 存在（若不存在，从 `sdd-validation.md` 中的脚本模板创建）。
+
+记录：`SMOKE_TC_TOTAL` = 生成的 case 总数；输出文件列表。
+
 **步骤 0.4 — 运行 sdd-validation 校准链**
 
 读取 `skills/create-project/references/sdd-validation.md`，依次执行：
