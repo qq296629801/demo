@@ -1,119 +1,119 @@
 ---
 name: evolve
-description: Use when optimizing the IIDP create-project skill with benchmark-driven experiments, source-to-spec evaluation, Docker smoke tests, or sample-pool validation.
+description: Use when 需要通过基准实验、源码转规格、Docker 冒烟测试或样本池验证来优化 IIDP create-project skill。
 ---
 
 # evolve
 
-## Overview
+## 概述
 
-`evolve` is the self-evolution harness for `skills/create-project`. It uses a fixed benchmark, source-code-derived requirements, generated IIDP apps, Docker smoke tests, and a single 100-point score to decide whether a `create-project` change is worth keeping.
+`evolve` 是 `skills/create-project` 的自进化评测框架。它用固定基准、从源码生成的需求文档、生成的 IIDP 应用、Docker 冒烟测试和一个 100 分评分，判断某个 `create-project` 改动是否值得保留。
 
-This skill is inspired by the autoresearch loop: keep the environment fixed, change only the editable target, measure one comparable metric, commit only improvements, and leave final review to humans.
+本 skill 参考 autoresearch 循环：固定环境，只修改允许修改的目标，用一个可比较指标度量，只提交提升，最终交给人工审核。
 
-## Hard Boundaries
+## 硬边界
 
-- The fixed benchmark repository is `https://github.com/YunaiV/ruoyi-vue-pro.git`.
-- Record the benchmark commit SHA on first use. Reuse that same SHA for every later comparison unless the user explicitly asks to refresh the benchmark.
-- During automatic improvement, only modify files under `skills/create-project/`.
-- Do not modify `skills/code-index/`, `skills/evolve/`, sample repositories, generated IIDP apps, Docker infrastructure, or test artifacts to force a higher score.
-- One improvement round may make only one small, reviewable change. If it needs a second concern, run a second round.
-- Sample-pool results may guide the next `create-project` edit, but only the fixed benchmark score decides whether an edit is kept.
-- A score increase keeps the branch for human review. A non-increase must be reverted.
-- Never auto-merge an evolve branch.
+- 固定基准仓库是 `https://github.com/YunaiV/ruoyi-vue-pro.git`。
+- 首次使用时记录基准 commit SHA。后续比较必须复用同一个 SHA，除非用户明确要求刷新基准。
+- 自动改进阶段只能修改 `skills/create-project/` 下的文件。
+- 不得修改 `skills/code-index/`、`skills/evolve/`、样本仓库、生成的 IIDP 应用、Docker 基础设施或测试产物来强行提分。
+- 每一轮改进只能做一个小而可审查的改动。如果还需要处理第二个问题，放到下一轮。
+- 样本池结果可以指导下一次 `create-project` 修改，但是否保留改动只由固定基准分决定。
+- 分数提升则保留分支等待人工审核；分数未提升必须回滚。
+- 永远不要自动合并 evolve 分支。
 
-## Required Inputs and Outputs
+## 必需输入与输出
 
-For every evaluated source repository:
+对每个被评测的源码仓库：
 
-1. Use `skills/code-index` to generate requirements from source code.
-2. Require at least SRS, user stories, API documentation, database structure, and test cases or acceptance criteria.
-3. Use `skills/create-project` to generate IIDP SDD artifacts and an IIDP app from those requirements.
-4. Generate smoke tests from the user stories and test cases.
-5. Run Docker and JSON-RPC validation according to `skills/create-project/references/sdd-validation.md` and this skill's smoke validation reference.
-6. Produce a score report with logs, commit SHAs, configuration evidence, and failure reasons.
+1. 使用 `skills/code-index` 从源码生成需求文档。
+2. 至少要求产出 SRS、用户故事、API 文档、数据库结构、测试用例或验收标准。
+3. 使用 `skills/create-project` 根据需求文档生成 IIDP SDD 产物和 IIDP 应用。
+4. 从用户故事和测试用例生成冒烟测试。
+5. 按 `skills/create-project/references/sdd-validation.md` 和本 skill 的冒烟验证参考执行 Docker 与 JSON-RPC 验证。
+6. 输出包含日志、commit SHA、配置证据和失败原因的评分报告。
 
-## Workflow
+## 工作流
 
-### Phase 0: Load References
+### Phase 0：加载参考资料
 
-Read only the references needed for the current action:
+只读取当前动作需要的参考资料：
 
-| Need | Read |
+| 需要 | 读取 |
 |---|---|
-| Experiment loop, branching, keep/revert rules | `references/autoresearch-loop.md` |
-| Score calculation and acceptance gates | `references/evaluation-rubric.md` |
-| Manual or websearch test samples | `references/sample-pool.md` |
-| Docker account/password checks and JSON-RPC smoke tests | `references/smoke-validation.md` |
+| 实验循环、分支、保留/回滚规则 | `references/autoresearch-loop.md` |
+| 评分计算和接收门禁 | `references/evaluation-rubric.md` |
+| 手工样本或 websearch 测试样本 | `references/sample-pool.md` |
+| Docker 账号密码检查和 JSON-RPC 冒烟测试 | `references/smoke-validation.md` |
 
-Also read `skills/code-index/SKILL.md`, `skills/create-project/SKILL.md`, and `skills/create-project/references/sdd-validation.md` before running a real evaluation.
+运行真实评测前，还必须读取 `skills/code-index/SKILL.md`、`skills/create-project/SKILL.md` 和 `skills/create-project/references/sdd-validation.md`。
 
-### Phase 1: Establish Baseline
+### Phase 1：建立基准
 
-1. Clone or reuse the fixed benchmark repository.
-2. Checkout the recorded benchmark SHA, or record the current SHA if this is the first run.
-3. Run source-to-spec with `code-index`.
-4. Run spec-to-IIDP generation with `create-project`.
-5. Run Docker configuration consistency checks.
-6. Run functional smoke tests generated from user stories and test cases.
-7. Score the benchmark and save baseline evidence.
+1. 克隆或复用固定基准仓库。
+2. checkout 已记录的基准 SHA；如果是首次运行，则记录当前 SHA。
+3. 使用 `code-index` 执行源码到规格书生成。
+4. 使用 `create-project` 执行规格书到 IIDP 应用生成。
+5. 执行 Docker 配置一致性检查。
+6. 执行从用户故事和测试用例生成的功能冒烟测试。
+7. 对基准打分并保存基准证据。
 
-The baseline score is the only acceptance threshold for later `create-project` edits.
+基准分是后续 `create-project` 改动的唯一接收阈值。
 
-### Phase 2: Explore Sample Pool
+### Phase 2：探索样本池
 
-Use sample repositories to find `create-project` weaknesses:
+使用样本仓库发现 `create-project` 的薄弱点：
 
-- User-provided samples are preferred.
-- If requested, use websearch to discover up to 50 backend management framework repositories.
-- Filter out unavailable, non-source, unrelated, or license-unclear repositories.
-- For each accepted sample, record URL, commit SHA, framework notes, generated spec quality, IIDP generation failures, smoke-test failures, and the suspected missing `create-project` guidance.
+- 优先使用用户提供的样本。
+- 如果用户要求，使用 websearch 最多发现 50 个后端管理框架仓库。
+- 过滤不可访问、没有源码、无关或许可证不清晰的仓库。
+- 对每个接收的样本，记录 URL、commit SHA、框架说明、生成规格质量、IIDP 生成失败、冒烟测试失败和疑似缺失的 `create-project` 指导。
 
-Do not keep or reject a `create-project` edit based on sample-pool score alone.
+不要只根据样本池分数保留或拒绝 `create-project` 改动。
 
-### Phase 3: Improve `create-project`
+### Phase 3：改进 `create-project`
 
-1. Create or switch to an isolated evolve branch.
-2. Pick one failure pattern from the baseline or sample pool.
-3. Edit one small area under `skills/create-project/`.
-4. Commit the edit before re-evaluation so it can be cleanly reverted.
-5. Re-run the fixed benchmark using the same benchmark SHA and environment.
-6. Compare the new benchmark score against the previous benchmark score:
-   - `new_score > previous_score`: keep the commit, update the evidence, and leave the branch for human review.
-   - `new_score <= previous_score`: revert the commit and record why it failed.
+1. 创建或切换到隔离的 evolve 分支。
+2. 从基准或样本池中选择一个失败模式。
+3. 只修改 `skills/create-project/` 下的一小块内容。
+4. 重新评测前先提交该改动，确保可以干净回滚。
+5. 使用相同基准 SHA 和相同环境重新运行固定基准。
+6. 比较新基准分与上一轮基准分：
+   - `new_score > previous_score`：保留 commit，更新证据，分支留给人工审核。
+   - `new_score <= previous_score`：回滚 commit，并记录失败原因。
 
-### Phase 4: Human Review Gate
+### Phase 4：人工审核门禁
 
-When at least one commit improves the benchmark:
+当至少一个 commit 提升了基准分：
 
-- Keep the evolve branch.
-- Summarize score delta, changed files, benchmark SHA, test logs, and sample-pool evidence.
-- Ask for human review or create a PR if the user requested GitHub publishing.
-- Do not merge automatically.
+- 保留 evolve 分支。
+- 汇总分数变化、变更文件、基准 SHA、测试日志和样本池证据。
+- 请求人工审核；如果用户要求发布到 GitHub，则创建 PR。
+- 不要自动合并。
 
-When no commit improves the benchmark:
+当没有任何 commit 提升基准分：
 
-- Revert all failed experiment commits.
-- Return to the original branch.
-- Report the best observed failure patterns and why no change was kept.
+- 回滚所有失败实验 commit。
+- 返回原始分支。
+- 报告观察到的最有价值失败模式，以及没有保留改动的原因。
 
-## Evidence Files
+## 证据文件
 
-Use local, reviewable evidence files when running the loop:
+运行循环时使用本地、可审查的证据文件：
 
-- `evolve-results.tsv`: one row per baseline/sample/round.
-- `evolve-evidence.md`: human-readable run log with score tables, diffs, smoke-test summaries, Docker configuration findings, and keep/revert decisions.
+- `evolve-results.tsv`：每个基准、样本或轮次一行。
+- `evolve-evidence.md`：人类可读运行日志，包含评分表、diff、冒烟测试摘要、Docker 配置发现、保留/回滚决策。
 
-Do not commit these evidence files unless the user explicitly asks.
+除非用户明确要求，否则不要提交这些证据文件。
 
-## Completion Checklist
+## 完成检查清单
 
-- Benchmark repository URL and commit SHA are recorded.
-- `code-index` requirements include SRS, user stories, API, database, and tests or acceptance criteria.
-- `create-project` generated required SDD artifacts and IIDP app files.
-- Docker credentials, database names, Redis/MinIO settings, and app port are consistent across compose, Docker config, and generated app config.
-- Smoke tests are derived from documented user stories and test cases.
-- Score uses `references/evaluation-rubric.md`.
-- Any kept change modifies only `skills/create-project/`.
-- Failed changes are reverted and explained.
-- Improved changes remain on a branch for human review, not auto-merged.
+- 已记录基准仓库 URL 和 commit SHA。
+- `code-index` 需求文档包含 SRS、用户故事、API、数据库、测试或验收标准。
+- `create-project` 已生成必需的 SDD 产物和 IIDP 应用文件。
+- Docker 账号密码、数据库名、Redis/MinIO 设置、应用端口在 compose、Docker 配置和生成应用配置之间一致。
+- 冒烟测试来自已记录的用户故事和测试用例。
+- 评分使用 `references/evaluation-rubric.md`。
+- 任何保留的改动只修改 `skills/create-project/`。
+- 失败改动已回滚并解释。
+- 提升分数的改动保留在分支上等待人工审核，不自动合并。

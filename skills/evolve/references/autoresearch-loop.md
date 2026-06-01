@@ -1,79 +1,79 @@
-# Autoresearch Loop Mapping
+# Autoresearch 循环映射
 
-## Principle
+## 原则
 
-`evolve` adapts the autoresearch pattern to skill maintenance:
+`evolve` 将 autoresearch 模式适配到 skill 维护：
 
-| Autoresearch idea | evolve equivalent |
+| Autoresearch 思路 | evolve 对应机制 |
 |---|---|
-| Fixed training setup | Fixed benchmark repository and commit SHA |
-| One editable training file | Only `skills/create-project/` is editable during improvement |
-| One validation metric | One 100-point benchmark score |
-| Git as memory | Commit each experiment before measurement |
-| Keep wins, discard losses | Keep score increases, revert non-increases |
-| Human-written program.md | Human-reviewed skill guidance and final PR |
+| 固定训练环境 | 固定基准仓库和 commit SHA |
+| 一个可编辑训练文件 | 改进阶段只允许编辑 `skills/create-project/` |
+| 一个验证指标 | 一个 100 分基准评分 |
+| Git 作为记忆 | 每次实验先 commit 再测量 |
+| 保留胜利、丢弃失败 | 分数提升则保留，未提升则回滚 |
+| 人类编写 program.md | 人工审核 skill 指导和最终 PR |
 
-The loop must optimize measured `create-project` behavior, not the evaluation harness.
+循环必须优化可测量的 `create-project` 行为，而不是优化评测框架本身。
 
-## Branch and Commit Rules
+## 分支与提交规则
 
-- Create an isolated branch named `evolve/create-project-YYYYMMDD-HHMM` unless the user provides another name.
-- Capture the original branch before starting.
-- Commit each attempted edit before running the benchmark.
-- Commit message format: `evolve: improve create-project <short reason>`.
-- If benchmark score does not increase, run a normal revert for the experiment commit and record the reason.
-- If score increases, keep the commit and use it as the new previous score for the next round.
+- 除非用户提供其他名称，否则创建隔离分支 `evolve/create-project-YYYYMMDD-HHMM`。
+- 开始前记录原始分支。
+- 每个尝试性改动都要在运行基准前提交。
+- 提交信息格式：`evolve: improve create-project <short reason>`。
+- 如果基准分没有提升，对实验 commit 执行正常 revert，并记录原因。
+- 如果分数提升，保留 commit，并把它作为下一轮的上一轮分数。
 
-## Round Shape
+## 单轮形态
 
-Each round follows this order:
+每一轮按以下顺序执行：
 
-1. Select one failure pattern.
-2. State the hypothesis in one sentence.
-3. Modify one small section under `skills/create-project/`.
-4. Commit the change.
-5. Re-run the fixed benchmark from the same benchmark commit SHA.
-6. Score with `evaluation-rubric.md`.
-7. Keep or revert.
-8. Append evidence.
+1. 选择一个失败模式。
+2. 用一句话说明改进假设。
+3. 修改 `skills/create-project/` 下的一小段内容。
+4. 提交改动。
+5. 使用同一个基准 commit SHA 重新运行固定基准。
+6. 用 `evaluation-rubric.md` 打分。
+7. 保留或回滚。
+8. 追加证据。
 
-Do not bundle unrelated fixes. A bigger instruction may be split into multiple rounds only after each round has passed the fixed benchmark.
+不要打包无关修复。更大的指导改动必须拆成多轮，每一轮都通过固定基准后才能继续。
 
-## Evidence Template
+## 证据模板
 
 ```markdown
-## Round <n>: <hypothesis>
+## 第 <n> 轮：<hypothesis>
 
-- Benchmark repo: https://github.com/YunaiV/ruoyi-vue-pro.git
-- Benchmark SHA: <sha>
-- Experiment commit: <sha>
-- Editable scope checked: only skills/create-project/
+- 基准仓库：https://github.com/YunaiV/ruoyi-vue-pro.git
+- 基准 SHA：<sha>
+- 实验 commit：<sha>
+- 可编辑范围已检查：only skills/create-project/
 
-### Failure Pattern
+### 失败模式
 
-<baseline or sample-pool evidence>
+<基准或样本池证据>
 
-### Change
+### 改动
 
-<file and concise before/after summary>
+<文件和简洁 before/after 摘要>
 
-### Score
+### 评分
 
-| Metric | Previous | New | Delta |
+| 指标 | Previous | New | Delta |
 |---|---:|---:|---:|
 | Total | 0 | 0 | 0 |
 
-### Decision
+### 决策
 
-KEEP or REVERT, with reason.
+KEEP 或 REVERT，并说明原因。
 ```
 
-## Stop Conditions
+## 停止条件
 
-Stop the loop when:
+出现以下情况时停止循环：
 
-- The user-specified maximum round count is reached.
-- Two consecutive kept rounds improve by less than 2 points each.
-- Three consecutive attempted edits are reverted.
-- Docker or external infrastructure is unavailable and prevents comparable scoring.
-- The next useful edit would require changing files outside `skills/create-project/`.
+- 达到用户指定的最大轮数。
+- 连续两轮保留改动的提升都小于 2 分。
+- 连续三个尝试性改动都被回滚。
+- Docker 或外部基础设施不可用，导致无法进行可比较评分。
+- 下一个有用改动需要修改 `skills/create-project/` 之外的文件。

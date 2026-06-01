@@ -1,92 +1,92 @@
-# Smoke Validation
+# 冒烟验证
 
-## Relationship to create-project Validation
+## 与 create-project 验证的关系
 
-Start with `skills/create-project/references/sdd-validation.md`. This file adds evolve-specific scoring and configuration consistency gates for generated IIDP apps.
+先读取 `skills/create-project/references/sdd-validation.md`。本文件为生成的 IIDP 应用补充 evolve 专用评分和配置一致性门禁。
 
-## Required Validation Flow
+## 必需验证流程
 
-For each evaluated repository:
+对每个被评测仓库：
 
-1. Derive JSON-RPC smoke cases from recovered user stories and test cases.
-2. Compare Docker and generated app configuration before startup.
-3. Start dependencies with `docker compose up -d mysql redis minio minio-init` when those services exist.
-4. Build the generated app with the project-standard Maven command.
-5. Start the IIDP app container or local app process.
-6. Run `tests/functional/smoke_test.py` or an equivalent JSON-RPC runner.
-7. Score with `evaluation-rubric.md`.
+1. 从还原出的用户故事和测试用例派生 JSON-RPC 冒烟用例。
+2. 启动前比较 Docker 配置和生成应用配置。
+3. 当相关服务存在时，用 `docker compose up -d mysql redis minio minio-init` 启动依赖。
+4. 使用项目标准 Maven 命令构建生成应用。
+5. 启动 IIDP 应用容器或本地应用进程。
+6. 运行 `tests/functional/smoke_test.py` 或等价 JSON-RPC runner。
+7. 使用 `evaluation-rubric.md` 打分。
 
-## Configuration Consistency Gate
+## 配置一致性门禁
 
-Compare values across:
+比较以下文件中的值：
 
 - `docker-compose.yml`
 - `docker/config/application.properties`
 - `docker/config/application-dev.properties`
 - `docker/config/dbcp.properties`
-- generated IIDP app configuration files, including `application*.properties`, `application*.yml`, `.env`, and module-specific config files.
+- 生成的 IIDP 应用配置文件，包括 `application*.properties`、`application*.yml`、`.env` 和模块专用配置文件。
 
-Required matches:
+必需一致项：
 
-| Area | Values |
+| 范围 | 值 |
 |---|---|
-| MySQL | host, port, database name, username, password |
-| Redis | host, port, password, database index if used |
-| MinIO | endpoint, access key, secret key, bucket if configured |
-| App | port, active profile, context path or JSON-RPC endpoint |
+| MySQL | host、port、database name、username、password |
+| Redis | host、port、password、database index（如使用） |
+| MinIO | endpoint、access key、secret key、bucket（如配置） |
+| App | port、active profile、context path 或 JSON-RPC endpoint |
 
-If a value is intentionally different because of container-internal networking, record both values and the mapping. Example: host machine `localhost:3306` maps to container service `mysql:3306`.
+如果某个值因为容器内部网络而有意不同，记录两个值及映射关系。例如：宿主机 `localhost:3306` 映射到容器服务 `mysql:3306`。
 
-## Failure Classification
+## 失败分类
 
-Classify every failed case as one of:
+每个失败用例归类为以下一种：
 
-- `spec-gap`: requirements or user story did not preserve source behavior.
-- `generation-gap`: `create-project` failed to generate required IIDP artifacts or code.
-- `config-gap`: Docker and generated app configuration are inconsistent.
-- `startup-gap`: dependencies or app cannot start.
-- `smoke-gap`: app starts but JSON-RPC behavior fails.
-- `environment-gap`: local Docker, network, Maven, or external dependency prevents comparable evaluation.
+- `spec-gap`：需求或用户故事没有保留源码行为。
+- `generation-gap`：`create-project` 未生成必需 IIDP 产物或代码。
+- `config-gap`：Docker 与生成应用配置不一致。
+- `startup-gap`：依赖或应用无法启动。
+- `smoke-gap`：应用已启动，但 JSON-RPC 行为失败。
+- `environment-gap`：本地 Docker、网络、Maven 或外部依赖导致无法进行可比较评测。
 
-Only `generation-gap`, repeatable `config-gap`, and `smoke-gap` should normally drive `create-project` edits. `environment-gap` should stop comparison instead of producing a misleading score.
+通常只有 `generation-gap`、可复现的 `config-gap` 和 `smoke-gap` 应驱动 `create-project` 修改。`environment-gap` 应停止比较，而不是产出误导性分数。
 
-## JSON-RPC Case Requirements
+## JSON-RPC 用例要求
 
-Each case must include:
+每个用例必须包含：
 
 - `storyId`
-- `caseId` or case `name`
+- `caseId` 或用例 `name`
 - JSON-RPC 2.0 request
 - expected HTTP status
-- expected result or expected error
-- trace to a user story, test case, or acceptance criterion from the generated requirements
+- expected result 或 expected error
+- 到生成需求中的用户故事、测试用例或验收标准的追溯关系
 
-Minimum service coverage should include available CRUD-style behavior:
+最低服务覆盖应包含可用的 CRUD 风格行为：
 
 - `search` or `find`
 - `create`
 - `update`
 - `delete`
-- at least one negative case for required fields, permissions, invalid status, or missing record when present in the source requirements
+- 当源码需求中存在相关行为时，至少包含一个必填字段、权限、非法状态或记录不存在的负向用例
 
-## Smoke Score
+## 冒烟评分
 
-Use the rubric formula:
+使用 rubric 公式：
 
 ```text
 smoke_points = round(20 * passed_cases / total_cases)
 ```
 
-Do not count skipped cases as passed. If the app cannot start, all smoke cases fail.
+不要把跳过用例计为通过。如果应用无法启动，所有冒烟用例都失败。
 
-## Evidence Requirements
+## 证据要求
 
-Record:
+记录：
 
-- exact config files compared
-- redacted credential comparison result
-- Docker service health summary
-- app startup command and result
-- number of JSON-RPC cases passed and failed
-- representative failure body for each failure class
-- final score contribution
+- 被比较的精确配置文件
+- 脱敏后的凭据比较结果
+- Docker 服务健康摘要
+- 应用启动命令和结果
+- JSON-RPC 用例通过和失败数量
+- 每类失败的代表性响应体
+- 最终评分贡献
