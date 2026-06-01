@@ -228,17 +228,10 @@ List<?> children = meta.get("[child_model]").find(
 List<String> ids = records.stream().map(...).collect(...)
 List<?> related = meta.get("[model]").find(Filter.in("id", ids), ...)
 
-// 分页查询标准契约（search/query 类服务）
-// IIDP 平台内置分页由 RecordSet 自动处理，通过 JSON-RPC Filter 传入 pageNum/pageSize
-// 自定义查询服务若需手动分页，入参签名如下：
-// (RecordSet rs, Integer pageNum, Integer pageSize, String orderBy)
-// 返回结构固定为 Map 含以下 key（不得自定义返回结构）：
-// {
-//   "total": Long,       // 总记录数
-//   "list": List<Map>,   // 当前页数据
-//   "pageNum": Integer,  // 当前页码（从 1 开始）
-//   "pageSize": Integer  // 每页条数
-// }
+// 分页查询标准契约（来自 api-params.md §2）
+// 入参：JSON-RPC args.limit（默认 31）/ args.offset（默认 0）/ args.order
+// 响应：result.data 数组（平台统一结构，见 api-params.md §2.1）
+// 禁止自定义返回 Map{total, list, pageNum, pageSize}，所有分页查询走内置 search 契约
 ```
 
 **业务步骤**：

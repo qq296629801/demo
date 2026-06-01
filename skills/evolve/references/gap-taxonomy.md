@@ -66,10 +66,10 @@
 ### G2-3：分页查询返回结构不规范
 
 - **根因**：自定义查询服务返回结构不统一（有的返回 List，有的返回 Map，有的返回自定义 DTO）
-- **平台规范**：分页查询返回固定 Map 结构：`{total, list, pageNum, pageSize}`
-- **检测**：backend-spec.md §4 中查询类服务的返回类型是否为平台标准结构
+- **平台规范**（来源：`api-params.md` §2）：分页入参为 `args.limit`（默认 31）/ `args.offset`（默认 0），响应为 `result.data`（数组）；不存在 `pageNum`/`pageSize` 入参，也不存在 `{total, list}` 返回 Map
+- **检测**：backend-spec.md §4 中是否出现 `pageNum`/`pageSize` 入参或 `Map{total,list}` 返回结构；有则为 Gap
 - **对应文件**：`sdd-backend.md` §4 查询逻辑
-- **修复状态**：✅ 已在 sdd-backend.md §4 补充分页返回结构注释
+- **修复状态**：✅ 已在 sdd-backend.md §4 修正分页参数（pageNum/pageSize → limit/offset）和返回结构
 
 ---
 

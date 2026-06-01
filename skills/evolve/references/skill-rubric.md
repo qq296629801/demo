@@ -22,7 +22,7 @@
 | contracts.md 缺失时流程无停止提示 | D4 失败机制编码 | `sdd-contracts.md` / `sdd-spec.md` 前置检查 |
 | smoke_test 的 search/create/update/delete 返回非预期结构 | D8 跨步骤一致性 | `sdd-backend.md` ↔ `sdd-contracts.md` 入参签名对比 |
 | 缺少 approve/reject 等状态变更服务，状态 TC 全失败 | D9 测试可验性 | `sdd-backend.md` §4 状态机服务 |
-| 分页查询返回 List 而非 `{total,list,pageNum,pageSize}` | D8 跨步骤一致性 | `sdd-backend.md` §4 查询返回结构 |
+| 分页查询使用 `pageNum`/`pageSize` 入参或返回 `Map{total,list}` 而非平台标准 `limit`/`offset` + `result.data` | D8 跨步骤一致性 | `sdd-backend.md` §4 查询逻辑（依据：`api-params.md` §2） |
 | 生成的 frontend-spec 直接写 Vue2 组件跳过 hook/扩展视图 | F1 实现分支合规性 | `sdd-frontend.md` §9 决策链 |
 | 节点 id 凭按钮文案自拼，未标记"待确认" | F2 节点规范性 | `sdd-frontend.md` §6 节点 id 来源 |
 | 数据源使用 axios/fetch，非 IIDP meta/api 数据源 | F3 数据源规范 | `sdd-frontend.md` §10 数据源规范 |
