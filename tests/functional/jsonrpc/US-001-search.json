@@ -1,0 +1,55 @@
+{
+  "storyId": "US-001",
+  "description": "用户列表查询（支持按用户名、状态筛选）",
+  "endpoint": "http://localhost:8060",
+  "cases": [
+    {
+      "name": "TC-001-1 正常分页查询",
+      "request": {
+        "id": "guid-001-1",
+        "jsonrpc": "2.0",
+        "method": "service",
+        "params": {
+          "model": "sys_user",
+          "service": "search",
+          "tag": "master",
+          "app": "sie-iidp-demo-sysuser",
+          "context": { "uid": "", "lang": "zh_CN" },
+          "args": {
+            "filter": [],
+            "properties": ["id", "username", "nickname", "status"],
+            "limit": 10,
+            "offset": 0,
+            "order": "id desc"
+          }
+        }
+      },
+      "expectedHttpStatus": 200,
+      "expectedResult": true
+    },
+    {
+      "name": "TC-001-2 按 status=ENABLE 筛选",
+      "request": {
+        "id": "guid-001-2",
+        "jsonrpc": "2.0",
+        "method": "service",
+        "params": {
+          "model": "sys_user",
+          "service": "search",
+          "tag": "master",
+          "app": "sie-iidp-demo-sysuser",
+          "context": { "uid": "", "lang": "zh_CN" },
+          "args": {
+            "filter": [["status", "=", "ENABLE"]],
+            "properties": ["id", "username", "status"],
+            "limit": 10,
+            "offset": 0,
+            "order": "id desc"
+          }
+        }
+      },
+      "expectedHttpStatus": 200,
+      "expectedResult": true
+    }
+  ]
+}

@@ -1,0 +1,43 @@
+{
+  "storyId": "US-005",
+  "description": "用户状态变更（启用/停用）",
+  "endpoint": "http://localhost:8060",
+  "cases": [
+    {
+      "name": "TC-005-1 启用用户",
+      "request": {
+        "id": "guid-005-1",
+        "jsonrpc": "2.0",
+        "method": "service",
+        "params": {
+          "model": "sys_user",
+          "service": "enable",
+          "tag": "master",
+          "app": "sie-iidp-demo-sysuser",
+          "context": { "uid": "", "lang": "zh_CN" },
+          "args": { "ids": ["test-user-id"] }
+        }
+      },
+      "expectedHttpStatus": 200,
+      "expectedResult": true
+    },
+    {
+      "name": "TC-005-2 停用用户",
+      "request": {
+        "id": "guid-005-2",
+        "jsonrpc": "2.0",
+        "method": "service",
+        "params": {
+          "model": "sys_user",
+          "service": "disable",
+          "tag": "master",
+          "app": "sie-iidp-demo-sysuser",
+          "context": { "uid": "", "lang": "zh_CN" },
+          "args": { "ids": ["test-user-id"] }
+        }
+      },
+      "expectedHttpStatus": 200,
+      "expectedResult": true
+    }
+  ]
+}
