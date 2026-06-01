@@ -1,0 +1,4 @@
+interface:
+  display_name: "自进化评测"
+  short_description: "用固定基准、样本池和 Docker 冒烟测试评估并改进 create-project。"
+  default_prompt: "使用此技能运行 create-project 自进化评测：从源码生成需求文档，生成 IIDP app，执行 Docker 冒烟测试，并只保留基准分提升的改动。"
