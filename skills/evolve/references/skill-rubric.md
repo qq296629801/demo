@@ -83,14 +83,35 @@
 - ManyToOne 是否有成对的 FK String 字段
 - 是否出现手动声明的 create_user/create_date 等审计字段
 
+【D1/D5 静态检查要求（场景 7）】
+阅读以下文件，按场景 7 检查点逐一核查：
+- skills/create-project/references/sdd-workflow.md
+- skills/create-project/commands/sdd-spec.md
+- skills/create-project/commands/sdd-contracts.md
+- skills/create-project/commands/sdd-tasks.md
+- skills/create-project/commands/sdd-validate.md
+D1 检查：每个 Step 是否有明确的输入/输出声明，是否存在 [TODO]/待补充/详见后续等空话占位符
+D5 检查：统计"建议/可以考虑/根据情况/灵活把握/尽量/一般来说"等软化措辞出现次数，每处扣 1pt
+
+【D4/D7 失败分支检查要求（场景 6）】
+阅读 skills/create-project/commands/sdd-spec.md 和 sdd-contracts.md，检查：
+- 是否有"若 contracts.md 不存在 → 停止"等显式 if-then 失败分支（D4）
+- 禁令是否用"禁止/停止"而非"注意/建议"，是否附有违反后果说明（D7）
+
+【D8 跨步骤一致性检查要求（场景 8）】
+对比 sdd-backend.md 和 references/sdd-contracts.md 中同一字段（如外键 ID、状态枚举）的类型声明和示例格式，
+检查是否存在类型不一致或命名漂移（如一处 String 一处 Long，或方法名拼写不同）
+
 【F1-F4 前端评分要求】
 阅读 sdd-frontend.md，重点检查：
-- F1：§9 决策链（标准模板 → hook → 扩展视图 → Vue2）是否完整，各分支有无进入/禁止条件
-- F2：节点 id 来源优先级是否有明确说明，是否有"不得凭文案猜测"的禁止条款
-- F3：是否有"禁止引入 axios/fetch"的明确禁令；bind_on_ 事件名约束是否存在；args 来源约束是否明确
-- F4：auth 字段格式规范（{model_name}:{action}）是否与 contracts.md 对齐；是否有禁止前端硬编码权限判断的说明
+- F1（场景 5/9）：§9 决策链完整性（标准模板 → hook → 扩展视图 → Vue2），hook 路径须有 return params 说明，
+  扩展视图路径须禁止用 replace 替换整页
+- F2（场景 5）：节点 id 来源优先级说明，是否有"不得凭文案猜测"的明确禁止条款
+- F3（场景 5/10）：是否有"禁止引入 axios/fetch"明确禁令；reqPrep/reqAfter 签名和 return 规则是否完整；
+  bind_on_ 事件名约束是否存在；service args 来源约束是否明确
+- F4（场景 5）：auth 字段格式（{model_name}:{action}）及与 contracts.md 对齐说明；禁止前端硬编码权限判断
 
-用 test-scenarios.md 的场景 5（前端实测，见场景 5 节）模拟运行 /sdd-spec 前端规格流程，
+用 test-scenarios.md 的场景 5 模拟运行 /sdd-spec 前端规格流程，
 检查生成的 frontend-spec 模板中节点 id 来源、数据源类型、按钮 auth 字段是否符合规范。
 
 【输出格式】

@@ -235,13 +235,227 @@ private Date updateTime;
 
 ---
 
+## 场景 6：contracts.md 缺失——失败分支验证（D4/D7）
+
+**用途**：专门触发失败分支，验证 skill 是否有**显式 if-then 停止指令**，而非模糊提示。
+
+**构造方式**：向 skill 发起以下请求，工作区**故意不提供** contracts.md：
+
+```
+请为 SysUser（用户管理）生成 backend-spec.md。
+当前工作区：specs/features/user-mgmt/requirements.md 已存在，但 contracts.md 尚未创建。
+```
+
+**期望行为（满分）：**
+
+skill 必须在检测到 contracts.md 缺失时**立即停止**，输出类似：
+
+```
+若 specs/features/user-mgmt/contracts.md 不存在 → 停止，提示：
+  "请先运行 /sdd-contracts 生成契约文件，再继续生成 backend-spec。"
+```
+
+**验证检查点：**
+
+| 检查项 | 期望结果 | 对应维度 |
+|---|---|---|
+| 失败分支是否存在 | `sdd-spec.md` 中有明确的"若 contracts.md 不存在 → 停止"分支，而非"注意/建议先准备" | D4 |
+| 停止措辞强度 | 用"停止"/"禁止继续"，不用"建议先"/"注意要" | D7 |
+| 违反后果说明 | 说明跳过契约直接生成 backend-spec 的后果（字段类型可能不一致、前后端脱轨） | D7 |
+| 正向流程是否区分 | 有 contracts.md 存在时走正常生成路径，两条分支都有明确说明 | D4 |
+
+**反模式（如出现以下内容则扣分）：**
+
+```
+❌ D4："请注意，生成 backend-spec 前建议先准备好 contracts.md"（软化措辞，非停止指令）
+❌ D4：直接生成 backend-spec 而不检查 contracts.md 是否存在
+❌ D7："尽量避免跳过契约步骤"（无后果说明）
+❌ D7："可以考虑先完成契约定义"（建议语气，非禁止）
+```
+
+---
+
+## 场景 7：模板完整性与可操作性——Step 输出结构验证（D1/D5）
+
+**用途**：静态检查 `sdd-workflow.md` 和各 `commands/*.md` 的结构完整性，验证 D1（无 TODO 占位符）和 D5（无软化措辞）。
+
+**检查方式**：法官直接阅读以下文件，按检查项逐一验证（不需要运行命令）：
+
+```
+skills/create-project/references/sdd-workflow.md
+skills/create-project/commands/sdd-spec.md
+skills/create-project/commands/sdd-contracts.md
+skills/create-project/commands/sdd-tasks.md
+skills/create-project/commands/sdd-validate.md
+```
+
+**验证检查点（D1）：**
+
+| 检查项 | 期望结果 |
+|---|---|
+| 每个 Step 有输入声明 | Step 0-5 各自说明"读取哪些文件 / 依赖哪些前置产物" |
+| 每个 Step 有输出声明 | Step 0-5 各自说明"生成哪个文件 / 输出什么格式" |
+| 无 TODO/待补充占位符 | 全文不出现 `[TODO]`、`待补充`、`详见后续`、`参考 xxx`（无实际内容兜底） |
+| 输出模板可直接使用 | 模板中的占位符仅为 `[实际值]` 风格，不是说明性文字替代实际格式 |
+
+**验证检查点（D5）：**
+
+扫描上述 5 个文件，统计出现以下软化措辞的次数（每处扣 1pt，上限扣满 10pt）：
+
+| 软化措辞模式 | 示例 |
+|---|---|
+| 建议/可以考虑 | "建议先检查..."、"可以考虑增加..." |
+| 根据情况/视具体 | "根据情况决定..."、"视具体需求选择..." |
+| 灵活把握/酌情 | "灵活把握粒度"、"酌情添加字段" |
+| 尽量/尽可能 | "尽量保持一致"、"尽可能复用" |
+| 一般来说/通常 | "一般来说需要..."（无明确条件） |
+
+**反模式（如出现以下内容则扣分）：**
+
+```
+❌ D1：Step 2（Backend Spec）缺少"输入：requirements.md + contracts.md"的声明
+❌ D1：sdd-tasks.md 中有"任务格式见后续章节"但后续章节为空
+❌ D5："根据业务复杂度灵活决定是否需要 contracts.md"
+❌ D5："建议在生成任务前先与用户确认计划"（无具体触发条件）
+```
+
+---
+
+## 场景 8：跨步骤一致性——同一实体在三份产物中的字段对比（D8）
+
+**用途**：验证同一字段在 backend-spec / contracts / frontend-spec 三份产物模板中类型和注解是否一致，检测跨文档漂移。
+
+**构造方式**：用场景 1（SysUser）同时运行以下两个命令，对比产物：
+
+```
+/sdd-spec    → 生成 backend-spec.md
+/sdd-contracts → 生成 contracts.md
+```
+
+然后检查 `sdd-backend.md` 模板和 `references/sdd-contracts.md` 模板中，**同一字段的类型声明是否一致**。
+
+**关键对比字段（SysUser.deptId）：**
+
+| 产物 | 字段位置 | 期望类型 | 期望注解 |
+|---|---|---|---|
+| backend-spec.md §3 模型表 | `deptId` 行 | `String` | `@Selection(model="sysDept")` |
+| contracts.md 服务入参表 | `create/update` 的 `valuesList` 中 `deptId` | `String` | — |
+| frontend-spec.md §7 字段规格 | `deptId` 行 | `String` | IIDP 控件：Lookup |
+
+**验证检查点：**
+
+| 检查项 | 期望结果 | 对应维度 |
+|---|---|---|
+| deptId 类型一致 | 三份产物均为 `String`，不出现一处 `Long` | D8 |
+| status 枚举值一致 | backend-spec 和 contracts 的枚举值列表相同（ENABLE/DISABLE） | D8 |
+| @MethodService 方法名一致 | contracts.md 的方法名与 backend-spec 服务表中的方法名完全匹配 | D8 |
+| sdd-backend.md ↔ sdd-contracts.md 模板对齐 | 两份 skill 参考文档中的字段类型示例格式一致（不出现一处用 String 一处用 Long 的示例） | D8 |
+
+**反模式（如出现以下内容则扣分）：**
+
+```
+❌ D8：backend-spec 模板示例写 deptId: Long，contracts 模板写 deptId: String
+❌ D8：backend-spec 方法名 "getUserList"，contracts 模板写 "queryUserList"（命名漂移）
+❌ D8：sdd-frontend.md 字段规格表中 status 枚举值为 0/1（未与 backend-spec 的 ENABLE/DISABLE 对齐）
+```
+
+---
+
+## 场景 9：前端 hook/扩展视图路径——复杂交互场景（F1）
+
+**用途**：触发 F1 决策链的非标准路径，验证 skill 能否正确引导走 hook 或扩展视图，而不是直接写 Vue2 组件。
+
+**业务描述**：
+- 场景 A（hook 路径）：订单列表页（场景 2 的 OmsOrder），需要在**查询前**自动注入当前登录用户的 memberId 作为过滤条件，其余 CRUD 用标准模板
+- 场景 B（扩展视图路径）：请假申请列表（场景 3 的 LeaveRequest），需要在表格工具栏**新增一个"批量提交"按钮**，触发自定义服务
+
+**期望行为：**
+
+| 场景 | 期望决策 | 期望产物 |
+|---|---|---|
+| 场景 A（查询前注入参数） | 走 **hook 路径**（`grid.beforeQuery`），不新增 Vue2 组件 | frontend-spec §9.2，hook 路径，写明 `beforeQuery` 钩子和 `return params` |
+| 场景 B（新增工具栏按钮） | 走**扩展视图路径**（`after`/`append` 扩展），不替换整个标准模板页 | frontend-spec §9.3，扩展类型 `after`，目标节点 id 标注来源 |
+
+**验证检查点（F1）：**
+
+| 检查项 | 期望结果 |
+|---|---|
+| 场景 A：不出现 Vue2 组件 | `sdd-frontend.md` 的 §9 有明确说明：参数注入优先用 `grid.beforeQuery` hook |
+| 场景 A：hook 返回值规范 | `beforeQuery` 说明必须 `return params`（不 return 则查询参数丢失） |
+| 场景 B：不出现 `type: 'page'` replace | 扩展工具栏按钮用 `after`/`append`，不用 `replace` 替换整个页面节点 |
+| 场景 B：目标节点 id 有来源 | 目标节点 id 有明确来源（标准模板规则库 / 后端视图定义 / 待确认），不自拼 |
+
+**反模式（如出现以下内容则扣分）：**
+
+```
+❌ F1：场景 A 直接写一个 Vue2 组件封装查询表单（跳过 hook 优先级）
+❌ F1：场景 B 用 replace 替换整个标准模板页来追加按钮
+❌ F1：§9 缺少 hook 路径的进入条件（"不改节点结构时用 hook"）
+❌ F1：beforeQuery 示例中没有 return params（导致参数丢失的隐性 bug）
+```
+
+---
+
+## 场景 10：前端 api 数据源与 reqPrep/reqAfter——复杂绑定验证（F3）
+
+**用途**：触发 F3 中 `api` 类型数据源和 `reqPrep`/`reqAfter` 的正确性验证。
+
+**业务描述**：
+- 请假申请详情页（场景 3 的 LeaveRequest），点击某条记录后加载**关联员工信息**
+- 员工信息需要通过独立 API 查询（非自动加载），需要 `reqPrep` 动态注入选中行的 `employeeId`
+
+**期望产物（frontend-spec.md §10 数据源配置）：**
+
+```json
+{
+  "type": "api",
+  "name": "employeeDetail",
+  "autoRequest": false,
+  "options": {
+    "model": "employee",
+    "service": "get",
+    "args": { "id": "" }
+  },
+  "reqPrep": "(vm, params) => { params.args.id = vm.biz.grid.checkedData.employeeId; return params }",
+  "reqAfter": "(vm, res) => { return res.data }"
+}
+```
+
+**验证检查点（F3）：**
+
+| 检查项 | 期望结果 |
+|---|---|
+| 数据源类型 | `type: "api"`（手动触发），不用 `autoRequest: true` |
+| reqPrep 签名 | `(vm, params) => { ...; return params }`，必须 return params |
+| reqAfter 签名 | `(vm, res) => { return res.data }`，必须 return 处理后数据 |
+| service 名来源 | `get` 来自 contracts.md 服务契约表，不凭空推断 |
+| 无 axios/fetch | 整个 frontend-spec 中不出现 axios / fetch / XMLHttpRequest |
+
+**反模式（如出现以下内容则扣分）：**
+
+```
+❌ F3：reqPrep 中没有 return params（数据源调用会静默失败）
+❌ F3：reqAfter 中没有 return（组件拿不到数据）
+❌ F3：service 名写成 "getEmployeeById"（凭命名猜测，未对齐 contracts.md）
+❌ F3：直接在 Vue2 组件的 mounted() 里 axios.get('/api/employee/' + id)
+```
+
+---
+
 ## 使用说明
 
-- **D10 后端实测**：必须实际运行**场景 1 或场景 2** 的 `/sdd-spec`，观察 backend-spec.md 输出
-- **F1-F4 前端实测**：必须实际运行**场景 5** 的 `/sdd-spec`，观察 frontend-spec.md 输出
-- **修复验证**：每轮 hill-climbing 修改后，用**场景 1 + 场景 3**（后端）及**场景 5**（前端）重新运行，对比错误数量
-- **基线确认**：首次运行前用**场景 4** 快速检查基础 CRUD，确认环境可用
-- **工作流验证**：用**场景 3**（JeecgBoot 请假）验证状态机生成
+| 场景 | 主要覆盖维度 | 运行方式 |
+|---|---|---|
+| 场景 1 | D2/D3/D6（核心后端） | 运行 `/sdd-spec`，检查 backend-spec.md |
+| 场景 2 | D2/D6/D9（ER + 状态机） | 运行 `/sdd-spec`，检查 backend-spec.md |
+| 场景 3 | D2/D9（工作流 + 审计字段） | 运行 `/sdd-spec`，检查 backend-spec.md |
+| 场景 4 | D2/D3（基础 CRUD 基线） | 运行 `/sdd-spec`，快速确认环境 |
+| 场景 5 | F1/F2/F3/F4（前端标准路径） | 运行 `/sdd-spec`，检查 frontend-spec.md |
+| 场景 6 | D4/D7（失败分支 + 约束执行力） | 静态阅读 `commands/*.md`，检查分支写法 |
+| 场景 7 | D1/D5（模板完整性 + 可操作性） | 静态阅读 `sdd-workflow.md` + `commands/*.md` |
+| 场景 8 | D8（跨步骤一致性） | 同时运行 `/sdd-spec` + `/sdd-contracts`，对比产物 |
+| 场景 9 | F1（hook/扩展视图路径） | 静态阅读 `sdd-frontend.md` §9，检查决策链 |
+| 场景 10 | F3（api 数据源 + reqPrep/reqAfter） | 静态阅读 `sdd-frontend.md` §10，检查数据源配置 |
 
 ## 真实项目对比说明
 
