@@ -7,7 +7,7 @@ description: Use when 需要通过基准实验、源码转规格、Docker 冒烟
 
 ## 概述
 
-`evolve` 是 `skills/create-project` 的自进化评测框架。它用固定基准、从源码生成的需求文档、生成的 IIDP 应用、Docker 冒烟测试和一个 100 分评分，判断某个 `create-project` 改动是否值得保留。
+`evolve` 是 `skills/create-project`、`skills/backend`、`skills/frontend` 的自进化评测框架。它用固定基准、从源码生成的需求文档、生成的 IIDP 应用、Docker 冒烟测试和一个 100 分评分，判断某个 skills 改动是否值得保留。
 
 本 skill 参考 autoresearch 循环：固定环境，只修改允许修改的目标，用一个可比较指标度量，只提交提升，最终交给人工审核。
 
@@ -15,8 +15,11 @@ description: Use when 需要通过基准实验、源码转规格、Docker 冒烟
 
 - 固定基准仓库是 `https://github.com/YunaiV/ruoyi-vue-pro.git`。
 - 首次使用时记录基准 commit SHA。后续比较必须复用同一个 SHA，除非用户明确要求刷新基准。
-- 自动改进阶段只能修改 `skills/create-project/` 下的文件。
-- 不得修改 `skills/code-index/`、`skills/evolve/`、样本仓库、生成的 IIDP 应用、Docker 基础设施或测试产物来强行提分。
+- 自动改进阶段只能修改以下目录下的文件：
+  - `skills/create-project/`：SDD 指令文件、命令文件
+  - `skills/backend/`：后端能力域文档（示例代码、用法覆盖、路由修复）
+  - `skills/frontend/`：前端能力域文档（子技能 SKILL.md、组件规则库、iidpDoc）
+- 不得修改 `skills/code-index/`、`skills/evolve/` 本身、样本仓库、生成的 IIDP 应用、Docker 基础设施或测试产物来强行提分。
 - 每一轮改进只能做一个小而可审查的改动。如果还需要处理第二个问题，放到下一轮。
 - 样本池结果可以指导下一次 `create-project` 修改，但是否保留改动只由固定基准分决定。
 - 分数提升则保留分支等待人工审核；分数未提升必须回滚。
@@ -71,14 +74,20 @@ description: Use when 需要通过基准实验、源码转规格、Docker 冒烟
 
 不要只根据样本池分数保留或拒绝 `create-project` 改动。
 
-### Phase 3：改进 `create-project`
+### Phase 3：改进 skills
 
 1. 创建或切换到隔离的 evolve 分支。
 2. 从基准或样本池中选择一个失败模式。
-3. 只修改 `skills/create-project/` 下的一小块内容。
+3. 按以下优先级选择改进方向，每轮只做一小块改动：
+   - **优先**：修复 skills 路由断链（路由不可达直接导致 AI 找不到指令）
+   - 补充 `sdd-backend.md` 或拆分后的能力域文件（model/method/view/contracts）的示例代码
+   - 补充 `skills/backend/references/core/` 各文件的示例和边界用法
+   - 补充 `sdd-frontend.md` 和 `sdd-frontend-interaction.md` 的交互规则和状态流转
+   - 补充 `skills/frontend/` 子技能的用法覆盖和组件规则
 4. 重新评测前先提交该改动，确保可以干净回滚。
 5. 使用相同基准 SHA 和相同环境重新运行固定基准。
-6. 比较新基准分与上一轮基准分：
+6. 运行 IIDP 合规门禁检查（见 `references/evaluation-rubric.md`）：门禁不通过直接 REVERT，不进入评分。
+7. 比较新基准分与上一轮基准分：
    - `new_score > previous_score`：保留 commit，更新证据，分支留给人工审核。
    - `new_score <= previous_score`：回滚 commit，并记录失败原因。
 
@@ -114,6 +123,6 @@ description: Use when 需要通过基准实验、源码转规格、Docker 冒烟
 - Docker 账号密码、数据库名、Redis/MinIO 设置、应用端口在 compose、Docker 配置和生成应用配置之间一致。
 - 冒烟测试来自已记录的用户故事和测试用例。
 - 评分使用 `references/evaluation-rubric.md`。
-- 任何保留的改动只修改 `skills/create-project/`。
+- 任何保留的改动只修改 `skills/create-project/`、`skills/backend/` 或 `skills/frontend/`。
 - 失败改动已回滚并解释。
 - 提升分数的改动保留在分支上等待人工审核，不自动合并。
