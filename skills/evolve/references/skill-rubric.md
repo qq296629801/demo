@@ -12,23 +12,25 @@
 
 ## 快速诊断表：TC 失败模式 → 维度 → 修改目标
 
-| TC 失败现象 | 诊断维度 | 对应 skill 文件 §位置 |
-|---|---|---|
-| 生成的 backend-spec 有 `Long id` / `List<Long>` | D2 字段规范性 | `sdd-backend.md` §3 模型设计表 |
-| 生成的 backend-spec 有 `create_user`/`create_date` 字段声明 | D2 字段规范性 | `sdd-backend.md` §3 审计字段规则 |
-| ManyToOne 只有 ORM 对象字段，无 FK String 字段 | D6 ER 关系设计 | `sdd-backend.md` §3 ManyToOne 规则 |
-| 生成代码用 Spring `@Service` 而非 `@MethodService` | D3 平台合规性 | `sdd-backend.md` §4 服务注解规范 |
-| 生成代码用 Spring `@Autowired`/`@Component` | D3 平台合规性 | `sdd-backend.md` §4 注解黑名单 |
-| contracts.md 缺失时流程无停止提示 | D4 失败机制编码 | `sdd-contracts.md` / `sdd-spec.md` 前置检查 |
-| smoke_test 的 search/create/update/delete 返回非预期结构 | D8 跨步骤一致性 | `sdd-backend.md` ↔ `sdd-contracts.md` 入参签名对比 |
-| 缺少 approve/reject 等状态变更服务，状态 TC 全失败 | D9 测试可验性 | `sdd-backend.md` §4 状态机服务 |
-| 分页查询使用 `pageNum`/`pageSize` 入参或返回 `Map{total,list}` 而非平台标准 `limit`/`offset` + `result.data` | D8 跨步骤一致性 | `sdd-backend.md` §4 查询逻辑（依据：`api-params.md` §2） |
-| 生成的 frontend-spec 直接写 Vue2 组件跳过 hook/扩展视图 | F1 实现分支合规性 | `sdd-frontend.md` §9 决策链 |
-| 节点 id 凭按钮文案自拼，未标记"待确认" | F2 节点规范性 | `sdd-frontend.md` §6 节点 id 来源 |
-| 数据源使用 axios/fetch，非 IIDP meta/api 数据源 | F3 数据源规范 | `sdd-frontend.md` §10 数据源规范 |
-| 按钮缺 auth 字段，或格式不是 `{model_name}:{action}` | F4 权限契约一致性 | `sdd-frontend.md` §8 按钮权限表 |
-| 指令文字有"建议/可以/根据情况"等软化措辞导致 AI 行为不确定 | D5 可操作性 | 对应 `commands/*.md` 失败步骤 |
-| 生成的 backend-spec 字段驼峰大小写与 `set()`/`getStr()` 不一致 | D2 字段规范性 | `sdd-backend.md` §3 驼峰规则 |
+| TC 失败现象 | 诊断维度 | 修改目标（create-project skill） | 平台文档依据 |
+|---|---|---|---|
+| 生成的 backend-spec 有 `Long id` / `List<Long>` | D2 字段规范性 | `sdd-backend.md` §3 模型设计表 | `backend/references/core/model-property-advanced.md` — id 类型规范 |
+| 生成的 backend-spec 有 `create_user`/`create_date` 字段声明 | D2 字段规范性 | `sdd-backend.md` §3 审计字段规则 | `backend/references/core/model.md` §@Model.isAutoLog |
+| ManyToOne 只有 ORM 对象字段，无 FK String 字段 | D6 ER 关系设计 | `sdd-backend.md` §3 ManyToOne 规则 | `backend/references/core/model.md` — ManyToOne 成对示例 |
+| 生成代码用 Spring `@Service` 而非 `@MethodService` | D3 平台合规性 | `sdd-backend.md` §4 服务注解规范 | `backend/references/core/annotation-scope.md` — @MethodService 作用域 |
+| 生成代码用 Spring `@Autowired`/`@Component` | D3 平台合规性 | `sdd-backend.md` §4 注解黑名单 | `backend/references/core/annotation-scope.md` — 禁用注解列表 |
+| contracts.md 缺失时流程无停止提示 | D4 失败机制编码 | `sdd-contracts.md` / `sdd-spec.md` 前置检查 | — |
+| smoke_test 的 search/create/update/delete 返回非预期结构 | D8 跨步骤一致性 | `sdd-backend.md` ↔ `sdd-contracts.md` 入参签名对比 | `backend/references/complete/api-params.md` §2 — 内置服务入参 |
+| 缺少 approve/reject 等状态变更服务，状态 TC 全失败 | D9 测试可验性 | `sdd-backend.md` §4 状态机服务 | `backend/references/core/method-service.md` — 状态变更服务规范 |
+| 分页使用 `pageNum`/`pageSize` 入参或返回 `Map{total,list}` 而非 `limit`/`offset` + `result.data` | D8 跨步骤一致性 | `sdd-backend.md` §4 查询逻辑 | `backend/references/complete/api-params.md` §2 — limit/offset/result.data |
+| 生成的 frontend-spec 直接写 Vue2 组件跳过 hook/扩展视图 | F1 实现分支合规性 | `sdd-frontend.md` §9 决策链 | `frontend/references/iidp-frontend-dev-manual/…/03.扩展说明/02.扩展类型.md` |
+| 节点 id 凭按钮文案自拼，未标记"待确认" | F2 节点规范性 | `sdd-frontend.md` §6 节点 id 来源 | `frontend/references/iidp-frontend-dev-manual/…/06.框架/01.节点 node.md` |
+| 数据源使用 axios/fetch，非 IIDP meta/api 数据源 | F3 数据源规范 | `sdd-frontend.md` §10 数据源规范 | `frontend/references/iidp-frontend-dev-manual/…/06.框架/02.数据源.md` |
+| 按钮缺 auth 字段，或格式不是 `{model_name}:{action}` | F4 权限契约一致性 | `sdd-frontend.md` §8 按钮权限表 | `backend/references/core/security-permission-i18n.md` — 按钮级权限规范 |
+| 指令文字有"建议/可以/根据情况"等软化措辞导致 AI 行为不确定 | D5 可操作性 | 对应 `commands/*.md` 失败步骤 | — |
+| 生成的 backend-spec 字段驼峰大小写与 `set()`/`getStr()` 不一致 | D2 字段规范性 | `sdd-backend.md` §3 驼峰规则 | `backend/references/core/platform-standards.md` — 字段名大小写规范 |
+
+> **路径前缀说明**：`backend/` = `skills/backend/`，`frontend/` = `skills/frontend/`
 
 ---
 
@@ -169,21 +171,25 @@ F4: [分数]/8 — [1-2句诊断说明]
 
 ---
 
-## 维度与 create-project 文件映射
+## 维度与文件映射
 
-| 维度 | 主要对应文件 | 次要对应文件 |
+> **两类文件区分**：
+> - **平台文档**（`/backend` / `/frontend`）：规范的原始出处，判断对错的唯一依据
+> - **修改目标**（`create-project/references/` 或 `commands/`）：create-project skill 中需要修正的文件
+
+| 维度 | 平台文档（规范来源） | 修改目标（create-project skill） |
 |---|---|---|
-| D1 模板完整性 | `sdd-workflow.md` | 所有 `commands/*.md` |
-| D2 字段规范性 | `sdd-backend.md` | `model-property-advanced.md` |
-| D3 平台合规性 | `sdd-backend.md` | `platform-standards.md` |
-| D4 失败机制编码 | 所有 `commands/*.md` | `sdd-workflow.md` |
-| D5 可操作性 | `sdd-backend.md`, `sdd-frontend.md` | 所有 `commands/*.md` |
-| D6 ER 关系设计 | `sdd-backend.md` | `model-property-advanced.md` |
-| D7 约束执行力 | `sdd-backend.md`, `platform-standards.md` | 所有 `commands/*.md` |
-| D8 跨步骤一致性 | `sdd-backend.md` ↔ `sdd-workflow.md` ↔ `contracts.md` | — |
-| D9 测试可验性 | `sdd-validate.md`, `sdd-tasks.md` | `sdd-workflow.md` |
-| D10 后端实测表现 | 运行 `/sdd-spec`（test-scenarios.md 场景 1-4） | — |
-| **F1 实现分支合规性** | `sdd-frontend.md` §9 | `sdd-workflow.md` |
-| **F2 节点与 selector 规范** | `sdd-frontend.md` §6 | `sdd-frontend-interaction.md` |
-| **F3 数据源与绑定规范** | `sdd-frontend.md` §10 | `sdd-contracts.md` |
-| **F4 权限与契约一致性** | `sdd-frontend.md` §8 | `references/sdd-contracts.md` |
+| D1 模板完整性 | — | `sdd-workflow.md`、所有 `commands/*.md` |
+| D2 字段规范性 | `backend/references/core/model.md`（isAutoLog、@Validate）<br>`backend/references/core/model-property-advanced.md`（id 类型、ManyToOne）<br>`backend/references/core/platform-standards.md`（驼峰规范） | `sdd-backend.md` §3 |
+| D3 平台合规性 | `backend/references/core/annotation-scope.md`（@MethodService vs @Service）<br>`backend/references/core/platform-standards.md`（禁用注解黑名单） | `sdd-backend.md` §4 |
+| D4 失败机制编码 | — | 所有 `commands/*.md`、`sdd-workflow.md` |
+| D5 可操作性 | — | `sdd-backend.md`、`sdd-frontend.md`、所有 `commands/*.md` |
+| D6 ER 关系设计 | `backend/references/core/model.md`（ManyToOne 成对示例）<br>`backend/references/core/model-property-advanced.md`（OneToMany/ManyToMany） | `sdd-backend.md` §3 |
+| D7 约束执行力 | — | `sdd-backend.md`、所有 `commands/*.md` |
+| D8 跨步骤一致性 | `backend/references/complete/api-params.md`（内置服务入参/返回结构） | `sdd-backend.md` ↔ `sdd-contracts.md` |
+| D9 测试可验性 | `backend/references/core/method-service.md`（状态机服务） | `sdd-validate.md`、`sdd-tasks.md` |
+| D10 后端实测表现 | — | 运行 `/sdd-spec`（test-scenarios.md 场景 1-4） |
+| **F1 实现分支合规性** | `frontend/references/iidp-frontend-dev-manual/…/03.扩展说明/02.扩展类型.md` | `sdd-frontend.md` §9 |
+| **F2 节点与 selector 规范** | `frontend/references/iidp-frontend-dev-manual/…/06.框架/01.节点 node.md` | `sdd-frontend.md` §6 |
+| **F3 数据源与绑定规范** | `frontend/references/iidp-frontend-dev-manual/…/06.框架/02.数据源.md` | `sdd-frontend.md` §10 |
+| **F4 权限与契约一致性** | `backend/references/core/security-permission-i18n.md`（按钮级权限规范） | `sdd-frontend.md` §8、`sdd-contracts.md` |
