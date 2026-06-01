@@ -298,9 +298,57 @@ IF ROUND >= MAX_ROUNDS:
 
 ### Phase 2：决策门
 
-**计算总提升**：`TOTAL_DELTA = CURRENT_SCORE - BASELINE_SCORE`
+**步骤 2.0 — 终态完整重评（强制，不可跳过）**
 
-#### 情况 A：总分提升（TOTAL_DELTA > 0）
+> Hill-Climbing 每轮只重评被修改的维度，累计 Δ 可能存在误差。**必须在创建 PR 之前，召唤两位全新独立法官对所有修改后的文件做完整的 10 维重评 + D10 实测**，以终态分数作为 PR 的唯一数字依据。
+
+召唤两个新的独立 sub-agent（不复用任何之前的法官），使用 `skill-rubric.md` 中的「独立法官 Prompt 模板」，要求：
+1. 读取所有修改过的文件（本轮进化分支上所有 KEEP commit 涉及的文件）
+2. 执行 D10 实测（用 test-scenarios.md 场景 1 套用模板，检查五项验证点）
+3. 按格式输出全部 D1-D10 得分
+
+计算两位法官平均分，得到 `FINAL_SCORE`。
+
+**将终态评分结果追加到 `skill-evolve-evidence.md`：**
+
+```markdown
+## 终态评分验证（Phase 2 门控）
+
+> 两位全新独立法官（法官 M / 法官 N）在所有修改完成后的完整 10 维重评结果。
+
+### D10 实测（场景 1 五项检查）
+
+| 检查项 | 结果 |
+|---|---|
+| Course.id 类型为 String | ✅/❌ |
+| categoryId FK String 成对存在 | ✅/❌ |
+| category @ManyToOne 成对 | ✅/❌ |
+| 无手动声明审计字段 | ✅/❌ |
+| sortOrder 驼峰引用有示例 | ✅/❌ |
+
+### 终态分数表（基线 vs 终态）
+
+| 维度 | 基线 | 终态 | Δ |
+|---|---|---|---|
+| D1-D10 ... | ... | ... | ... |
+| **总分** | [BASELINE_SCORE] | [FINAL_SCORE] | [FINAL_SCORE - BASELINE_SCORE] |
+
+法官 M：[分数]/100，法官 N：[分数]/100，平均：**[FINAL_SCORE]/100**
+```
+
+**重新计算总提升**：`CONFIRMED_DELTA = FINAL_SCORE - BASELINE_SCORE`
+
+**门控判断**：
+- `CONFIRMED_DELTA > 0` → 继续情况 A（创建 PR）
+- `CONFIRMED_DELTA <= 0` → 即使 Hill-Climbing 过程中 Δ 为正，终态未提升也执行情况 B（丢弃分支）
+
+> **设计原则**：PR 标题中的分数必须来自终态完整重评，不得使用累计估算值。
+
+---
+
+**计算确认总提升**：`CONFIRMED_DELTA = FINAL_SCORE - BASELINE_SCORE`
+
+#### 情况 A：终态总分提升（CONFIRMED_DELTA > 0）
 
 创建 PR：
 
@@ -311,17 +359,21 @@ git push -u origin ${EVOLVE_BRANCH}
 PR 内容：
 
 ```
-标题：skill-evolve: +[TOTAL_DELTA]pt ([BASELINE_SCORE]→[CURRENT_SCORE]) - [主要改动摘要]
+标题：skill-evolve: +[CONFIRMED_DELTA]pt ([BASELINE_SCORE]→[FINAL_SCORE]) - [主要改动摘要]
 
 正文：
-## 评分变化
+## 终态评分（两位独立法官完整重评确认）
 
 | 维度 | 修改前 | 修改后 | Δ |
 |---|---|---|---|
 | D1 模板完整性 (/12) | X | X | +X |
 | D2 字段规范性 (/12) | X | X | +X |
 | ... | | | |
-| **总分 (/100)** | [BASELINE] | [CURRENT] | +[TOTAL_DELTA] |
+| **总分 (/100)** | [BASELINE] | [FINAL_SCORE] | +[CONFIRMED_DELTA] |
+
+## D10 实测结果（场景 1，修改后验证）
+
+[五项检查 ✅/❌ 表格]
 
 ## 证据链（逐轮 Before → After，仅展示 KEEP 的轮次）
 
@@ -403,9 +455,11 @@ git branch -D ${EVOLVE_BRANCH}
 ## 完成标志
 
 **情况 A（分数提升）**：
+- **Phase 2 终态重评已完成**（两位全新法官 + D10 实测，五项检查全部 ✅）
+- PR 标题中的分数来自 `FINAL_SCORE`（终态评分），不是 Hill-Climbing 累计估算值
 - PR 已创建，URL 已输出
 - `skill-evolve-results.tsv` 已记录所有轮次数据（含 `judge_diagnosis` 和 `change_reason` 列）
-- `skill-evolve-evidence.md` 包含每轮 before/after 快照和法官诊断（已嵌入 PR body）
+- `skill-evolve-evidence.md` 包含：基线诊断 + 每轮 before/after 快照 + **终态评分验证节**（已嵌入 PR body）
 - 进化分支已推送到远程
 - 未自动合并（等待人工审核）
 
