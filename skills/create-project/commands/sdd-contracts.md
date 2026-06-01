@@ -24,7 +24,10 @@ $ARGUMENTS
 ## 前置检查
 
 1. 确认 `requirements.md` 存在且 `## Clarifications` 节已填写（或用户确认跳过 Clarify）。
+   - **若 `requirements.md` 不存在** → **停止执行**，输出提示："请先运行 `/sdd-specify` 生成需求规格，再执行 `/sdd-contracts`。"
+   - **若 `## Clarifications` 节为空且用户未确认跳过** → **停止执行**，输出提示："需求存在歧义尚未澄清，请先运行 `/sdd-clarify`，或输入'跳过澄清'后重试。"
 2. **必须先读取** `skills/backend/references/core/model.md`、`references/core/method-service.md`、`references/core/view.md`、`references/core/menu.md`、`references/core/app-json.md`，不得凭记忆填写注解参数或字段类型。
+   - **若上述任一文件不可读** → **停止执行**，输出提示："缺少必要参考文件：[列出不可读的文件路径]，请确认 skills/backend/references/core/ 目录存在后重试。"
 
 ## 执行步骤
 
