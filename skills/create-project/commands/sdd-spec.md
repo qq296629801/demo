@@ -19,8 +19,11 @@ $ARGUMENTS
 
 ## 前置检查
 
-1. 确认 `contracts.md` 和 `integration-map.md` 已存在（`/sdd-contracts` 已执行）；否则提示先运行 `/sdd-contracts`。
+1. 确认 `contracts.md` 和 `integration-map.md` 已存在（`/sdd-contracts` 已执行）。
+   - **若 `contracts.md` 不存在** → **停止执行**，输出提示："请先运行 `/sdd-contracts` 生成契约文件，再执行 `/sdd-spec`。"
+   - **若 `integration-map.md` 不存在** → **停止执行**，输出提示："缺少架构级契约，请先运行 `/sdd-contracts`。"
 2. **所有规格内容必须取自 `contracts.md`**，不得自行发明字段注解、服务签名、权限码。
+   - **若生成过程中发现 backend-spec §3 字段与 `contracts.md` 模型属性契约不一致** → **停止生成**，输出冲突清单（字段名、类型差异），提示："请修正 contracts.md 后重新执行 `/sdd-spec`。"
 
 ## 执行步骤
 
