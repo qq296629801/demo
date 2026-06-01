@@ -1,6 +1,6 @@
 ---
 name: skill-evolve
-description: "IIDP create-project Skill 进化修复系统：用打分驱动的 Hill-Climbing 循环自动检测 create-project skill 文档的质量缺陷，以 10 维 Rubric 评分（100 分），每轮只修改最低分维度，独立法官重评，分数提升则保留 commit 并申请 PR 供人工审核合并，分数未提升则丢弃分支。参考 darwin-skill（9 维 rubric + git ratchet）和 autoresearch（keep/discard 循环）设计。触发词：进化 skill / skill 打分 / skill 质量 / skill-evolve / optimize create-project / skill 优化"
+description: "IIDP create-project Skill 进化修复系统：用打分驱动的 Hill-Climbing 循环自动检测 create-project skill 文档的质量缺陷，以 14 维 Rubric 评分（140 分，后端 D1-D10 共 100pt + 前端 F1-F4 共 40pt），每轮只修改最低分维度，独立法官重评，分数提升则保留 commit 并申请 PR 供人工审核合并，分数未提升则丢弃分支。参考 darwin-skill（9 维 rubric + git ratchet）和 autoresearch（keep/discard 循环）设计。触发词：进化 skill / skill 打分 / skill 质量 / skill-evolve / optimize create-project / skill 优化"
 ---
 
 # Skill Evolve — create-project 自动进化修复系统
@@ -30,8 +30,8 @@ description: "IIDP create-project Skill 进化修复系统：用打分驱动的 
 | `/skill-evolve` | 主命令：完整进化循环（评分 → 修复 → 重评 → PR 或丢弃） |
 
 参考文件：
-- `references/skill-rubric.md` — 10 维评分 rubric + 独立法官 prompt 模板
-- `references/test-scenarios.md` — 标准测试场景（用于评分验证）
+- `references/skill-rubric.md` — 14 维评分 rubric + 独立法官 prompt 模板（后端 D1-D10 / 前端 F1-F4）
+- `references/test-scenarios.md` — 标准测试场景（场景 1-4 后端实测，场景 5 前端实测）
 
 ---
 
@@ -52,4 +52,5 @@ description: "IIDP create-project Skill 进化修复系统：用打分驱动的 
 - ❌ 不得在分数未提升时创建 PR 或合并分支
 - ❌ 不得使用 `git reset --hard`（用 `git revert` 保留历史）
 - ❌ 不得自动合并 PR（必须人工审核）
-- ❌ 不得跳过测试场景验证（D10 实测维度权重 12pt，不能省略）
+- ❌ 不得跳过后端测试场景验证（D10，场景 1-4，不能省略）
+- ❌ 不得跳过前端测试场景验证（F1-F4，场景 5，不能省略）

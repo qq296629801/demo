@@ -198,10 +198,48 @@ private Date updateTime;
 
 ---
 
+## 场景 5：RuoYi-Vue-Pro 用户管理——前端规格（F1-F4 实测场景）
+
+**来源**：与场景 1 相同实体（SysUser / SysDept），聚焦前端规格输出的正确性。
+
+**业务描述**：
+- 用户列表页（标准 CRUD 管理后台风格）：搜索 + 表格 + 新增/编辑弹窗
+- SysUser 属于 SysDept（ManyToOne），需要部门选择器（Lookup）
+- 状态字段 `status` 有 ENABLE/DISABLE 两个枚举值，表格列需要展示中文
+- 无复杂交互逻辑，**期望走标准模板/在线视图路径，前端无需新增代码**
+
+**模拟运行 `/sdd-spec` 后，检查生成的 frontend-spec.md：**
+
+**验证检查点（F1-F4）：**
+
+| 检查项 | 期望结果 | 对应维度 |
+|---|---|---|
+| §9 决策路径 | 给出"标准模板/在线视图"结论，说明无需前端代码的理由（不直接跳到扩展视图） | F1 |
+| 节点 id 来源 | 有明确来源标注（菜单 key 推导 / 标准模板规则库 / 待确认），**不出现**按文案自拼的 id | F2 |
+| 不确定节点 id | 标记为"待确认"，不伪造具体值 | F2 |
+| 数据源类型 | `type: "meta"`，使用 IIDP 平台数据源；**不出现** axios/fetch 引入 | F3 |
+| 部门选择器绑定 | `deptId` 字段使用 `@Selection(model="sysDept")`；对应 `bind_` 来自后端契约，不凭空写 service 名 | F3 |
+| 操作按钮 auth | 新增按钮 auth = `sys_user:create`，编辑 = `sys_user:update`，删除 = `sys_user:delete`；格式为 `{model_name}:{action}` | F4 |
+| 无前端权限硬编码 | **不出现** `v-if="hasPermission()"` 或 JS 逻辑判断权限码 | F4 |
+
+**反模式（如出现以下内容则扣分）：**
+
+```
+❌ F1：直接写扩展视图或 Vue2 组件，跳过"是否可用标准模板"判断
+❌ F2：节点 id 写成 "sys_user_list_table"（按文案拼接，无来源依据）
+❌ F3：数据源配置里出现 import axios from 'axios'
+❌ F3：bind_on_ 使用了 "on_row_select"（非平台真实事件名）
+❌ F4：按钮 auth 写成 "sysUser:create"（camelCase model_name，应为下划线 sys_user）
+❌ F4：JS 中出现 if (this.userInfo.roles.includes('admin')) 类前端权限判断
+```
+
+---
+
 ## 使用说明
 
-- **D10 实测维度评分**：必须实际运行**场景 1 或场景 2** 的 `/sdd-spec`，观察 backend-spec.md 输出
-- **修复验证**：每轮 hill-climbing 修改后，用**场景 1 + 场景 3** 重新运行，对比错误数量
+- **D10 后端实测**：必须实际运行**场景 1 或场景 2** 的 `/sdd-spec`，观察 backend-spec.md 输出
+- **F1-F4 前端实测**：必须实际运行**场景 5** 的 `/sdd-spec`，观察 frontend-spec.md 输出
+- **修复验证**：每轮 hill-climbing 修改后，用**场景 1 + 场景 3**（后端）及**场景 5**（前端）重新运行，对比错误数量
 - **基线确认**：首次运行前用**场景 4** 快速检查基础 CRUD，确认环境可用
 - **工作流验证**：用**场景 3**（JeecgBoot 请假）验证状态机生成
 
