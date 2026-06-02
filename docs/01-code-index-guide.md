@@ -96,8 +96,9 @@ codegraph status   # 查看索引行数、各类型符号数量
 
 ### Phase B：模块分组
 
-- **≤ 5 个模块**：直接扁平分析，输出到 `spec/` 平铺目录
-- **> 5 个模块**：按功能域分组（建议 3-5 组），逐组深挖，输出到 `spec/modules/{module}/`
+- 所有项目统一采用模块化输出。
+- 系统级文档输出到 `spec/` 顶层。
+- 模块级详细设计输出到 `spec/modules/{module}/`。
 
 ```
 # 枚举所有顶级模块
@@ -115,18 +116,22 @@ codegraph_files(path="src/main/java", pattern="*", format="tree")
 
 ### Phase D：规格生成
 
-按 `skills/code-index/references/llm-prompts.md` 中的 8 个 Prompt 依次生成：
+按 `skills/code-index/references/llm-prompts.md` 中的 Prompt 依次生成：
 
 | Prompt | 输出文件 | 内容 |
 |---|---|---|
-| P1 | `01-hla.md` | 高阶架构：架构图 + 关键服务方法设计 + ER 摘要 + Mermaid 流程图 |
-| P2 | `02-srs.md` | 功能需求规格（FR 编号 + 验收标准） |
-| P3 | `03-prd.md` | 产品需求文档（用户视角） |
-| P4 | `04-user-stories.md` | 用户故事（As A / I Want / So That） |
-| P5 | `05-api.md` | 接口文档（端点 + 请求/响应结构） |
-| P6 | `06-flowcharts/` | 业务流程图（Mermaid flowchart） |
-| P7 | `07-database.md` | 数据库表结构（建表 DDL + ER 图） |
-| P8 | `09-ui/` | 静态 HTML 原型（列表/表单/详情/审批/Dashboard） |
+| 系统 HLA | `spec/hla.md` | 系统架构、模块拓扑、跨模块依赖 |
+| 系统数据库总览 | `spec/database-overview.md` | 全库核心表、跨模块 ER、数据边界 |
+| 系统概览 | `spec/overview.md` | 完整导航、模块索引、调用图/依赖图/前置条件摘要 |
+| 模块概览 | `spec/modules/{module}/overview.md` | 模块简介、功能入口、模块内导航 |
+| 模块 HLA | `spec/modules/{module}/hla.md` | 模块架构、调用图、依赖图、前置条件 |
+| 模块 SRS | `spec/modules/{module}/srs.md` | 详细功能需求与字段约束 |
+| 模块 PRD | `spec/modules/{module}/prd.md` | 模块产品需求文档 |
+| 模块用户故事 | `spec/modules/{module}/user-stories.md` | 用户故事与验收标准 |
+| 模块 API | `spec/modules/{module}/api.md` | 接口文档、字段校验矩阵、前端调用对照 |
+| 模块数据结构 | `spec/modules/{module}/database.md` | 数据表结构、DDL、模块 ER 图 |
+| 模块 UI | `spec/modules/{module}/ui/` | 静态 HTML 原型，覆盖 mock 基础流程 |
+| 模块流程图 | `spec/modules/{module}/flowcharts/` | Mermaid + SVG 业务流程图 |
 
 ### Phase C'：完整性核查
 
@@ -140,44 +145,26 @@ codegraph status   # 对比 route 计数与 API 文档接口数
 
 ## 输出规格书结构
 
-### 小型项目（模块 ≤ 5）
+### 统一模块化结构
 
 ```
 spec/
 ├── .progress.md          # 进度追踪（断点续接）
-├── 01-hla.md             # 高阶架构（含 Mermaid 流程图、ER 摘要）
-├── 02-srs.md             # 功能需求规格
-├── 03-prd.md             # 产品需求文档
-├── 04-user-stories.md    # 用户故事
-├── 05-api.md             # 接口文档
-├── 06-flowcharts/        # 业务流程图
-│   ├── login-flow.md
-│   └── order-flow.md
-├── 07-database.md        # 数据库结构
-├── 08-migration.md       # 迁移说明（可选）
-├── 09-ui/                # 静态 HTML 原型
-│   ├── {entity}-list.html
-│   ├── {entity}-form.html
-│   ├── {entity}-detail.html
-│   ├── {entity}-workflow.html
-│   └── dashboard.html
-├── 10-i18n.md            # 国际化词条（可选）
-└── 11-deployment.md      # 部署说明（可选）
-```
-
-### 大型项目（模块 > 5）
-
-```
-spec/
-├── .progress.md
-├── 00-overview.md        # 全局架构概览
+├── overview.md           # 系统级概览、完整导航、模块索引
+├── hla.md                # 系统级架构、模块拓扑、跨模块依赖
+├── database-overview.md  # 系统级数据模型总览
 └── modules/
-    ├── user-mgr/         # 用户管理模块
-    │   ├── 01-hla.md
-    │   ├── 02-srs.md
-    │   └── ...
-    ├── order-mgr/
-    └── report/
+    └── {module}/
+        ├── overview.md
+        ├── hla.md
+        ├── srs.md
+        ├── prd.md
+        ├── user-stories.md
+        ├── api.md
+        ├── database.md
+        ├── error-codes.md
+        ├── flowcharts/
+        └── ui/
 ```
 
 ---
@@ -187,17 +174,17 @@ spec/
 `code-index` 生成的规格书可直接作为 `create-project` 的输入：
 
 ```
-code-index 输出：spec/02-srs.md + spec/04-user-stories.md
+code-index 输出：spec/modules/{module}/srs.md + spec/modules/{module}/user-stories.md
                           ↓
 create-project 输入：/sdd-specify（粘贴 SRS 功能点）
                           ↓
 生成 IIDP 应用代码
 ```
 
-如果 `spec/09-ui/` 目录下有静态 HTML 原型，可用 `/sdd-ui-parse` 命令解析交互需求：
+如果 `spec/modules/*/ui/` 目录下有静态 HTML 原型，可用 `/sdd-ui-parse` 命令解析交互需求：
 
 ```
-/sdd-ui-parse   # 解析 spec/09-ui/*.html → 生成 interaction-spec.md
+/sdd-ui-parse   # 解析 spec/modules/*/ui/*.html → 生成 interaction-spec.md
 ```
 
 详见 [create-project 使用指南](02-create-project-guide.md)。
