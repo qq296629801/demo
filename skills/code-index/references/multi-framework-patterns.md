@@ -43,9 +43,9 @@ codegraph_search("IsAuthenticated" / "IsAdminUser") → 权限类
 codegraph_search("permission_classes") → 接口权限配置
 ```
 
-**Spec 映射：**
+**Codebook 映射：**
 
-| 代码元素 | Spec 文档位置 |
+| 代码元素 | Codebook 文档位置 |
 |---------|-------------|
 | `models.Model` 子类字段 | 数据库结构文档 DDL |
 | `ModelSerializer` fields | API 文档 Request/Response 字段 |
@@ -162,9 +162,9 @@ codegraph_trace("XxxController.create", "XxxRepository.save") → 流程图
 @IsEnum(UserStatus)
 ```
 
-**Spec 映射：**
+**Codebook 映射：**
 
-| 代码元素 | Spec 文档位置 |
+| 代码元素 | Codebook 文档位置 |
 |---------|-------------|
 | `@ApiTags("模块名")` | API 文档模块分组 |
 | `@ApiOperation({ summary })` | API 接口描述 |

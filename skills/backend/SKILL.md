@@ -24,6 +24,8 @@ description: >-
 | `references/core/model-property-advanced.md` | 模型层高级能力：模型类型、继承扩展、ER 指令集、属性高级参数、日期、视图模型 | Step 5 涉及模型/属性/日期/视图模型高级能力时必须读 |
 | `references/core/er.md` | ER 专题：使用 OneToMany + ManyToOne 替代带业务字段的 ManyToMany 中间表 | 涉及带业务字段的多对多关系、中间关系模型、OneToMany + ManyToOne 替代 ManyToMany、ER 子表视图或 addEr/createEr 差异时必须读 |
 | `references/core/method-service.md` | @MethodService 全场景：CRUD重写、业务方法、Excel、RPC、SQL、事务、Redis、DTO 服务分层 | Step 5 需要服务方法时 |
+| `references/core/RecordSet.md` | RecordSet 记录集 API：方法参数、CRUD、查询、跨模型调用、属性访问与异步执行 | 涉及 `@MethodService` 参数、CRUD 重写、跨模型调用、`RecordSet.call/read/search/update/delete/get/set` 时读取 |
+| `references/core/DbUtils.md` | DbUtils 静态数据访问 API：CRUD、查询统计、批量处理、按模型名 Map 操作与批量性能优化 | 涉及 `DbUtils.search/count/select/create/update/delete/batchCreate/batchUpdate`、按模型名 Map 操作、批量导入或性能优化时读取 |
 | `references/core/api-filter-sql.md` | 接口层能力：JSON-RPC、Filter 波兰表达式、内置服务参数、服务编排、异步、原生 SQL | Step 5~6 涉及接口、Filter、SQL、编排、异步时必须读 |
 | `references/core/view.md` | 后端视图 JSON 完整结构、search/grid/form/tree 配置、tbar/buttons、子表、扩展视图 | Step 6 编写视图文件 |
 | `references/core/view-advanced.md` | 后端视图高级能力：联动、上下表、选择器、弹窗、数据域、扩展继承、JSONPath | Step 6 涉及高级视图或复杂模板时必须读 |
@@ -113,6 +115,8 @@ description: >-
 路径：`src/main/java/com/sie/iidp/{appPkg}/{moduleName}/model/{ModelName}.java`
 
 读取 `references/core/model.md` 获取注解详细参数；读取 `references/core/platform-standards.md` 约束命名、异常、事务、SQL、安全和代码规约。
+涉及模型内 CRUD、查询、事务、SQL、属性获取、异步执行或服务初始化时，读取 `references/core/BaseModel.md`，以 BaseModel 方法签名为准生成调用。
+涉及 `RecordSet` API 细节时，读取 `references/core/RecordSet.md`；涉及 `DbUtils` 静态数据访问、批量处理或按模型名 CRUD 时，读取 `references/core/DbUtils.md`。
 涉及模型类型、继承/扩展、ER 指令集、属性高级参数、分组校验、日期、Dict/Selection 回显或视图模型时，读取 `references/core/model-property-advanced.md`。
 按需读取 `references/core/component-field-mapping.md`、`references/core/method-service.md`、`references/core/data-source-api.md`、`references/core/api-filter-sql.md`、`references/core/file-excel-print-job.md` 获取组件映射、服务、接口、Filter、SQL、外部 API、文件/Excel/打印/任务写法。
 
@@ -211,10 +215,34 @@ mvn spring-boot:run -pl sie-iidp-demo-start
 
 # Docker Compose 本地启动
 docker compose up -d --build
-
-# 验证接口
-# POST http://localhost:8060/root/rpc/service/master
 ```
+
+#### 快速 JSON-RPC 冒烟测试
+
+引擎启动后，用 curl 验证模型 CRUD（详细规范见 `references/core/api-filter-sql.md` § Token 获取与鉴权）：
+
+```bash
+# 1. 获取 superuser token
+TOKEN=$(mysql -u <user> -p<password> -h <host> <db> -N -e \
+  "SELECT token FROM rbac_token WHERE id = 'rbac_token_superuser' LIMIT 1")
+
+# 2. 测试 search
+curl -s -X POST http://localhost:8060/root/rpc/service/master \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TOKEN" \
+  -d '{"id":"1","jsonrpc":"2.0","params":{"app":"<appName>","model":"<model_name>","service":"search","args":{"filter":[],"limit":5,"offset":0}}}'
+
+# 3. 测试 create
+curl -s -X POST http://localhost:8060/root/rpc/service/master \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TOKEN" \
+  -d '{"id":"2","jsonrpc":"2.0","params":{"app":"<appName>","model":"<model_name>","service":"create","args":{"<field>":"<value>"}}}'
+```
+
+**关键点：**
+- token 通过 `Authorization: Bearer <token>` HTTP 头传递
+- `model`/`service`/`app` 在 `params` 层级（不在 `args` 内）
+- `args` 是扁平 Map：create 直接传字段名，search 用 `filter`/`limit`/`offset`
 
 ---
 

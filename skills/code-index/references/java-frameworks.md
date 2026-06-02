@@ -24,10 +24,10 @@ Step 2 — 对比包前缀映射表（见第二节）
   → 例：发现 com.baomidou.mybatisplus → 使用 MyBatis-Plus → @TableName=表名
 
 Step 3 — 对每个命中的框架执行对应提取策略
-  → 按第二节的"Spec 意义"列，决定每种注解写入哪个文档
+  → 按第二节的"Codebook 意义"列，决定每种注解写入哪个文档
 
 Step 4 — 未命中注解：按第三节规则推断语义
-  → 通过注解名称模式自动归类到对应 Spec 文档
+  → 通过注解名称模式自动归类到对应 Codebook 文档
 ```
 
 ---
@@ -36,14 +36,14 @@ Step 4 — 未命中注解：按第三节规则推断语义
 
 ### Web 层
 
-| 包前缀 | 框架/库 | 关键注解 → Spec 意义 |
+| 包前缀 | 框架/库 | 关键注解 → Codebook 意义 |
 |--------|--------|---------------------|
 | `org.springframework.web` | Spring MVC | `@RestController`=API入口、`@RequestMapping/@GetMapping/@PostMapping`=API路由 |
 | `org.springframework.web.bind.annotation` | Spring MVC | `@RequestBody/@RequestParam/@PathVariable`=API参数定义 |
 
 ### 安全与权限层
 
-| 包前缀 | 框架/库 | 关键注解 → Spec 意义 |
+| 包前缀 | 框架/库 | 关键注解 → Codebook 意义 |
 |--------|--------|---------------------|
 | `org.springframework.security` | Spring Security | `@PreAuthorize/@PostAuthorize`=权限码（写入 API 权限说明）|
 | `cn.dev33.satoken` | Sa-Token | `@SaCheckPermission`=权限码、`@SaCheckLogin`=需登录、`@SaCheckRole`=角色 |
@@ -51,14 +51,14 @@ Step 4 — 未命中注解：按第三节规则推断语义
 
 ### API 文档层
 
-| 包前缀 | 框架/库 | 关键注解 → Spec 意义 |
+| 包前缀 | 框架/库 | 关键注解 → Codebook 意义 |
 |--------|--------|---------------------|
 | `io.swagger.v3.oas.annotations` | SpringDoc（OpenAPI 3） | `@Tag(name)`=模块分组、`@Operation(summary)`=接口描述、`@Schema(description)`=DTO字段说明 |
 | `io.swagger.annotations` | Swagger 2（springfox）| `@Api(tags)`=模块分组、`@ApiOperation`=接口描述、`@ApiModelProperty`=DTO字段说明 |
 
 ### 数据访问层
 
-| 包前缀 | 框架/库 | 关键注解 → Spec 意义 |
+| 包前缀 | 框架/库 | 关键注解 → Codebook 意义 |
 |--------|--------|---------------------|
 | `com.baomidou.mybatisplus` | MyBatis-Plus | `@TableName`=数据库表名、`@TableField`=字段映射、`@TableId`=主键 |
 | `jakarta.persistence` / `javax.persistence` | JPA / Hibernate | `@Entity`=数据库表、`@Table(name)`=表名、`@Column`=字段约束（长度/唯一/非空）、`@Index`=索引 |
@@ -67,7 +67,7 @@ Step 4 — 未命中注解：按第三节规则推断语义
 
 ### 校验层
 
-| 包前缀 | 框架/库 | 关键注解 → Spec 意义 |
+| 包前缀 | 框架/库 | 关键注解 → Codebook 意义 |
 |--------|--------|---------------------|
 | `jakarta.validation` | Bean Validation 3（Spring Boot 3.x）| `@NotBlank/@NotNull`=必填、`@Size`=长度约束、`@Pattern(regexp)`=正则校验、`@Email`=邮箱格式、`@Min/@Max`=数值范围 → **全部写入 API 字段校验矩阵** |
 | `javax.validation` | Bean Validation 2（Spring Boot 2.x）| 同上 |
@@ -75,14 +75,14 @@ Step 4 — 未命中注解：按第三节规则推断语义
 
 ### 事务与缓存层
 
-| 包前缀 | 框架/库 | 关键注解 → Spec 意义 |
+| 包前缀 | 框架/库 | 关键注解 → Codebook 意义 |
 |--------|--------|---------------------|
 | `org.springframework.transaction` | Spring TX | `@Transactional`=事务边界（写入 SRS 事务说明）|
 | `org.springframework.cache` | Spring Cache | `@Cacheable`=缓存查询接口（写入 HLA 缓存策略）、`@CacheEvict`=缓存失效触发点 |
 
 ### 异步与调度层
 
-| 包前缀 | 框架/库 | 关键注解 → Spec 意义 |
+| 包前缀 | 框架/库 | 关键注解 → Codebook 意义 |
 |--------|--------|---------------------|
 | `org.springframework.scheduling` | Spring Scheduling | `@Scheduled`=**定时触发**（写入 SRS 触发方式、HLA 异步流程）|
 | `org.springframework.context.event` | Spring Events | `@EventListener`=**领域事件触发**（写入 SRS 触发方式）|
@@ -91,27 +91,27 @@ Step 4 — 未命中注解：按第三节规则推断语义
 
 ### 微服务层
 
-| 包前缀 | 框架/库 | 关键注解 → Spec 意义 |
+| 包前缀 | 框架/库 | 关键注解 → Codebook 意义 |
 |--------|--------|---------------------|
 | `org.springframework.cloud.openfeign` | OpenFeign | `@FeignClient(name)`=微服务调用（写入 HLA 服务依赖图）|
 | `com.alibaba.dubbo` / `org.apache.dubbo` | Dubbo | `@DubboService`=RPC服务提供方、`@DubboReference`=RPC调用方（写入 HLA RPC 调用图）|
 | `org.springframework.cloud.gateway` | Spring Cloud Gateway | 路由配置 → HLA 网关架构 |
 
-### 无 Spec 意义（忽略）
+### 无 Codebook 意义（忽略）
 
 | 包前缀 | 框架/库 | 处理方式 |
 |--------|--------|---------|
-| `lombok` | Lombok | `@Data/@Builder/@Slf4j` 均无业务语义，**不写入任何 Spec** |
-| `org.mapstruct` | MapStruct | `@Mapper/@Mapping` 为对象转换，**不写入 Spec**（可在 HLA 分层中注明转换层存在）|
+| `lombok` | Lombok | `@Data/@Builder/@Slf4j` 均无业务语义，**不写入任何 Codebook** |
+| `org.mapstruct` | MapStruct | `@Mapper/@Mapping` 为对象转换，**不写入 Codebook**（可在 HLA 分层中注明转换层存在）|
 | `org.projectreactor` / `reactor.core` | Reactor | 响应式编程标记，注明"异步响应式"即可 |
 
 ---
 
 ## 第三节：未命中注解的语义推断规则
 
-当某注解的包前缀**不在上方映射表中**时，通过注解**名称模式**推断其 Spec 意义：
+当某注解的包前缀**不在上方映射表中**时，通过注解**名称模式**推断其 Codebook 意义：
 
-| 名称模式（大小写不敏感）| 推断意义 | 写入哪个 Spec |
+| 名称模式（大小写不敏感）| 推断意义 | 写入哪个 Codebook |
 |------------------------|---------|-------------|
 | `*Log*` / `*Audit*` / `*Record*` / `*Operation*` | 操作日志注解 | SRS §审计日志需求 |
 | `*Permission*` / `*Auth*` / `*Check*` / `*Requires*` | 权限控制注解 | API 接口权限说明 |
@@ -128,8 +128,8 @@ Step 4 — 未命中注解：按第三节规则推断语义
 | `*Sign*` / `*Signature*` | 签名验证 | SRS 安全需求 |
 
 **推断置信度标注规则：**
-- 名称完全匹配（如 `@OperationLog`）→ 高置信度，直接写入 Spec
-- 名称部分匹配 → 在 Spec 中标注 `[推断，需确认]`
+- 名称完全匹配（如 `@OperationLog`）→ 高置信度，直接写入 Codebook
+- 名称部分匹配 → 在 Codebook 中标注 `[推断，需确认]`
 - 完全无法推断 → 在 HLA 的"横切关注点"节列出，标注 `[未知注解，需人工确认]`
 
 ---

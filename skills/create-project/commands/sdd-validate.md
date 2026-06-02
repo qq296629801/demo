@@ -42,10 +42,9 @@ $ARGUMENTS
 ### 前端验收
 
 - 实现分支判断：每个页面的 `frontend-spec.md §9` 已明确标注。
-- 标准模板页：确认无多余前端代码。
-- 扩展视图：`selector` 命中方式明确，`ds_config` 完整。
-- lint / build：运行 `npm run lint` 或说明无法运行的原因。
-- 节点验证：浏览器控制台 `tech_app.printObj(节点id)` 可验证（手工步骤标注）。
+- 标准模板页：前端无需启动验证时，在报告中标注跳过原因。
+- 前端运行：在前端工程根目录依次运行 `npm run init:tech`、`npm run start`。
+- 启动结果：`init:tech` 退出码为 0；`start` 输出本地访问地址且无阻塞性报错。
 
 ### 测试覆盖率更新
 

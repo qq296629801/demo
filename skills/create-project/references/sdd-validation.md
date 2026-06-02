@@ -8,13 +8,19 @@ Step 1.5a（backend-spec.md 生成后）立即执行 AC 提取，将 `requiremen
 
 ### AC → TC 提取 Prompt
 
-读取 `requirements.md` 中每条验收标准（AC），按以下结构输出到 `validation.md` 的测试用例规格节：
+读取 `requirements.md` 中每条验收标准（AC），按后端服务测试（`TC-BE-xx`）和前端运行验收（`TC-FE-xx`）分别输出到 `validation.md` 的测试用例规格节。前端验收只确认工程能完成技术初始化并成功启动，不扩展为页面级交互验收。
 
 ```
-TC-<编号>  <用例名称>
+TC-BE-<编号>  <后端服务用例名称>
 前置条件：<环境或数据依赖>
 操作步骤：<调用的服务 / 方法>
 期望结果：<成功或失败的断言>
+覆盖 AC：<对应 AC 编号>
+
+TC-FE-<编号>  <前端运行验收名称>
+前置条件：<前端工程路径 / Node 环境 / 依赖安装状态>
+操作步骤：运行 npm run init:tech；再运行 npm run start
+期望结果：init:tech 成功完成；start 成功启动 dev server，无阻塞性报错
 覆盖 AC：<对应 AC 编号>
 ```
 
@@ -44,6 +50,7 @@ TC-<编号>  <用例名称>
 - `*Test.json` 顶层结构必须是 `{ "methodName": [ {...} ] }`，每个元素包含 `displayName`、`args`、`expected`
 - 测试类必须标注 `@IIDPTest`，测试方法必须标注 `@DDTest`
 - `expected` 字段不能为空对象 `{}`
+- 如本 feature 涉及前端工程，`frontend-spec.md` §9 应明确实现分支；运行验收不检查页面节点、权限显隐或交互细节
 
 ---
 
@@ -117,6 +124,47 @@ class ExampleTest {
 
 ---
 
+## 前端验证（工程启动验收）
+
+前端验证只确认前端工程能按 IIDP 技术初始化并启动本地开发服务。除非用户另行要求，不执行页面级交互验收、节点控制台验证、lint 或 build。
+
+### 触发条件
+
+满足以下任一条件时执行前端运行验收：
+
+- `frontend-spec.md` §9 标记“需要前端代码”
+- tasks.md 中存在前端工程、前端扩展或前端启动任务
+- 用户明确要求验证前端工程
+
+如当前 feature 是标准模板/在线视图且前端无需新增代码，可跳过前端运行验收，并在验收报告中标注“前端无需启动验证”。
+
+### 执行命令
+
+在前端工程根目录依次运行：
+
+```bash
+npm run init:tech
+npm run start
+```
+
+`npm run start` 为长驻进程。看到本地 dev server 成功启动、监听地址输出且无阻塞性报错后，即可判定前端运行验收通过；验收报告记录启动 URL、端口和是否存在非阻塞 warning。
+
+### 前端运行用例规格
+
+`validation.md` 中的 `TC-FE-xx` 推荐按以下结构写入：
+
+```markdown
+TC-FE-001  前端工程初始化与启动
+前置条件：进入前端工程根目录；Node 版本和依赖满足项目要求
+操作步骤：运行 npm run init:tech；完成后运行 npm run start
+期望结果：init:tech 退出码为 0；start 输出本地访问地址且无阻塞性报错
+覆盖 AC：前端可运行
+```
+
+若命令不存在、依赖缺失、端口冲突或启动失败，在验收报告中标注为失败或阻塞，并记录原始错误摘要。
+
+---
+
 ## 功能测试（Docker 冒烟测试）
 
 功能测试验证用户故事的端到端流程，通过 JSON-RPC 调用运行中的服务进行断言。
@@ -147,6 +195,18 @@ docker compose up -d iidp-app
 | Redis | `localhost:6379` | — | `redis` |
 | MinIO | `http://localhost:9000` | `snest` | `12345678` |
 | 应用 | `http://localhost:8060/root/rpc/service/master` | — | Bearer token（rbac_token 表） |
+
+**Token 获取方式：**
+
+引擎初始化时会为 `rbac_user_superuser` 创建对应 token 记录，可直接从数据库获取：
+
+```bash
+# 从 dbcp.properties 获取连接信息后执行
+mysql -u <user> -p<password> -h <host> <db> -N -e \
+  "SELECT token FROM rbac_token WHERE id = 'rbac_token_superuser' LIMIT 1"
+```
+
+**关键：** token 通过 HTTP `Authorization: Bearer <token>` 头传递，不在 JSON-RPC body 里。
 
 ### JSON-RPC 请求规范
 
@@ -360,4 +420,5 @@ python tests/functional/smoke_test.py
 | 静态数量检查 | 模型数、服务方法数、测试方法数均与规格一致 |
 | 静态格式检查 | 无注解缺失、无空 expected、JSON 结构合规 |
 | 单元测试 | `mvn test` 全绿；Jacoco 行覆盖率 ≥ 90% |
+| 前端运行验收 | `npm run init:tech` 成功；`npm run start` 成功启动 dev server |
 | 功能冒烟测试 | 所有容器 healthy；`smoke_test.py` 退出码 0 |

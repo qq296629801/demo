@@ -78,6 +78,14 @@ public class {ModelName} extends BaseModel<{ModelName}> {
 
 ---
 
+## BaseModel 继承能力
+
+模型类声明 `extends BaseModel<{ModelName}>` 后，当前模型即可直接使用 BaseModel 提供的通用模型能力。`extends BaseModel<T>` 不只是类型声明，也意味着模型内的 `@MethodService` 方法可以调用 BaseModel 的 CRUD、查询、事务、SQL、异步、属性 typed getter 和服务获取能力。
+
+生成或修改模型服务方法时，如果要使用 `create`、`update`、`delete`、`select`、`selectById`、`search`、`count`、`commit`、`rollback`、`execute`、`getMeta`、`getStr`、`getInt`、`getLong`、`getDate`、`runAsync`、`supplyAsync`、`initService`、`initNewService` 等方法，必须先读取 [`BaseModel.md`](BaseModel.md)，以其中的方法签名和约束为准，不得凭记忆补全参数或返回值。
+
+---
+
 ## 注解作用域规则（严格执行）
 
 > 完整速查表见 [`annotation-scope.md`](annotation-scope.md)。

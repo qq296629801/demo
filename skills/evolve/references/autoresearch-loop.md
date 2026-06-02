@@ -7,7 +7,7 @@
 | Autoresearch 思路 | evolve 对应机制 |
 |---|---|
 | 固定训练环境 | 固定基准仓库和 commit SHA |
-| 一个可编辑训练文件 | 改进阶段只允许编辑 `skills/create-project/` |
+| 一个可编辑训练文件 | 改进阶段只允许编辑 `skills/create-project/`、`skills/backend/`、`skills/frontend/` |
 | 一个验证指标 | 一个 100 分基准评分 |
 | Git 作为记忆 | 每次实验先 commit 再测量 |
 | 保留胜利、丢弃失败 | 分数提升则保留，未提升则回滚 |
@@ -30,12 +30,13 @@
 
 1. 选择一个失败模式。
 2. 用一句话说明改进假设。
-3. 修改 `skills/create-project/` 下的一小段内容。
-4. 提交改动。
-5. 使用同一个基准 commit SHA 重新运行固定基准。
-6. 用 `evaluation-rubric.md` 打分。
-7. 保留或回滚。
-8. 追加证据。
+3. 将失败分类为 `route-gap`、`backend-doc-gap`、`frontend-doc-gap`、`sdd-template-gap` 或 `knowledge-gap`。
+4. 修改允许范围内的一小段内容：`skills/create-project/`、`skills/backend/` 或 `skills/frontend/`。如果是 `knowledge-gap`，只记录缺口和所需私有事实源，不修改 backend/frontend 规则。
+5. 提交改动。
+6. 使用同一个基准 commit SHA 重新运行固定基准。
+7. 用 `evaluation-rubric.md` 打分。
+8. 保留或回滚。
+9. 追加证据。
 
 不要打包无关修复。更大的指导改动必须拆成多轮，每一轮都通过固定基准后才能继续。
 
@@ -47,11 +48,21 @@
 - 基准仓库：https://github.com/YunaiV/ruoyi-vue-pro.git
 - 基准 SHA：<sha>
 - 实验 commit：<sha>
-- 可编辑范围已检查：only skills/create-project/
+- 可编辑范围已检查：only skills/create-project/, skills/backend/, skills/frontend/
 
 ### 失败模式
 
 <基准或样本池证据>
+
+### 失败分类
+
+`route-gap` / `backend-doc-gap` / `frontend-doc-gap` / `sdd-template-gap` / `knowledge-gap`
+
+### 私有规则证据
+
+- 证据来源：<本地文档路径、源码路径、日志片段、配置项、测试结果或用户确认>
+- 规则结论：<可写回的规则，或 knowledge-gap 缺口说明>
+- 验证方式：<静态检查、构建、Docker 或 JSON-RPC 冒烟测试>
 
 ### 改动
 
@@ -76,4 +87,5 @@ KEEP 或 REVERT，并说明原因。
 - 连续两轮保留改动的提升都小于 2 分。
 - 连续三个尝试性改动都被回滚。
 - Docker 或外部基础设施不可用，导致无法进行可比较评分。
-- 下一个有用改动需要修改 `skills/create-project/` 之外的文件。
+- 下一个有用改动需要修改允许范围之外的文件。
+- 失败被分类为 `knowledge-gap`，且缺少继续判断所需的 IIDP 私有文档、源码、日志、配置、测试证据或用户确认。

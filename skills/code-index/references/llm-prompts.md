@@ -1,8 +1,8 @@
 # LLM Prompt 模板 — 代码转规格书
 
-每个模板对应一种 Spec 文档类型。使用时将 `{{...}}` 占位符替换为 codegraph 采集结果。
+每个模板对应一种 Codebook 文档类型。使用时将 `{{...}}` 占位符替换为 codegraph 采集结果。
 
-`SKILL.md` 是输出目录和断点恢复契约的唯一来源；本文件只描述各文档的生成提示与内容要求。所有详细功能设计都写入 `spec/modules/{module}/`，顶层 `spec/` 只保留系统级文档。
+`SKILL.md` 是输出目录和断点恢复契约的唯一来源；本文件只描述各文档的生成提示与内容要求。所有详细功能设计都写入 `codebook/modules/{module}/`，顶层 `codebook/` 只保留系统级文档。
 
 ---
 
@@ -32,7 +32,7 @@
 
 ## Prompt 1 — 系统级 HLA
 
-> 执行顺序：系统级第 1 步 | 依赖：全部模块采集完成 | 输出：`spec/hla.md`
+> 执行顺序：系统级第 1 步 | 依赖：全部模块采集完成 | 输出：`codebook/hla.md`
 
 ```
 你是一名资深系统架构师，请根据以下代码分析结果生成系统级高阶架构文档（HLA）。
@@ -72,7 +72,7 @@
 
 ## Prompt 2 — 模块 HLA
 
-> 执行顺序：模块级第 2 步 | 依赖：模块源码采集完成 | 输出：`spec/modules/{module}/hla.md`
+> 执行顺序：模块级第 2 步 | 依赖：模块源码采集完成 | 输出：`codebook/modules/{module}/hla.md`
 
 ```
 你是一名模块架构师，请根据以下代码分析结果生成模块级 HLA。
@@ -112,7 +112,7 @@
 
 ## Prompt 3 — 模块 Overview
 
-> 执行顺序：模块级第 1 步 | 依赖：模块边界确定 | 输出：`spec/modules/{module}/overview.md`
+> 执行顺序：模块级第 1 步 | 依赖：模块边界确定 | 输出：`codebook/modules/{module}/overview.md`
 
 ```
 请生成模块概览文档。
@@ -137,7 +137,7 @@
 
 ## Prompt 4 — SRS 软件需求规格
 
-> 执行顺序：模块级第 3 步 | 依赖：模块 HLA | 输出：`spec/modules/{module}/srs.md`
+> 执行顺序：模块级第 3 步 | 依赖：模块 HLA | 输出：`codebook/modules/{module}/srs.md`
 
 ```
 你是一名需求工程师，请根据以下代码分析结果逆向生成模块软件需求规格说明书（SRS）。
@@ -184,7 +184,7 @@
 
 ## Prompt 5 — PRD 产品需求文档
 
-> 执行顺序：模块级第 4 步 | 依赖：模块 SRS | 输出：`spec/modules/{module}/prd.md`
+> 执行顺序：模块级第 4 步 | 依赖：模块 SRS | 输出：`codebook/modules/{module}/prd.md`
 
 ```
 你是一名产品经理，请将以下模块代码分析结果转化为面向产品和业务的 PRD 文档。
@@ -219,7 +219,7 @@
 
 ## Prompt 6 — 用户故事
 
-> 执行顺序：模块级第 5 步 | 依赖：模块 SRS、PRD | 输出：`spec/modules/{module}/user-stories.md`
+> 执行顺序：模块级第 5 步 | 依赖：模块 SRS、PRD | 输出：`codebook/modules/{module}/user-stories.md`
 
 ```
 请根据以下模块接口列表、操作日志和角色定义，生成标准用户故事。
@@ -250,7 +250,7 @@
 
 ## Prompt 7 — API 文档
 
-> 执行顺序：模块级第 6 步 | 依赖：模块 SRS | 输出：`spec/modules/{module}/api.md`
+> 执行顺序：模块级第 6 步 | 依赖：模块 SRS | 输出：`codebook/modules/{module}/api.md`
 
 ```
 你是一名 API 文档工程师，请根据以下代码分析结果生成模块 API 规格文档。
@@ -289,7 +289,7 @@
 
 ## Prompt 8 — 数据库结构文档
 
-> 执行顺序：模块级第 7 步 | 依赖：Entity 源码 | 输出：`spec/modules/{module}/database.md`
+> 执行顺序：模块级第 7 步 | 依赖：Entity 源码 | 输出：`codebook/modules/{module}/database.md`
 
 ```
 请根据以下 Entity/DO 类完整源码生成模块数据库结构文档。
@@ -314,7 +314,7 @@
 
 ## Prompt 9 — 错误码文档
 
-> 执行顺序：模块级第 8 步 | 依赖：错误码源码 | 输出：`spec/modules/{module}/error-codes.md`
+> 执行顺序：模块级第 8 步 | 依赖：错误码源码 | 输出：`codebook/modules/{module}/error-codes.md`
 
 ```
 请根据以下错误码常量文件源码生成模块错误码文档。
@@ -335,7 +335,7 @@
 
 ## Prompt 10 — 流程图生成
 
-> 执行顺序：模块级第 10 步 | 依赖：模块 SRS、API、调用链 | 输出：`spec/modules/{module}/flowcharts/`
+> 执行顺序：模块级第 10 步 | 依赖：模块 SRS、API、调用链 | 输出：`codebook/modules/{module}/flowcharts/`
 
 ```
 请根据以下调用链分析结果生成模块业务流程图。
@@ -361,7 +361,7 @@ Mermaid 内容必须包含：
 
 ## Prompt 11 — UI/UX 静态页面
 
-> 执行顺序：模块级第 9 步 | 依赖：模块 API 字段、UI_CONTEXT | 输出：`spec/modules/{module}/ui/`
+> 执行顺序：模块级第 9 步 | 依赖：模块 API 字段、UI_CONTEXT | 输出：`codebook/modules/{module}/ui/`
 
 ```
 请根据以下业务模块信息生成完整的静态 HTML 管理页面原型集。
@@ -410,7 +410,7 @@ Mermaid 内容必须包含：
 
 ## Prompt 12 — 系统数据库总览
 
-> 执行顺序：系统级第 2 步 | 依赖：全部模块 `database.md` | 输出：`spec/database-overview.md`
+> 执行顺序：系统级第 2 步 | 依赖：全部模块 `database.md` | 输出：`codebook/database-overview.md`
 
 ```
 请根据所有模块的数据模型摘要生成系统级数据库总览。
@@ -431,7 +431,7 @@ Mermaid 内容必须包含：
 
 ## Prompt 13 — 系统 Overview
 
-> 执行顺序：系统级第 3 步，最后生成 | 输出：`spec/overview.md`
+> 执行顺序：系统级第 3 步，最后生成 | 输出：`codebook/overview.md`
 
 ```
 请生成系统级 overview 文档。

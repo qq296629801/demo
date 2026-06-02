@@ -73,6 +73,75 @@
 
 ---
 
+## Token 获取与鉴权
+
+IIDP 引擎 JSON-RPC 调用需要 Bearer token，通过 HTTP `Authorization` 请求头发送。
+
+### 获取 superuser token
+
+引擎种子数据 `rbac_user.json` 中预置了 `rbac_user_superuser`（账号 `superuser` / 密码 `superuser`），初始化时在 `rbac_token` 表创建对应记录。可直接从数据库获取：
+
+```bash
+# 查询 superuser token（从 dbcp.properties 获取连接信息）
+mysql -u <user> -p<password> -h <host> <db> -N -e \
+  "SELECT token FROM rbac_token WHERE id = 'rbac_token_superuser' LIMIT 1"
+```
+
+### 携带 token 发起请求
+
+所有 JSON-RPC 调用必须在 HTTP Header 中携带 token：
+
+```bash
+curl -s -X POST http://localhost:8060/root/rpc/service/master \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TOKEN" \
+  -d '{...}'
+```
+
+**关键约束：**
+
+- token 通过 HTTP `Authorization: Bearer <token>` 头传递，不在 JSON body 中。
+- 首次部署后可先用上述 SQL 获取 token，后续通过 `rbac_login_model.login` 接口登录获取。
+- `sie_iidp_iam.auth.ignore=true` 仅跳过权限校验（AuthModel），不跳过 token 存在性检查——token 仍必须非空。
+
+### 快速 curl 冒烟测试模板
+
+```bash
+TOKEN=$(mysql -u <user> -p<password> -h <host> <db> -N -e \
+  "SELECT token FROM rbac_token WHERE id = 'rbac_token_superuser' LIMIT 1")
+
+# search 查询
+curl -s -X POST http://localhost:8060/root/rpc/service/master \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TOKEN" \
+  -d '{"id":"1","jsonrpc":"2.0","params":{"app":"<appName>","model":"<model_name>","service":"search","args":{"filter":[],"properties":["id","name"],"limit":5,"offset":0}}}'
+
+# create 创建
+curl -s -X POST http://localhost:8060/root/rpc/service/master \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TOKEN" \
+  -d '{"id":"2","jsonrpc":"2.0","params":{"app":"<appName>","model":"<model_name>","service":"create","args":{"<field>":"<value>"}}}'
+
+# update 更新（需替换 <recordId>）
+curl -s -X POST http://localhost:8060/root/rpc/service/master \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TOKEN" \
+  -d '{"id":"3","jsonrpc":"2.0","params":{"app":"<appName>","model":"<model_name>","service":"update","args":{"ids":["<recordId>"],"values":{"<field>":"<newValue>"}}}}'
+
+# delete 删除（需替换 <recordId>）
+curl -s -X POST http://localhost:8060/root/rpc/service/master \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TOKEN" \
+  -d '{"id":"4","jsonrpc":"2.0","params":{"app":"<appName>","model":"<model_name>","service":"delete","args":{"ids":["<recordId>"]}}}'
+```
+
+**params 结构要点：**
+
+- `model`、`service`、`app`、`tag`（默认 `master`）在 `params` 层级，不在 `args` 内。
+- `args` 是扁平键值 Map：create 直接传模型字段名，search/update/delete 按内置服务参数约定传 `filter`/`ids`/`values`/`valuesList`/`properties` 等。
+
+---
+
 ## 内置服务参数速查
 
 | 服务 | 入参 | 生成要求 |
