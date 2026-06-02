@@ -213,7 +213,7 @@ mvn spring-boot:run -pl sie-iidp-demo-start
 docker compose up -d --build
 
 # 验证接口
-# POST http://localhost:8060/root/api/master
+# POST http://localhost:8060/root/rpc/service/master
 ```
 
 ---

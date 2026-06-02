@@ -116,7 +116,7 @@ specs/
 - 构建：Maven，使用项目内 `settings.xml`
 - 平台：IIDP 元模型、Snest SDK/Engine、Spring Boot 启动模块
 - 运行依赖：MySQL、Redis、MinIO；按需求使用 XXL-Job
-- 接口协议：JSON-RPC `POST /root/api/master`
+- 接口协议：JSON-RPC `POST /root/rpc/service/master`
 
 ## 后端生成约束
 - 新增业务 App 默认放在 `sie-iidp-demo-apps/sie-iidp-demo-{appName}`

@@ -146,7 +146,7 @@ docker compose up -d iidp-app
 | MySQL | `localhost:3306` 数据库 `iidp_demo` | `iidp` | `iidp123456` |
 | Redis | `localhost:6379` | — | `redis` |
 | MinIO | `http://localhost:9000` | `snest` | `12345678` |
-| 应用 | `http://localhost:8060` | — | — |
+| 应用 | `http://localhost:8060/root/rpc/service/master` | — | Bearer token（rbac_token 表） |
 
 ### JSON-RPC 请求规范
 
@@ -185,7 +185,7 @@ docker compose up -d iidp-app
 | `create` | `valuesList` |
 | `update` | `ids` `values` |
 | `delete` | `ids` |
-| `find` | `filter` `limit` `offset` `order` |
+| `find` | `ids`(查单条) 或 `filter` `limit` `offset` `order` |
 | `count` | `filter` |
 
 **Filter 表达式规范（来自 `filter.md`）：**
@@ -224,7 +224,8 @@ docker compose up -d iidp-app
 {
   "storyId": "US-001",
   "description": "用户故事描述（来自 requirements.md）",
-  "endpoint": "http://localhost:8060",
+  "endpoint": "http://localhost:8060/root/rpc/service/master",
+  "token": "<从 rbac_token 表获取或设环境变量 IIDP_API_TOKEN>",
   "cases": [
     {
       "name": "TC-001 正常 search 流程",
@@ -301,21 +302,26 @@ docker compose up -d iidp-app
 创建 `tests/functional/smoke_test.py`，扫描所有测试文件并执行断言：
 
 ```python
-import requests, json, sys, pathlib, uuid
+import requests, json, sys, pathlib, uuid, os
 
 JSONRPC_PATH = pathlib.Path("tests/functional/jsonrpc")
 failures = []
 total = 0
 
+# 从环境变量或测试文件 spec 中获取 token，优先使用环境变量
+AUTH_TOKEN = os.environ.get("IIDP_API_TOKEN")
+
 for f in sorted(JSONRPC_PATH.glob("*.json")):
     spec = json.loads(f.read_text(encoding="utf-8"))
-    endpoint = spec.get("endpoint", "http://localhost:8060")
+    endpoint = spec.get("endpoint", "http://localhost:8060/root/rpc/service/master")
+    token = spec.get("token") or AUTH_TOKEN
+    headers = {"Authorization": f"Bearer {token}"} if token else {}
     for case in spec["cases"]:
         total += 1
         req = dict(case["request"])
         req["id"] = str(uuid.uuid4())
         try:
-            resp = requests.post(endpoint, json=req, timeout=30)
+            resp = requests.post(endpoint, json=req, headers=headers, timeout=30)
             body = resp.json()
         except Exception as e:
             print(f"FAIL: {spec['storyId']} / {case['name']}  error={e}")
@@ -323,10 +329,11 @@ for f in sorted(JSONRPC_PATH.glob("*.json")):
             continue
 
         ok = resp.status_code == case.get("expectedHttpStatus", 200)
+        # IIDP 响应始终包含 result 和 error 两个 key，成功时 error 为 null，失败时 result 为 null
         if case.get("expectedResult"):
-            ok = ok and "result" in body
+            ok = ok and body.get("error") is None
         if case.get("expectedError"):
-            ok = ok and "error" in body
+            ok = ok and body.get("error") is not None
 
         tag = f"{spec['storyId']} / {case['name']}"
         if ok:
@@ -342,6 +349,7 @@ sys.exit(1 if failures else 0)
 运行方式：
 
 ```bash
+pip install requests  # 如未安装
 python tests/functional/smoke_test.py
 ```
 

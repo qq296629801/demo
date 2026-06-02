@@ -54,7 +54,7 @@
 | `jsonrpc` | 固定 `2.0` |
 | `method` | 通常为 `service` |
 | `params.model` | 模型名 |
-| `params.service` | 服务名或接口名 |
+| `params.service` | **（必填）** 服务名或接口名。漏传会导致引擎 NPE，即使是内置 CRUD 也必须指明 `"search"` `"find"` `"create"` 等 |
 | `params.app` | 跨 App 调用时指定应用 |
 | `params.tag` | 默认 `master` |
 | `params.context.uid/lang` | 用户和语言上下文 |

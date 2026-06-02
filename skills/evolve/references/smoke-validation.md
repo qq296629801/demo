@@ -50,13 +50,24 @@
 
 通常只有 `generation-gap`、可复现的 `config-gap` 和 `smoke-gap` 应驱动 `create-project` 修改。`environment-gap` 应停止比较，而不是产出误导性分数。
 
+## 认证要求
+
+IIDP 引擎强制 token 认证，未提供 token 时所有 JSON-RPC 调用返回 `{"code":7100,"message":"token不能为空"}`。
+
+- 请求头：`Authorization: Bearer <token>`
+- Token 来源：`rbac_token` 表的 `token` 字段，或 `apps.json` 中的 `apiToken` 字段
+- 测试时可通过环境变量 `IIDP_API_TOKEN` 传入，避免硬编码
+- Docker 冒烟测试前需确认 token 可用且未过期
+
+当 token 不可用时，所有冒烟用例应标记为 `environment-gap`，不得归因于生成质量。
+
 ## JSON-RPC 用例要求
 
 每个用例必须包含：
 
 - `storyId`
 - `caseId` 或用例 `name`
-- JSON-RPC 2.0 request
+- JSON-RPC 2.0 request（必须包含 `params.service`，至少填写 `"search"` 等内置服务名）
 - expected HTTP status
 - expected result 或 expected error
 - 到生成需求中的用户故事、测试用例或验收标准的追溯关系
