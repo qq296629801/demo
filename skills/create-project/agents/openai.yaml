@@ -1,0 +1,4 @@
+interface:
+  display_name: "创建项目"
+  short_description: "生成 IIDP 项目规格、UI 原型、契约和验收清单。"
+  default_prompt: "使用此技能把 IIDP 项目想法转成项目宪法、UI 原型规格、前后端契约、计划、任务和验证步骤。"
