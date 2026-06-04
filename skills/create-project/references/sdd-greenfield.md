@@ -81,7 +81,7 @@ C) 记录环境阻塞原因，暂缓进入步骤 2
 
 **目的**：在业务开发前确立项目的命名规范、技术栈约束、App 规划和路线图，避免后期大规模改动。
 
-**执行**：读取 `references/sdd-constitution.md`，产出以下文件：
+**执行**：先读取 `skills/backend/references/core/platform-standards.md` 获取平台规范基线，再读取 `references/sdd-constitution.md`，产出以下文件：
 - `specs/mission.md`：项目定位、目标用户、核心价值
 - `specs/iidp-stack.md`：技术栈约束、appPkg 命名规则、模型规范、前端框架版本
 - `specs/roadmap.md`：Phase 规划、App 优先级、里程碑
