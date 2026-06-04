@@ -41,7 +41,7 @@
 
 每个失败用例归类为以下一种：
 
-- `spec-gap`：需求或用户故事没有保留源码行为。
+- `spec-gap`：需求文档描述的功能在生成的 IIDP 应用中未被正确实现。
 - `generation-gap`：`create-project` 未生成必需 IIDP 产物或代码。
 - `config-gap`：Docker 与生成应用配置不一致。
 - `startup-gap`：依赖或应用无法启动。

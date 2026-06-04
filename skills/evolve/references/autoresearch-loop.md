@@ -33,7 +33,7 @@
 3. 将失败分类为 `route-gap`、`backend-doc-gap`、`frontend-doc-gap`、`sdd-template-gap` 或 `knowledge-gap`。
 4. 修改允许范围内的一小段内容：`skills/create-project/`、`skills/backend/` 或 `skills/frontend/`。如果是 `knowledge-gap`，只记录缺口和所需私有事实源，不修改 backend/frontend 规则。
 5. 提交改动。
-6. 使用同一个基准 commit SHA 重新运行固定基准。
+6. 使用同一份基准需求文档（相同 hash）重新运行固定基准。
 7. 用 `evaluation-rubric.md` 打分。
 8. 保留或回滚。
 9. 若 KEEP，执行 Phase 4 技能反馈回写；若发现缺少证据来源、目标文件、插入位置或验证方式，只记录为 `knowledge-gap`。
