@@ -41,6 +41,40 @@ public Object create(List<Map<String, Object>> valuesList) {
 }
 ```
 
+### 日期格式流水号生成（如 ASN-YYYYMMDD-XXXXX）
+
+需求文档中常见"单据编号自动生成"要求（格式：`前缀-YYYYMMDD-5位序号`）。推荐在重写 `create` 时生成：
+
+```java
+@MethodService(description = "create")
+public Object create(List<Map<String, Object>> valuesList) {
+    RecordSet rs = BaseContextHandler.getMeta().get(this.getMeta().getModelName());
+    try {
+        // 方式一：使用平台 CodeGenTempUtil（ORDER_TYPE 为业务类型标识符常量）
+        // String asnNo = CodeGenTempUtil.genOneCode(ORDER_TYPE);
+
+        // 方式二：自行拼接日期前缀 + 毫秒/雪花 ID 保证唯一
+        String dateStr = DateUtil.format(DateUtil.date(), "yyyyMMdd");
+        String seq = String.format("%05d", System.currentTimeMillis() % 100000);
+        String asnNo = "ASN-" + dateStr + "-" + seq;
+
+        if (CollUtil.isNotEmpty(valuesList)) {
+            valuesList.forEach(v -> {
+                v.putIfAbsent("asn_no", asnNo);
+                v.putIfAbsent("status", 0); // 初始状态：待收货
+            });
+        }
+        return rs.callSuper(WmsAsnMaster.class, MethodConst.CREATE, valuesList);
+    } catch (ModelException | ValidationException e) {
+        throw e;
+    } catch (Exception e) {
+        throw new ValidationException("创建入库单失败，请联系运维人员");
+    }
+}
+```
+
+> **注意**：方式二在高并发场景下可能重复（毫秒级冲突），生产环境建议使用 `CodeGenTempUtil.genOneCode()` 或 Redis 原子自增。`putIfAbsent` 防止前端传入值被覆盖。
+
 ### 重写 update（更新前调用 RPC）
 
 ```java
