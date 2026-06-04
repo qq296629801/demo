@@ -15,11 +15,17 @@ handoffs:
 $ARGUMENTS
 ```
 
-可传入功能目录路径；为空时从 `CLAUDE.md` 读取活动功能目录。
+可传入模组目录路径（如 `specs/modules/student-mgr/`）；为空时从 `CLAUDE.md` 读取活动模组目录。
 
 ## 前置检查
 
-1. 确认 `backend-spec.md` 和 `frontend-spec.md` 均已存在；否则提示先运行 `/sdd-spec`。
+1. 确定活动规格书目录（按优先级）：
+   a. `$ARGUMENTS` 不为空 → 使用指定路径。
+   b. `CLAUDE.md` 存在 `<!-- IIDP-SDD START -->` 标记 → 读取 `当前活动模组` 字段。
+   c. 以上均无 → 提示用户：
+      > "请输入模组规格书目录路径（如 `specs/modules/student-mgr/`）："
+      等待用户输入后继续。
+2. 确认 `backend-spec.md` 和 `frontend-spec.md` 均已存在；否则提示先运行 `/sdd-spec`。
 2. 读取 `contracts.md` 确认无 `待确认` 阻塞项。
 
 ## 执行步骤
@@ -50,8 +56,8 @@ $ARGUMENTS
 
    ```markdown
    <!-- IIDP-SDD START -->
-   当前活动功能：specs/features/<feature>/
-   实现计划：specs/features/<feature>/plan.md
+   当前活动模组：specs/modules/<moduleName>/
+   实现计划：specs/modules/<moduleName>/plan.md
    当前阶段：Step 3 Tasks（待生成）
    <!-- IIDP-SDD END -->
    ```

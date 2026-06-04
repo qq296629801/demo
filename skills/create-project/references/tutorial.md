@@ -92,7 +92,7 @@ cp skills/create-project/commands/sdd-*.md .claude/commands/
 /sdd-specify 学生信息管理：支持新增、编辑、删除学生，按班级筛选，导出 Excel
 ```
 
-产物：`specs/features/phase1-student-mgr/requirements.md`
+产物：`specs/modules/student-mgr/requirements.md`
 
 ---
 
@@ -116,7 +116,7 @@ cp skills/create-project/commands/sdd-*.md .claude/commands/
 
 产物：
 - `specs/integration-map.md`（架构级：模型清单、ER、权限码总览）
-- `specs/features/<feature>/contracts.md`（API 级：字段注解、服务签名、视图 key）
+- `specs/modules/<feature>/contracts.md`（API 级：字段注解、服务签名、视图 key）
 
 > 后续规格书的所有字段注解、权限码必须取自 `contracts.md`，不得自行发明。
 
@@ -299,8 +299,8 @@ cp skills/create-project/commands/sdd-*.md .claude/commands/
 
 ```markdown
 <!-- IIDP-SDD START -->
-当前活动功能：specs/features/phase1-student-mgr/
-实现计划：specs/features/phase1-student-mgr/plan.md
+当前活动模组：specs/modules/student-mgr/
+实现计划：specs/modules/student-mgr/plan.md
 当前阶段：Step 4 Implement（进行中）
 <!-- IIDP-SDD END -->
 ```

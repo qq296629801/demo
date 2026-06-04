@@ -169,7 +169,7 @@
 ### 协调 Agent 启动 Prompt 模板
 
 ```text
-请对 [specs/features/phaseN-feature-name/] 目录下的规格文件执行深度审查。
+请对 [specs/modules/{moduleName}/] 目录下的规格文件执行深度审查。
 
 并行启动以下 5 个子 Agent（使用 Agent 工具，独立上下文，不共享中间结果）：
 1. 规格内部一致性 Agent — 只读规格文件，按 sdd-review.md Agent 1 检查范围输出发现报告，不修改任何文件。

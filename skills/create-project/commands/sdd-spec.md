@@ -15,9 +15,16 @@ handoffs:
 $ARGUMENTS
 ```
 
-可传入 `backend`、`frontend`、`both`（默认）或功能目录路径。
+可传入 `backend`、`frontend`、`both`（默认）或模组目录路径（如 `specs/modules/student-mgr/`）。
 
 ## 前置检查
+
+0. 确定活动规格书目录（按优先级）：
+   a. `$ARGUMENTS` 为路径格式 → 使用指定路径；为 `backend`/`frontend`/`both` → 从 CLAUDE.md 或用户输入获取目录。
+   b. `CLAUDE.md` 存在 `<!-- IIDP-SDD START -->` 标记 → 读取 `当前活动模组` 字段。
+   c. 以上均无 → 提示用户：
+      > "请输入模组规格书目录路径（如 `specs/modules/student-mgr/`）："
+      等待用户输入后继续。
 
 1. 确认 `contracts.md` 和 `integration-map.md` 已存在（`/sdd-contracts` 已执行）。
    - **若 `contracts.md` 不存在** → **停止执行**，输出提示："请先运行 `/sdd-contracts` 生成契约文件，再执行 `/sdd-spec`。"
@@ -31,7 +38,7 @@ $ARGUMENTS
 
 ### Step 1.5a：backend-spec.md（必须生成）
 
-读取 `sdd-backend.md` 模板，生成 `specs/features/<feature>/backend-spec.md`，包含：
+读取 `sdd-backend.md` 模板，生成 `specs/modules/<feature>/backend-spec.md`，包含：
 
 | 章节 | 来源 |
 |---|---|
@@ -45,7 +52,7 @@ $ARGUMENTS
 
 ### Step 1.5b：frontend-spec.md（必须生成）
 
-读取 `sdd-frontend.md` 模板，生成 `specs/features/<feature>/frontend-spec.md`；**即使标准模板无需前端代码，也必须生成此文件**，在 §9 标注"前端无需新增代码"及理由。
+读取 `sdd-frontend.md` 模板，生成 `specs/modules/<feature>/frontend-spec.md`；**即使标准模板无需前端代码，也必须生成此文件**，在 §9 标注"前端无需新增代码"及理由。
 
 ### Step 1.5c：interaction-spec.md（条件生成）
 

@@ -15,7 +15,16 @@ handoffs:
 $ARGUMENTS
 ```
 
-可传入功能目录路径；为空时从 `CLAUDE.md` 读取活动功能目录。
+可传入模组目录路径（如 `specs/modules/student-mgr/`）；为空时从 `CLAUDE.md` 读取活动模组目录。
+
+## 前置检查
+
+1. 确定活动规格书目录（按优先级）：
+   a. `$ARGUMENTS` 不为空 → 使用指定路径。
+   b. `CLAUDE.md` 存在 `<!-- IIDP-SDD START -->` 标记 → 读取 `当前活动模组` 字段。
+   c. 以上均无 → 提示用户：
+      > "请输入模组规格书目录路径（如 `specs/modules/student-mgr/`）："
+      等待用户输入后继续。
 
 ## 触发条件
 

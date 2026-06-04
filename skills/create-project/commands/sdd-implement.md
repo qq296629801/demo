@@ -19,11 +19,16 @@ handoffs:
 $ARGUMENTS
 ```
 
-可传入 `next`（默认，执行下一个未完成任务）、具体任务 ID（如 `T003`）或功能目录路径。
+可传入 `next`（默认，执行下一个未完成任务）、具体任务 ID（如 `T003`）或模组目录路径（如 `specs/modules/student-mgr/`）。
 
 ## 前置检查
 
-1. 从 `CLAUDE.md` 标记读取活动功能目录。
+1. 确定活动规格书目录（按优先级）：
+   a. `$ARGUMENTS` 为路径格式 → 使用指定路径；为 `next` 或任务 ID → 从 CLAUDE.md 或用户输入获取目录。
+   b. `CLAUDE.md` 存在 `<!-- IIDP-SDD START -->` 标记 → 读取 `当前活动模组` 字段。
+   c. 以上均无 → 提示用户：
+      > "请输入模组规格书目录路径（如 `specs/modules/student-mgr/`）："
+      等待用户输入后继续。
 2. 读取 `tasks.md`，找到第一个 `- [ ]` 未勾选任务。
 3. 若所有任务已勾选 → 提示运行 `/sdd-validate`，不执行实现。
 4. 确认当前 git 分支不在主干（`main`/`master`/`develop`）；若在主干，提示切换分支后继续。

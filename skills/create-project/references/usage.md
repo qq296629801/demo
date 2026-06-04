@@ -112,8 +112,8 @@ specs/
 ### 功能级文档
 
 ```text
-specs/features/
-└── phase1-[feature]/
+specs/modules/
+└── {moduleName}/
     ├── requirements.md
     ├── plan.md
     ├── tasks.md
@@ -129,7 +129,7 @@ backlog/
 CHANGELOG.md
 ```
 
-`backlog/ideas.md` 记录待研究想法、候选需求、未排期能力和产品探索。只有被确认进入路线图后，才移动或拆分到 `specs/features/<feature>/`。
+`backlog/ideas.md` 记录待研究想法、候选需求、未排期能力和产品探索。只有被确认进入路线图后，才移动或拆分到 `specs/modules/<feature>/`。
 
 ### IIDP 完整项目结构
 
@@ -143,8 +143,8 @@ agents/
 │   ├── roadmap.md
 │   ├── integration-map.md
 │   ├── decisions.md
-│   ├── features/
-│   │   └── phase1-[feature]/
+│   ├── modules/
+│   │   └── {moduleName}/
 │   │       ├── requirements.md
 │   │       ├── plan.md
 │   │       ├── tasks.md

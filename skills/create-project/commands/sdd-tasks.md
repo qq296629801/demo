@@ -19,11 +19,17 @@ handoffs:
 $ARGUMENTS
 ```
 
-可传入 `tdd`（启用 TDD 模式，测试先行）或功能目录路径。
+可传入 `tdd`（启用 TDD 模式，测试先行）或模组目录路径（如 `specs/modules/student-mgr/`）。
 
 ## 前置检查
 
-1. 确认 `plan.md` 已存在且用户已确认计划摘要（Plan Review Gate 已通过）。
+1. 确定活动规格书目录（按优先级）：
+   a. `$ARGUMENTS` 不为空且非 `tdd` → 使用指定路径；若为 `tdd` → 从 CLAUDE.md 或用户输入获取目录后启用 TDD 模式。
+   b. `CLAUDE.md` 存在 `<!-- IIDP-SDD START -->` 标记 → 读取 `当前活动模组` 字段。
+   c. 以上均无 → 提示用户：
+      > "请输入模组规格书目录路径（如 `specs/modules/student-mgr/`）："
+      等待用户输入后继续。
+2. 确认 `plan.md` 已存在且用户已确认计划摘要（Plan Review Gate 已通过）。
 2. 确认 git 分支不在主干；若在主干，提示创建 feature 分支后再继续。
 
 ## 执行步骤

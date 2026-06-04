@@ -75,7 +75,7 @@ $ARGUMENTS
 
    以下约束不受模板控制，始终强制适用：
    - 三条约束（IIDP 规范优先 / 契约先行 / 不编造平台事实）
-   - `specs/features/<phaseN>-<feature>/` 目录结构
+   - `specs/modules/<moduleName>/` 目录结构
    - `skills/backend/` 和 `skills/frontend/` 中的 IIDP 平台技术规范
    ```
 

@@ -1,5 +1,5 @@
 ---
-description: 【SDD Spec Sync】AI 直接改动代码后，通过 git diff 感知变更，精准更新受影响的规格书章节。一次只处理当前活动功能的规格，完成后输出变更摘要。
+description: 【SDD Spec Sync】AI 直接改动代码后，通过 git diff 感知变更，精准更新受影响的规格书章节。一次只处理当前活动模组的规格，完成后输出变更摘要。
 handoffs:
   - label: 运行验收 Validate
     command: sdd-validate
@@ -20,11 +20,16 @@ handoffs:
 $ARGUMENTS
 ```
 
-可传入具体功能目录路径（如 `specs/features/phase1-student-mgr/`），默认从 CLAUDE.md 读取当前活动功能。
+可传入具体模组目录路径（如 `specs/modules/student-mgr/`），为空时从 CLAUDE.md 读取活动模组目录。
 
 ## 前置步骤
 
-1. 从 CLAUDE.md `<!-- IIDP-SDD START -->` 标记读取当前活动功能目录（`specs/features/<feature>/`）。
+1. 确定活动规格书目录（按优先级）：
+   a. `$ARGUMENTS` 不为空 → 使用指定路径。
+   b. `CLAUDE.md` 存在 `<!-- IIDP-SDD START -->` 标记 → 读取 `当前活动模组` 字段。
+   c. 以上均无 → 提示用户：
+      > "请输入模组规格书目录路径（如 `specs/modules/student-mgr/`）："
+      等待用户输入后继续。
 2. 收集变更文件列表（三个来源合并去重）：
    - `git diff HEAD --name-only`（未提交的暂存/工作区变更）
    - `git diff $(git merge-base HEAD origin/$(git symbolic-ref --short HEAD 2>/dev/null || echo main) 2>/dev/null || git merge-base HEAD origin/main 2>/dev/null || echo HEAD) HEAD --name-only`（已 commit 但未推送的变更；若 origin 不可达则跳过）

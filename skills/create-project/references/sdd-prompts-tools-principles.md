@@ -26,11 +26,11 @@
 |---|---|
 | 规格批判（Critique） | `对 [requirements.md] 做 Critique：从产品战略视角质疑功能价值和边界，从工程风险视角识别待确认阻塞项和漂移风险。不修改规格，只输出发现报告。` |
 | 代码蓝图（Blueprint） | `在开始实现前，为 [功能名称] 生成代码蓝图：后端文件清单（路径/类型/关键内容）和前端扩展清单（路径/扩展类型/selector/id来源）。不写真实代码，只描述结构。` |
-| 漂移检测（Spec Sync） | `对 specs/features/[feature]/ 和当前工程代码做漂移检测，按"代码超前/规格超前/真实冲突"分类列出每条漂移，给出最小处理建议，不修改文件。` |
-| PR 描述（PR Bridge） | `基于 specs/features/[phaseN-feature]/ 目录生成 PR 描述，包含功能概述、变更范围（后端/前端）、规格目录链接、验收清单、待确认事项。` |
-| 规格澄清（Clarify） | `读取 specs/features/[feature]/requirements.md，对功能范围、领域模型、交互流程、非功能属性、集成依赖、边界条件、约束权衡、术语命名、完成信号、IIDP 特有待确认项 10 个维度做歧义扫描；生成 ≤5 个高影响力澄清问题（每题附 2–4 个选项或简答指引）；等用户回答后，将答案写入 requirements.md 的 ## Clarifications 节，并更新受影响章节。不进入 Plan 之前不得跳过此步骤。` |
-| AC→TC 提取 | `读取 specs/features/[feature]/requirements.md 的验收标准，生成测试用例规格：后端服务测试（TC-BE-xx，覆盖正常流程/状态拒绝/权限拦截/必填校验）和前端验收场景（TC-FE-xx，覆盖加载/增删改查/权限显隐/空态异常态）。输出写入 validation.md 测试用例规格节，不写代码。` |
-| 测试缺口扫描 | `扫描 specs/features/[feature]/validation.md 的测试覆盖率追踪表，列出所有"⬜ 待执行"的 TC-ID；按严重度分类（Critical：权限/数据完整性；Medium：用户可见流程；Low：内部逻辑）；给出每条 TC 的推荐执行顺序和前置条件。仅报告，不修改文件。` |
+| 漂移检测（Spec Sync） | `对 specs/modules/[feature]/ 和当前工程代码做漂移检测，按"代码超前/规格超前/真实冲突"分类列出每条漂移，给出最小处理建议，不修改文件。` |
+| PR 描述（PR Bridge） | `基于 specs/modules/{moduleName}/ 目录生成 PR 描述，包含功能概述、变更范围（后端/前端）、规格目录链接、验收清单、待确认事项。` |
+| 规格澄清（Clarify） | `读取 specs/modules/[feature]/requirements.md，对功能范围、领域模型、交互流程、非功能属性、集成依赖、边界条件、约束权衡、术语命名、完成信号、IIDP 特有待确认项 10 个维度做歧义扫描；生成 ≤5 个高影响力澄清问题（每题附 2–4 个选项或简答指引）；等用户回答后，将答案写入 requirements.md 的 ## Clarifications 节，并更新受影响章节。不进入 Plan 之前不得跳过此步骤。` |
+| AC→TC 提取 | `读取 specs/modules/[feature]/requirements.md 的验收标准，生成测试用例规格：后端服务测试（TC-BE-xx，覆盖正常流程/状态拒绝/权限拦截/必填校验）和前端验收场景（TC-FE-xx，覆盖加载/增删改查/权限显隐/空态异常态）。输出写入 validation.md 测试用例规格节，不写代码。` |
+| 测试缺口扫描 | `扫描 specs/modules/[feature]/validation.md 的测试覆盖率追踪表，列出所有"⬜ 待执行"的 TC-ID；按严重度分类（Critical：权限/数据完整性；Medium：用户可见流程；Low：内部逻辑）；给出每条 TC 的推荐执行顺序和前置条件。仅报告，不修改文件。` |
 
 ### 实现计划与任务
 

@@ -11,7 +11,7 @@ handoffs:
 
 ## 用途
 
-解析 `code-index` skill 生成的静态 HTML 原型（`spec/09-ui/` 目录），使用 Playwright MCP 对每个页面执行导航、无障碍树快照和关键交互模拟，提取结构化交互需求，输出 `specs/features/<feature>/interaction-spec.md`。
+解析 `code-index` skill 生成的静态 HTML 原型（`spec/09-ui/` 目录），使用 Playwright MCP 对每个页面执行导航、无障碍树快照和关键交互模拟，提取结构化交互需求，输出 `specs/modules/<feature>/interaction-spec.md`。
 
 输出格式严格遵循 `skills/create-project/references/sdd-frontend-interaction.md` 的 8 节结构：
 1. 页面目标  2. 用户流程  3. 交互状态表  4. 响应式与容器策略  5. 无障碍与易用性
@@ -26,9 +26,9 @@ $ARGUMENTS
 ```
 
 可选参数：
-- `--feature <name>`：功能模块名称，输出路径为 `specs/features/<name>/interaction-spec.md`；不传时默认取 `spec/09-ui/` 的父目录 spec 名。
+- `--feature <name>`：功能模块名称，输出路径为 `specs/modules/<name>/interaction-spec.md`；不传时默认取 `spec/09-ui/` 的父目录 spec 名。
 - `--ui-dir <path>`：静态 HTML 目录路径，默认为 `spec/09-ui/`。
-- `--contracts <path>`：`contracts.md` 路径，默认为 `specs/features/<feature>/contracts.md`；不存在时跳过 API 映射步骤并在 §8 标注"待确认"。
+- `--contracts <path>`：`contracts.md` 路径，默认为 `specs/modules/<feature>/contracts.md`；不存在时跳过 API 映射步骤并在 §8 标注"待确认"。
 
 ## 前置检查
 
@@ -148,7 +148,7 @@ mcp__playwright__snapshot()   ← 捕获确认弹窗或状态变化
 
 ### 步骤 5 — 生成 interaction-spec.md
 
-基于步骤 2-4 提取的信息，按 `sdd-frontend-interaction.md` 模板格式生成 `interaction-spec.md`，写入 `specs/features/<feature>/interaction-spec.md`。
+基于步骤 2-4 提取的信息，按 `sdd-frontend-interaction.md` 模板格式生成 `interaction-spec.md`，写入 `specs/modules/<feature>/interaction-spec.md`。
 
 文档结构（每个 HTML 文件生成独立的一级章节，8 节结构在每个页面章节内展开）：
 
@@ -272,7 +272,7 @@ mcp__playwright__snapshot()   ← 捕获确认弹窗或状态变化
 ## UI 原型解析完成 ✓
 
 ### 已生成文件
-- specs/features/[feature]/interaction-spec.md
+- specs/modules/[feature]/interaction-spec.md
 
 ### 解析概览
 | 页面文件 | 识别按钮数 | 表单字段数 | 状态枚举 | API 已映射 |
@@ -292,7 +292,7 @@ B) 手动补充 interaction-spec.md §8 中的待确认项后再执行 A
 
 ## 完成标志
 
-- `specs/features/<feature>/interaction-spec.md` 已写入，包含全部 8 节（§3.4 仅当存在工作流状态时输出）。
+- `specs/modules/<feature>/interaction-spec.md` 已写入，包含全部 8 节（§3.4 仅当存在工作流状态时输出）。
 - 每个 HTML 文件对应至少 1 个用户操作流程（§2）条目。
 - §7 API 调用映射中每条操作有接口引用或明确标注"待确认"。
 - 输出摘要包含解析概览、待确认项和后续选项。

@@ -28,8 +28,8 @@ specs/
 │   ├── requirements.md
 │   ├── contracts.md
 │   └── ...
-└── features/
-    └── phase1-[feature]/
+└── modules/
+    └── {moduleName}/
         ├── requirements.md
         ├── contracts.md        # API 级契约（属性/ER字段/服务签名/视图key，Step 1.3a 生成）
         ├── backend-spec.md
@@ -140,9 +140,9 @@ specs/
 - `effectPaths.includeRegExp` 不带 `/iidp/` 前缀
 
 ## Git 工作流约定
-- feature 分支命名：`feature/{appName}/phase{N}-{feature-name}`（与 `specs/features/phase{N}-{feature-name}/` 目录对齐）
+- feature 分支命名：`feature/{appName}/{moduleName}`（与 `specs/modules/{moduleName}/` 目录对齐）
 - 每个 feature 对应一个分支和一个 PR，从主干（main/master）创建
-- 合并策略：Squash merge，PR 描述引用对应 `specs/features/` 规格目录
+- 合并策略：Squash merge，PR 描述引用对应 `specs/modules/` 规格目录
 - **写代码前必须切换到 feature 分支**，不得在主干直接修改工程文件
 
 ## 版本约束
@@ -244,12 +244,12 @@ specs/
 ## Phase 1：[阶段名]
 目标：[业务目标]
 
-功能列表（每项链接到 `specs/features/<feature>/` 下的规格文件）：
+功能列表（每项链接到 `specs/modules/<feature>/` 下的规格文件）：
 
 | 状态 | 功能 | 规格目录 | 涉及模型/页面 | 负责人 | 完成日期 |
 |---|---|---|---|---|---|
-| ☐ 待开始 / ▶ 进行中 / ✅ 完成 | [功能名 1] | [`specs/features/phase1-[feature1]/`](features/phase1-[feature1]/requirements.md) | `[model]`/[页面] | — | — |
-| ☐ | [功能名 2] | [`specs/features/phase1-[feature2]/`](features/phase1-[feature2]/requirements.md) | `[model]` | — | — |
+| ☐ 待开始 / ▶ 进行中 / ✅ 完成 | [功能名 1] | [`specs/modules/{moduleName1}/`](modules/{moduleName1}/requirements.md) | `[model]`/[页面] | — | — |
+| ☐ | [功能名 2] | [`specs/modules/{moduleName2}/`](modules/{moduleName2}/requirements.md) | `[model]` | — | — |
 
 验收标准：
 - [ ] 后端：每个功能的模型、视图、菜单、服务可被 IIDP 引擎加载（参见各 feature 的 `validation.md`）
@@ -259,11 +259,11 @@ specs/
 ## 技术债
 | 问题 | 影响 | 优先级 | 计划处理阶段 | 关联 feature |
 |---|---|---|---|---|
-| [问题] | [影响] | 高/中/低 | Phase X | `phase1-[feature]` |
+| [问题] | [影响] | 高/中/低 | Phase X | `{moduleName}` |
 ```
 
 **约定**：
-- 新建 feature 时同步在本 roadmap 表中追加一行，链接路径与 `specs/features/` 目录一致。
+- 新建 feature 时同步在本 roadmap 表中追加一行，链接路径与 `specs/modules/` 目录一致。
 - feature 完成时把 ☐ 改为 ✅，填完成日期，避免 roadmap 与实际进度脱节。
 
 ## integration-map.md 模板
@@ -310,13 +310,13 @@ specs/
 
 ## requirements.md 模板
 
-> **填写时机**：Step 0 能力识别完成后，由 `/sdd-specify` 生成并写入 `specs/features/<feature>/requirements.md`。
+> **填写时机**：Step 0 能力识别完成后，由 `/sdd-specify` 生成并写入 `specs/modules/<feature>/requirements.md`。
 > 所有 `待确认` 标记须在 Clarify 阶段处理；未处理的保留说明理由。
 
 ```markdown
 # [功能名称] 功能规格
 
-**功能目录**：`specs/features/<phaseN>-<feature-name>/`
+**功能目录**：`specs/modules/<moduleName>/`
 **创建日期**：YYYY-MM-DD
 **状态**：草稿 / 澄清中 / 待评审 / 已确认
 
@@ -456,7 +456,7 @@ specs/
 
 ## contracts.md 模板
 
-> **填写时机（强制）**：每个 Feature 在 **Step 1.3a** 生成 `specs/features/<feature>/contracts.md`，必须先于 `backend-spec.md` 和 `frontend-spec.md`。
+> **填写时机（强制）**：每个 Feature 在 **Step 1.3a** 生成 `specs/modules/<feature>/contracts.md`，必须先于 `backend-spec.md` 和 `frontend-spec.md`。
 > 填写时必须参考 `skills/backend/references/core/` 对应文件，不得凭记忆填写注解参数或字段类型。
 > backend-spec 的字段注解、服务签名、auth 值必须取自本文件，不得自行发明。
 

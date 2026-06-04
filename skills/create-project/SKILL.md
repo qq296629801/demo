@@ -105,7 +105,7 @@ backend-spec.md → [backend] Step 1 确认命名 → Step 2-3 工程结构/POM
 
 1. 检查当前 git 分支（`git branch --show-current`）。
 2. 若在主干（`main`/`master`/`develop`），**暂停并提示用户**：
-   > "即将开始写代码，建议先创建 feature 分支：`git checkout -b feature/{appName}/phase{N}-{feature-name}`。确认切换后继续，或明确告知在当前分支继续。"
+   > "即将开始写代码，建议先创建 feature 分支：`git checkout -b feature/{appName}/{moduleName}`。确认切换后继续，或明确告知在当前分支继续。"
 3. 用户确认分支后再执行 tasks.md 中的具体任务。
 
 AI 不得自动执行 `git checkout`；分支创建由用户操作或授权后操作。

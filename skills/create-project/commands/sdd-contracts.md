@@ -19,9 +19,16 @@ handoffs:
 $ARGUMENTS
 ```
 
-可传入功能目录路径；为空时从 `CLAUDE.md` 读取活动功能目录。
+可传入模组目录路径（如 `specs/modules/student-mgr/`）；为空时从 `CLAUDE.md` 读取活动模组目录。
 
 ## 前置检查
+
+0. 确定活动规格书目录（按优先级）：
+   a. `$ARGUMENTS` 不为空 → 使用指定路径。
+   b. `CLAUDE.md` 存在 `<!-- IIDP-SDD START -->` 标记 → 读取 `当前活动模组` 字段。
+   c. 以上均无 → 提示用户：
+      > "请输入模组规格书目录路径（如 `specs/modules/student-mgr/`）："
+      等待用户输入后继续。
 
 1. 确认 `requirements.md` 存在且 `## Clarifications` 节已填写（或用户确认跳过 Clarify）。
    - **若 `requirements.md` 不存在** → **停止执行**，输出提示："请先运行 `/sdd-specify` 生成需求规格，再执行 `/sdd-contracts`。"
@@ -52,7 +59,7 @@ $ARGUMENTS
 - 存在 → 以该文件为骨架填写本功能契约；
 - 不存在 → 使用 `sdd-constitution.md § contracts.md 模板`。
 
-新建 `specs/features/<feature>/contracts.md`，按上一步确定的模板填写：
+新建 `specs/modules/<feature>/contracts.md`，按上一步确定的模板填写：
 
 | 契约项 | 必须先读的 backend skills |
 |---|---|
@@ -65,6 +72,6 @@ $ARGUMENTS
 ## 完成标志
 
 - `specs/integration-map.md` 包含本 Phase 模型、权限码总览（新增模型分组）。
-- `specs/features/<feature>/contracts.md` 已生成，所有字段注解、服务签名、权限码可从文件中直接查到。
+- `specs/modules/<feature>/contracts.md` 已生成，所有字段注解、服务签名、权限码可从文件中直接查到。
 - 输出提示：backend-spec 和 frontend-spec 的所有内容**必须取自本文件**，不得自行发明。
 - 下一步：`/sdd-critique`（可选）或直接 `/sdd-spec`。

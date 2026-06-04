@@ -19,18 +19,23 @@ handoffs:
 $ARGUMENTS
 ```
 
-可传入功能目录路径（如 `specs/features/phase1-student-mgr/`）；为空时从 `CLAUDE.md` 读取活动功能目录。
+可传入模组目录路径（如 `specs/modules/student-mgr/`）；为空时从 `CLAUDE.md` 读取活动模组目录。
 
 ## 前置检查
 
-1. 从 `CLAUDE.md` `<!-- IIDP-SDD START -->` 读取活动功能目录，或使用 `$ARGUMENTS` 指定路径。
+1. 确定活动规格书目录（按优先级）：
+   a. `$ARGUMENTS` 不为空 → 使用指定路径。
+   b. `CLAUDE.md` 存在 `<!-- IIDP-SDD START -->` 标记 → 读取 `当前活动模组` 字段。
+   c. 以上均无 → 提示用户：
+      > "请输入模组规格书目录路径（如 `specs/modules/student-mgr/`）："
+      等待用户输入后继续。
 2. 确认 `requirements.md` 已存在，否则提示先运行 `/sdd-specify`。
 
 ## 执行步骤
 
 按 `skills/create-project/references/sdd-workflow.md § Step 1.2` 执行：
 
-1. **加载** `specs/features/<feature>/requirements.md`。
+1. **加载** `specs/modules/<feature>/requirements.md`。
 2. **扫描 10 类歧义维度**（功能范围、领域模型、交互流程、非功能属性、集成依赖、边界条件、约束权衡、术语命名、完成信号、IIDP 特有待确认项）。
 3. **生成 ≤5 个问题**，按影响程度排优先级，每题附 2–4 个选项或简答指引。
 4. **逐题交互**：一次只问一题，等待用户回答后再问下一题。

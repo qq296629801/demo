@@ -4,7 +4,7 @@
 
 **生成任何后端内容前，同时必须先读取 `skills/backend/references/core/platform-standards.md`**（项目宪法），确保命名、代码规范、异常处理、SQL 访问等所有约定符合 IIDP 平台强制要求。
 
-**输出文件路径**：`specs/features/<phase>-<feature>/backend-spec.md`
+**输出文件路径**：`specs/modules/<moduleName>/backend-spec.md`
 
 ```markdown
 # [功能名称] IIDP 后端规格

@@ -55,8 +55,8 @@ agents/
 │   │   ├── requirements.md       # 覆盖默认 requirements.md 模板
 │   │   ├── contracts.md          # 覆盖默认 contracts.md 模板
 │   │   └── ...                   # 其他可覆盖模板见 sdd-constitution.md
-│   ├── features/
-│   │   └── phase1-[feature]/
+│   ├── modules/
+│   │   └── {moduleName}/
 │   │       ├── requirements.md
 │   │       ├── contracts.md          # API 级契约（Step 1.3a 生成，先于规格书）
 │   │       ├── backend-spec.md       # 后端技术落地规格（模型、服务、视图、菜单、权限细节）
@@ -112,4 +112,4 @@ agents/
 └── README.md
 ```
 `specs/legacy/` 用于 Legacy 代码分析（存量项目），保存代码侦察、业务规则提取和变更区域规格依据。
-`backlog/ideas.md` 用于记录待研究想法、候选需求、未排期能力和产品探索，不等同于已进入 `roadmap.md` 或 `specs/features/` 的承诺范围。
+`backlog/ideas.md` 用于记录待研究想法、候选需求、未排期能力和产品探索，不等同于已进入 `roadmap.md` 或 `specs/modules/` 的承诺范围。

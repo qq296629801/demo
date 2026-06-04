@@ -147,8 +147,8 @@ C) 先建立技术债治理 Phase，再进入具体功能规格
 **目的**：把本次存量改造、新增 App、跨 App 集成或技术债治理事项转换为可验收的需求规格，并在生成技术规格前锁定模型、视图、服务、权限和前端参数契约。
 
 **执行**：读取 `references/sdd-workflow.md` Step 1.1-1.3a，产出：
-- `specs/features/phase{N}-{feature}/requirements.md`
-- `specs/features/phase{N}-{feature}/contracts.md`
+- `specs/modules/{moduleName}/requirements.md`
+- `specs/modules/{moduleName}/contracts.md`
 
 执行时必须先读取 `specs/iidp-stack.md` 和 `specs/integration-map.md`：
 - 新增模型、视图、菜单、数据文件、模块名必须遵循已提取命名规范。
@@ -305,8 +305,8 @@ specs/
 ├── decisions.md                        ← 步骤 2 起记录存量兼容和治理决策
 ├── templates/
 │   └── iidp-stack.md                   ← 步骤 1 生成并填充的项目级模板
-└── features/
-    └── phase1-{feature}/
+└── modules/
+    └── {moduleName}/
         ├── requirements.md             ← 步骤 3
         ├── contracts.md                ← 步骤 3
         ├── backend-spec.md             ← 步骤 4

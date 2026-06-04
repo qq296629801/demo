@@ -140,8 +140,8 @@ C) 调整 Phase 规划优先级
 **目的**：明确本次 Phase 要做什么（requirements.md），并在写规格书前确定前后端契约（contracts.md），强制前后端对齐。
 
 **执行**：读取 `references/sdd-workflow.md` Step 1.1–1.3a，产出：
-- `specs/features/phase{N}-{feature}/requirements.md`
-- `specs/features/phase{N}-{feature}/contracts.md`（先于 backend-spec，强制步骤）
+- `specs/modules/{moduleName}/requirements.md`
+- `specs/modules/{moduleName}/contracts.md`（先于 backend-spec，强制步骤）
 
 **步骤 3 产出摘要**：
 
@@ -208,8 +208,8 @@ C) 审查规格书一致性
 **目的**：将规格书拆解为可逐项执行的原子任务，并同步生成测试用例规格。
 
 **执行**：读取 `references/sdd-workflow.md` Step 3，产出：
-- `specs/features/phase{N}-{feature}/tasks.md`
-- `specs/features/phase{N}-{feature}/validation.md`（从 AC 提取 TC-BE / TC-FE）
+- `specs/modules/{moduleName}/tasks.md`
+- `specs/modules/{moduleName}/validation.md`（从 AC 提取 TC-BE / TC-FE）
 
 **步骤 5 产出摘要**：
 
@@ -292,8 +292,8 @@ specs/
 ├── roadmap.md                          ← 步骤 2
 ├── integration-map.md                  ← 步骤 2（后续每步完成后更新）
 ├── decisions.md                        ← 步骤 2 起，每次关键决策后更新
-└── features/
-    └── phase1-{feature}/
+└── modules/
+    └── {moduleName}/
         ├── requirements.md             ← 步骤 3
         ├── contracts.md                ← 步骤 3
         ├── backend-spec.md             ← 步骤 4
