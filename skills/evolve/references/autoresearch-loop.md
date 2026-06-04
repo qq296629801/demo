@@ -13,16 +13,16 @@
 | 保留胜利、丢弃失败 | 分数提升则保留，未提升则回滚 |
 | 人类编写 program.md | 人工审核 skill 指导和最终 PR |
 
-循环必须优化可测量的 `create-project` 行为，而不是优化评测框架本身。
+循环必须优化可测量的 IIDP skills 行为，而不是优化评测框架本身。
 
 ## 分支与提交规则
 
-- 除非用户提供其他名称，否则创建隔离分支 `evolve/create-project-YYYYMMDD-HHMM`。
+- 除非用户提供其他名称，否则创建隔离分支 `evolve/skills-YYYYMMDD-HHMM`。
 - 开始前记录原始分支。
 - 每个尝试性改动都要在运行基准前提交。
-- 提交信息格式：`evolve: improve create-project <short reason>`。
+- 提交信息格式：`evolve: improve skills <short reason>`。
 - 如果基准分没有提升，对实验 commit 执行正常 revert，并记录原因。
-- 如果分数提升，保留 commit，并把它作为下一轮的上一轮分数。
+- 如果分数提升，保留 commit，把它作为下一轮的上一轮分数，并立即执行 Phase 4 技能反馈回写。
 
 ## 单轮形态
 
@@ -36,7 +36,8 @@
 6. 使用同一个基准 commit SHA 重新运行固定基准。
 7. 用 `evaluation-rubric.md` 打分。
 8. 保留或回滚。
-9. 追加证据。
+9. 若 KEEP，执行 Phase 4 技能反馈回写；若发现缺少证据来源、目标文件、插入位置或验证方式，只记录为 `knowledge-gap`。
+10. 追加证据。
 
 不要打包无关修复。更大的指导改动必须拆成多轮，每一轮都通过固定基准后才能继续。
 
@@ -47,6 +48,7 @@
 
 - 基准仓库：https://github.com/YunaiV/ruoyi-vue-pro.git
 - 基准 SHA：<sha>
+- 运行目录：.evolve/runs/<timestamp>/
 - 实验 commit：<sha>
 - 可编辑范围已检查：only skills/create-project/, skills/backend/, skills/frontend/
 
@@ -77,6 +79,13 @@
 ### 决策
 
 KEEP 或 REVERT，并说明原因。
+
+### Phase 4 反馈回写
+
+- 发现：<标题，或本轮未发现可写回文档缺口>
+- 目标文件：<skills/... 或 knowledge-gap>
+- 插入位置：<章节/标题>
+- 验证方式：<静态检查、构建、Docker 或 JSON-RPC 冒烟测试>
 ```
 
 ## 停止条件

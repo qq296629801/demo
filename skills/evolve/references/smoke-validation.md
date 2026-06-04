@@ -48,7 +48,13 @@
 - `smoke-gap`：应用已启动，但 JSON-RPC 行为失败。
 - `environment-gap`：本地 Docker、网络、Maven 或外部依赖导致无法进行可比较评测。
 
-通常只有 `generation-gap`、可复现的 `config-gap` 和 `smoke-gap` 应驱动 `create-project` 修改。`environment-gap` 应停止比较，而不是产出误导性分数。
+失败归因必须先映射到 evolve 的改进分类，再决定是否修改 skills：
+
+- 可复现的 `generation-gap`、`config-gap` 或 `smoke-gap` 若根因是 SDD 模板、契约映射或验证规则表达不足，归为 `sdd-template-gap`，候选修改 `skills/create-project/`。
+- 如果根因是已有 backend/frontend 规则未被加载，归为 `route-gap`，候选修改 `skills/create-project/` 或 skill 路由。
+- 如果根因是 backend 私有规则缺失、示例不足或边界用法不清，且有本地文档、源码、日志、配置、测试或用户确认支撑，归为 `backend-doc-gap`，候选修改 `skills/backend/`。
+- 如果根因是 frontend 私有规则缺失、组件规则不足或扩展协议不清，且有 `iidpDoc`、源码、日志、配置、测试或用户确认支撑，归为 `frontend-doc-gap`，候选修改 `skills/frontend/`。
+- `environment-gap` 应停止比较，不产出误导性分数；资料不足时归为 `knowledge-gap`，只记录缺口和所需证据。
 
 ## 认证要求
 
@@ -86,7 +92,7 @@ IIDP 引擎强制 token 认证，未提供 token 时所有 JSON-RPC 调用返回
 使用 rubric 公式：
 
 ```text
-smoke_points = round(30 * passed_cases / total_cases)
+smoke_points = round(35 * passed_cases / total_cases)
 ```
 
 不要把跳过用例计为通过。如果应用无法启动，所有冒烟用例都失败。

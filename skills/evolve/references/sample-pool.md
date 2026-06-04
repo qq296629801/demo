@@ -2,7 +2,7 @@
 
 ## 目的
 
-样本池用于在多种后端管理框架中暴露 `create-project` 指导缺口。它不能替代固定基准。样本结果用于指导假设，固定基准决定是否保留改动。
+样本池用于在多种后端管理框架中暴露 `create-project`、`backend`、`frontend` 的指导缺口。它不能替代固定基准。样本结果用于指导假设，固定基准决定是否保留改动。
 
 ## 来源
 
@@ -60,7 +60,7 @@
 - code-index result: <规格质量摘要>
 - create-project result: <生成摘要>
 - Docker/smoke result: <通过/失败摘要>
-- Suspected create-project gap: <一句话说明>
+- Suspected skills gap: <`route-gap` / `backend-doc-gap` / `frontend-doc-gap` / `sdd-template-gap` / `knowledge-gap` + 一句话说明>
 ```
 
 ## 使用样本结果
@@ -69,7 +69,11 @@
 
 1. 按根因对失败分组。
 2. 优先处理影响多个样本或固定基准的问题。
-3. 为 `skills/create-project/` 形成一个小的改进假设。
+3. 按失败分类形成一个小的改进假设：
+   - `route-gap` 或 `sdd-template-gap`：候选目标通常是 `skills/create-project/`。
+   - `backend-doc-gap`：候选目标通常是 `skills/backend/`，但必须有本地文档、源码、日志、配置、测试或用户确认作为 IIDP 私有规则证据。
+   - `frontend-doc-gap`：候选目标通常是 `skills/frontend/`，但必须有 `iidpDoc`、源码、日志、配置、测试或用户确认作为 IIDP 私有规则证据。
+   - `knowledge-gap`：只记录缺口和所需证据，不修改 backend/frontend 规则。
 4. 保留改动前必须运行固定基准。
 
 不得编辑样本仓库或生成的 IIDP 应用来让样本分数通过。
