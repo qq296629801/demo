@@ -43,14 +43,15 @@ $ARGUMENTS
    | 任务类型 | 必须经由 | 输入文件 |
    |---|---|---|
    | 后端工程、模型、视图、菜单、服务、数据 | `skills/backend/SKILL.md` Step 1～10 | `backend-spec.md` |
-   | 前端规格 → 代码（含工程初始化） | `skills/frontend/SKILL.md` → `iidp-frontend-spec-code` | `frontend-spec.md` |
-   | 前端扩展开发 | `skills/frontend/SKILL.md` → `iidp-frontend-extension-dev` | `frontend-spec.md` |
+   | 前端规格 → 代码（含工程初始化） | `iidp-frontend`（`skills/frontend/SKILL.md`）→ `iidp-frontend-spec-code` | `frontend-spec.md` |
+   | 前端扩展开发 | `iidp-frontend`（`skills/frontend/SKILL.md`）→ `iidp-frontend-extension-dev` | `frontend-spec.md` |
    | 前端标准模板页（§9 标注无需代码） | 勾选"前端无需新增代码" | — |
 
 3. **执行规则**：
    - 修改前读取相邻文件，沿用当前工程风格。
    - 不顺手重构无关模块。
    - 对缺失事实写"待确认"，不补成假事实。
+   - 前端任务在写入任何代码前，必须先通过 `iidp-frontend` 的工程门禁；生成或修改组件节点前必须读取 `skills/frontend/references/iidp-frontend-extension-dev/COMPONENT_RULES.md`；写扩展视图/hook/自定义组件前必须读取 `iidp-frontend-extension-dev` 对应协议，校验 `selector`、扩展 `type`、`hook` 结构、`bind_on_`、`ds_config` 和组件注册边界。
 
 4. **任务完成后**：将 `- [ ]` 改为 `- [x]`，输出完成摘要，**停止**。
 5. **输出剩余任务数**，提示下一步：

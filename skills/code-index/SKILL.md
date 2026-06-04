@@ -4,8 +4,9 @@ description: |
   把存量代码（任意语言/框架）转成完整功能规格书（Codebook）。整合 codegraph 框架，
   以 codegraph_search、codegraph_callers、codegraph_trace 三条命令为核心，
   自动解析代码语义图谱，再通过 LLM Prompt 模板生成 SRS、PRD、HLA、API 文档、
-  用户故事、流程图（Mermaid/SVG）、UI 静态页面、数据库结构等。
-  支持 RuoYi、JEECG Boot、yudao-cloud、maku-boot 等 Java 快速开发框架，
+  用户故事、流程图（Mermaid/SVG）、UI 静态页面、数据库结构等；识别到 IIDP 时还必须
+  额外生成可被 brownfield 增量改造消费的 baseline-spec 结构化基线规格。
+  支持 IIDP、RuoYi、JEECG Boot、yudao-cloud、maku-boot 等 Java 快速开发框架，
   以及通用 Spring Boot（JPA/MyBatis-Plus）、Python（Django/FastAPI）、
   TypeScript（NestJS/Express）、Go（Gin/Echo）、
   前端（React/Vue/Angular）的自动识别与模式提取。
@@ -63,6 +64,18 @@ description: |
 - [ ] codebook/hla.md
 - [ ] codebook/database-overview.md
 - [ ] codebook/overview.md
+
+## IIDP baseline-spec 文件（仅 IIDP 项目）
+- [ ] codebook/baseline-spec/apps.json
+- [ ] codebook/baseline-spec/menus.json
+- [ ] codebook/baseline-spec/models.json
+- [ ] codebook/baseline-spec/views.json
+- [ ] codebook/baseline-spec/services.json
+- [ ] codebook/baseline-spec/frontend-extends.json
+- [ ] codebook/baseline-spec/capability-list.json
+- [ ] codebook/baseline-spec/artifact-map.json
+- [ ] codebook/baseline-spec/trace-map.json
+- [ ] codebook/baseline-spec/unresolved.json
 
 ## 模块级文件
 - [ ] codebook/modules/{{MODULE}}/overview.md
@@ -269,9 +282,33 @@ codegraph_impact(symbol_id="<node_id>")   # 变更影响面分析
 
 ## 第三步：框架自动识别
 
+> IIDP 存量系统识别与提取规则见 `references/iidp-framework.md`
 > Java 后端框架详细规则见 `references/java-frameworks.md`  
 > 前端框架识别规则见 `references/frontend-frameworks.md`  
 > Python/TypeScript/Go 后端框架规则见 `references/multi-framework-patterns.md`
+
+**IIDP 项目优先识别：**
+
+当后端出现 `com.sie.iidp`、`sie-snest-sdk`、`sie-snest-engine`、`sie-iidp-plugin`、
+`apps/apps.json`、`**/app.json`、`@Model`、`@Property`、`@MethodService`、`BaseModel`
+或 `views/*.json` / `menus.json` 时，判定为 IIDP 后端候选。
+
+当前端 `package.json` 出现 `init:tech`、`install:tech`、`@tech/t-core`、`@tech/t-el-ui`、
+`@tech/t-build`、`@tech/t-base`，或存在 `apps/*/common/index.js`、`apps/*/model-views/*.js`、
+`apps/*/views/**/*.js`、`config/apps.json` 时，判定为 IIDP 前端候选。
+
+识别为 IIDP 后，不要只按 Controller/API 生成 `ENDPOINT_LIST`。应按
+`references/iidp-framework.md` 读取后端 `@Model/@Property/@MethodService`、`menus.json`、
+`views/*.json`、`data/*.json`，以及前端 `model-views`、`extendView`、`hook`、`selector`、
+`ds_config`，形成 `CAPABILITY_LIST`，再驱动 SRS/API/UI/流程图生成。
+
+在生成任何 IIDP Codebook 之前，必须先执行 `references/iidp-framework.md` 的“输入形态识别与前后端配套关系”规则，判断当前输入是仅后端、仅前端、前后端配套，还是多工程混合。若识别为前后端配套，必须额外生成 `integration/frontend-backend-map.md`、`integration/contract-matrix.md`、`integration/unmatched-items.md`，不能只分别输出后端和前端规格。
+
+前后端配套识别不得只按 app 名称、仓库名或目录名判定。app 一致只能产生候选配对；强配套必须继续命中至少两类非 app 证据，例如 `model -> @Model`、`service -> @MethodService/标准服务`、`selector.value -> menus.json.name`、`model-views.viewId -> menus.json.view/views/*.json`、字段 -> `@Property/view columns`。
+
+识别到 IIDP 前端时，不能只输出扩展机制概览。必须额外输出面向正向生成链路的前端交互规格和实现契约，至少包含页面定位、目标节点、扩展类型、事件 `bind_on_*`、hook 点、数据源 `ds_config`、元服务调用 `app/model/service/args`、组件/弹窗/openView、状态变化、校验规则、生成文件建议。否则不能声称该 Codebook 可用于 `create-project` 正向生成前端代码。
+
+识别到 IIDP 后，除 Markdown Codebook 外还必须生成 `codebook/baseline-spec/`。Markdown 面向人阅读，`baseline-spec` 面向后续 `iidp-brownfield-change`、`create-project`、backend/frontend 正向链路消费。不得只把 `srs.md` 或 `create-project-contract.md` 当作可执行基线；必须把 app、menu、model、view、service、frontend extension、capability、trace、unresolved 等事实归一化为结构化 JSON。
 
 **Java 项目（通用注解发现，无需枚举框架名）：**
 
@@ -563,6 +600,42 @@ for each 模块 in 模块列表：
 # > 生成完成：{时间戳}，覆盖 {N} 个模块，{M} 张数据表，{P} 个 API 接口
 ```
 
+**Phase D-IIDP：生成 baseline-spec（仅 IIDP 项目）**
+
+```
+如果 FRAMEWORK == IIDP：
+  在 Markdown Codebook 生成后，立即生成 codebook/baseline-spec/ 下的结构化 JSON。
+  baseline-spec 不从 Markdown 反抽；必须直接使用 Phase A/C 中读取到的源码、JSON 配置、前端扩展和配套矩阵事实。
+
+  必须输出：
+    apps.json
+    menus.json
+    models.json
+    views.json
+    services.json
+    frontend-extends.json
+    capability-list.json
+    artifact-map.json
+    trace-map.json
+    unresolved.json
+
+  每个规格项必须包含：
+    id                稳定规格 ID，例如 model.example_student / view.demo_example_class_grid
+    kind              app/menu/model/view/service/frontendExtend/capability 等
+    sourceFile        来源文件路径；无法定位时为 null 并写入 unresolved.json
+    sourceLine        来源行号；无法定位时为 null
+    confidence        high/medium/low
+    status            confirmed / inferred / needs-confirmation / placeholder
+    unresolvedReason  status 不是 confirmed 时必须填写
+
+  生成原则：
+    - baseline-spec 是当前代码事实，不描述新需求。
+    - baseline-spec 默认只读，后续开发者应修改 delta-spec，而不是直接修改 baseline-spec。
+    - capability-list.json 必须由菜单、视图按钮、@MethodService、标准服务、前端扩展、hook 合并生成。
+    - trace-map.json 必须能把 capability/model/view/service/frontendExtend 回连到源码文件。
+    - unresolved.json 必须集中收录无法确认的 app/model/service/nodeId/权限/字段/运行时节点。
+```
+
 ### 4.3 语义归类
 
 将采集到的符号按业务模块归类：
@@ -593,6 +666,17 @@ codebook/
 ├── overview.md                 系统级概览、完整文档导航、模块索引、生成统计
 ├── hla.md                      系统级架构、模块拓扑、跨模块依赖、部署/安全总览
 ├── database-overview.md        系统级数据模型总览、跨模块 ER 关系
+├── baseline-spec/              IIDP 项目的结构化基线规格（仅识别到 IIDP 时必须输出）
+│   ├── apps.json               App 清单、装载方式、前后端 app 配对候选
+│   ├── menus.json              菜单、页面入口、绑定模型和视图
+│   ├── models.json             @Model/@Property/@Validate/@Dict/@Selection/关系
+│   ├── views.json              后端 views/*.json 与前端 model-views 的统一视图规格
+│   ├── services.json           @MethodService、标准元服务、传统 Controller 服务
+│   ├── frontend-extends.json   selector/type/view/beforeOperate/hook/ds_config/bind_on_*
+│   ├── capability-list.json    现有能力清单，作为 brownfield 差异规格的基线
+│   ├── artifact-map.json       规格项到推荐修改文件类型/目标路径的映射
+│   ├── trace-map.json          规格项到 sourceFile/sourceLine 的追踪映射
+│   └── unresolved.json         待确认、占位、低置信度和运行时依赖项
 └── modules/
     ├── {module}/
     │   ├── overview.md         模块概览、模块内导航、功能入口清单
@@ -621,6 +705,7 @@ codebook/
 | 数据库结构 | SQL DDL + Mermaid ER 图 | 直接输出 |
 | UI/UX | 静态 HTML + Tailwind CSS | 写 .html 文件 |
 | 用户故事 | Markdown 表格 | 直接写 .md |
+| IIDP baseline-spec | JSON | 直接从源码事实归一化输出，不从 Markdown 反抽 |
 
 ---
 
@@ -629,6 +714,7 @@ codebook/
 | 文件 | 何时读取 |
 |-----|---------|
 | `references/codegraph-setup.md` | 安装/初始化/CLI 命令完整参考 |
+| `references/iidp-framework.md` | 识别到 IIDP 存量系统时必读（元模型、菜单/视图、前端扩展、hook）|
 | `references/java-frameworks.md` | 识别到 Java 项目时必读（Spring 生态注解发现）|
 | `references/frontend-frameworks.md` | 识别到前端项目时必读（Vue/React/Angular via package.json）|
 | `references/multi-framework-patterns.md` | 识别到 Python/TS/Go 后端项目时必读 |
