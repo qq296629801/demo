@@ -1,0 +1,25 @@
+{
+  "baseline_type": "requirements-doc",
+  "baseline_doc_name": "WMS 仓库管理系统需求规格说明书（基础版）",
+  "baseline_doc_source": "基于 ModernWMS（https://github.com/fjykTec/ModernWMS）功能整理，结合行业通用 WMS 规范编写",
+  "baseline_doc_hash": "2b73edcaeb3a795e09aad8afcbc4ddb5f63a3ac6056b2f1a6b924fccf4fdbf0a",
+  "baseline_doc_version": "v1.0",
+  "quality_score": {
+    "total": 10,
+    "modules": 2,
+    "user_stories": 2,
+    "data_model": 2,
+    "business_rules": 2,
+    "acceptance_criteria": 2
+  },
+  "preprocessed": false,
+  "preprocessed_reason": "",
+  "recorded_at": "2026-06-04 00:00:00",
+  "environment": {
+    "os": "Linux 6.18.5",
+    "docker": "pending",
+    "maven": "pending",
+    "java": "pending"
+  },
+  "last_baseline_score": null
+}
