@@ -35,6 +35,8 @@
 | `data/menus.json` | 新增/修改 | 菜单 |
 | `apps/apps.json` | 修改 | 登记 jar |
 
+> **子模块 pom.xml 模板**：参见 `skills/backend/references/core/pom-structure.md` §13「新增业务 App 操作规范」（parent 声明 + 登记步骤）+ §5.1「sie-iidp-demo-example」（依赖模式：`sie-snest-sdk` + `sie-iidp-plugin`）。**禁止编造 Maven 坐标**，必须使用 §4.2 中的版本管理值。
+
 > **生成 `app.json` 时，必须读取 `skills/backend/references/core/app-json.md`** 获取完整字段定义（name/resolved/view/data/events 等）、路径规则与两类示例，不使用本文内联模板（避免字段漂移）。按 §1 命名表中的 `appName`、`appPkg`、`product`、`productDesc`、`productSequence` 填写对应字段。
 
 ## 3. 模型设计

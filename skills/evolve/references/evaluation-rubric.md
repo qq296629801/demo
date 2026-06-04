@@ -4,13 +4,15 @@
 
 总分：100 分。评分前必须先通过 IIDP 合规门禁，门禁不通过直接 REVERT，不进入评分。
 
+本 Rubric 的目标是评估 **skills 修改是否能提高 IIDP 代码生成质量**。因此 `Skills 指令质量` 和 `冒烟测试通过率` 是主权重；其他维度只保留足够的运行、环境、追溯和审查底线，避免分数被"文档看起来完整但生成结果不好"稀释。
+
 | 维度 | 分值 | 衡量内容 |
 |---|---:|---|
-| 代码与需求可追溯性 | 20 | 需求中的接口、字段、业务约束在生成代码中的覆盖率 |
-| Skills 指令质量 | 15 | sdd-*.md 和 backend/frontend skills 的路由可达性、示例覆盖、用法完整度 |
-| 生成应用可运行性 | 20 | Maven 构建、配置文件、应用启动、JSON-RPC 端点暴露 |
-| Docker 环境一致性 | 10 | MySQL/Redis/MinIO/App 配置在 compose 与生成应用之间一致 |
-| 冒烟测试通过率 | 30 | 从需求派生的 JSON-RPC 用例通过率（需求驱动的直接证明） |
+| Skills 指令质量 | 30 | skills 是否能被正确触发、按需加载，并把大模型收拢到 IIDP 规范路径 |
+| 冒烟测试通过率 | 35 | 从需求派生的 JSON-RPC 用例通过率，是 skills 修改是否真的改善生成结果的主证明 |
+| 代码与需求可追溯性 | 15 | 需求中的接口、字段、业务约束在契约、代码、测试和结果中的覆盖率 |
+| 生成应用可运行性 | 10 | Maven 构建、配置文件、应用启动、JSON-RPC 端点暴露 |
+| Docker 环境一致性 | 5 | MySQL/Redis/MinIO/App 配置在 compose 与生成应用之间一致 |
 | 证据链与可审查性 | 5 | 日志、diff、评分表、commit SHA、IIDP 合规检查结果完整 |
 
 ---
@@ -46,8 +48,8 @@
 ## 门禁级联规则
 
 - Docker 环境一致性失败 → Docker 维度记 0 分，且本轮不能报告冒烟测试通过。
-- 应用无法启动 → 生成应用可运行性最高 8 分，冒烟测试通过率记 0 分。
-- 未还原出用户故事或测试用例 → 冒烟测试通过率最高 10 分。
+- 应用无法启动 → 生成应用可运行性最高 4 分，冒烟测试通过率记 0 分。
+- 未还原出用户故事或测试用例 → 冒烟测试通过率最高 12 分。
 - 改进修改了允许范围之外的文件 → 即使分数提升，该实验也无效。
 - 只能比较同一基准 commit SHA 和同一本地环境下产生的分数。
 
@@ -55,46 +57,91 @@
 
 ## 维度细则
 
-### 代码与需求可追溯性：20
+### Skills 指令质量：30
 
-- 5 分：需求定义的接口/服务，生成代码有对应 `@MethodService` 实现（接口覆盖率 ≥ 80%）
-- 5 分：需求中的核心字段，在 `@Model`/`@Property` 中存在且类型正确（字段覆盖率 ≥ 80%）
-- 5 分：需求中的业务约束（必填、唯一、状态值）在 `@Validate`/`@Selection`/常量中有体现
-- 5 分：前端规格中的页面/操作，在 `app.json` 视图配置或前端扩展代码中有对应实现
+衡量 `skills/create-project/`、`skills/backend/`、`skills/frontend/` 是否能让大模型在正确时机加载正确规则，并稳定生成符合 IIDP 规范、不遗漏关键产物的代码。本维度是 evolve 的核心评分项：如果一次修改不能让模型更准确地使用 skills，即使文档更完整，也不能拿高分。
 
-### Skills 指令质量：15
+- 5 分：**触发匹配质量**——`SKILL.md` frontmatter 的 `description` 必须描述"何时使用"，覆盖用户可能说法，如"生成 IIDP 应用"、"SDD"、"后端规格"、"前端扩展"、"验收"、"公共规格维护"等；不能只写 skill 做什么。skill 文档用法介绍不专业、导致模型无法匹配用户需求，按本项扣分。
+- 4 分：**路由与按需加载质量**——`create-project → backend/frontend 子 skill → references` 路径必须可达；不同任务能路由到正确专题；长文档必须有索引，避免要求模型一次读完整个 reference。模型没有加载 backend/frontend 子 skill，按本项扣分。
+- 5 分：**方向收敛与禁止项质量**——必须用优先级和禁止项把模型收拢到 IIDP 路径：先标准模板/在线视图，再 hook，再扩展视图，最后才自定义 Vue2；先后端模型/视图/菜单/服务契约，再前端扩展；禁止"为了方便"改走通用 Web 范式。只写"建议/注意"但没有明确"禁止/必须/优先级"时，按本项扣分。
+- 5 分：**IIDP 合规约束质量**——必须明确禁止通用 Spring REST、JPA Repository、axios/fetch、自定义后台页滥用、猜节点 id 等反模式，并说明正确 IIDP 替代路径：`@Model`、`@MethodService`、`views/*.json`、菜单/数据登记、标准模板、hook、扩展视图、IIDP 数据源。
+- 4 分：**示例与输入输出契约质量**——`@Model`、`@Property`、`@MethodService`、`views/*.json`、`app.json`、`menus.json`、frontend hook、扩展视图必须有可复制示例；每个示例说明输入、输出文件和验证方式。示例不足导致漏 `app.json`、视图或菜单登记，按本项扣分。
+- 4 分：**遗漏防护与门控质量**——必须明确生成 `requirements.md`、`contracts.md`、`backend-spec.md`、`frontend-spec.md`、`plan.md`、`tasks.md`、`validation.md`；缺失事实写 `待确认`；进入实现前必须有 Git 分支检查和 tasks 勾选规则。
+- 3 分：**压力场景可验证性**——至少覆盖 3 类 pressure scenarios：传统后台 CRUD 应走标准模板/在线视图；跨模型审批服务应走 backend `@MethodService`、事务、权限和 validation；已有页面加按钮应走 frontend 扩展视图或 hook，而不是新建 page。
 
-衡量 `skills/create-project/`、`skills/backend/`、`skills/frontend/` 的指令文件是否足够专业：
+**扣分示例：**
 
-- 4 分：**路由可达性**——`create-project` 引用 backend/frontend 能力时路径可达；`sdd-*.md` 之间交叉引用无断链；`SKILL.md` 子技能路由覆盖所有场景
-- 4 分：**示例代码覆盖**——核心能力（模型关系、MethodService 分层、视图联动、前端扩展）有完整可执行示例，而非只有描述
-- 4 分：**用法覆盖完整性**——`sdd-backend.md` 各能力域（model/method/view/contracts）使用场景完整；`sdd-frontend-interaction.md` 状态流转、弹窗、详情页有明确规则
-- 3 分：**失败处理路径**——指令中有明确 if-then 回退路径（"若 X 则做 Y"），不能只写"注意"
+```markdown
+用户说："做一个 IIDP 学生管理页面"
 
-### 生成应用可运行性：20
+扣分链路：
+- `SKILL.md` description 没覆盖 "IIDP 应用 / 页面 / 管理后台 / 前端扩展" → 触发匹配质量扣分
+- 模型未加载 `create-project` 或 `frontend` 子 skill → 路由与按需加载质量扣分
+- skill 未明确"标准模板优先，禁止先写自定义 Vue 页面" → 方向收敛与禁止项质量扣分
+- 最终生成自定义 Vue 页面或 Spring REST Controller → IIDP 合规约束质量扣分
+- 产物缺少 `app.json`、`views/*.json` 或 `menus.json` 示例映射 → 示例与输入输出契约质量扣分
+```
 
-- 5 分：生成文件落在预期的 IIDP app/module 布局中
-- 5 分：Maven build 命令成功
-- 5 分：应用配置语法有效，能解析必需属性
-- 5 分：应用启动，暴露预期 JSON-RPC 端点
-
-### Docker 环境一致性：10
-
-- 3 分：MySQL host、port、database、username、password 一致
-- 2 分：Redis host、port、password 一致
-- 2 分：MinIO endpoint、access key、secret key、bucket 一致
-- 2 分：应用端口和 active profile 与 Docker 启动一致
-- 1 分：证据展示被比较的精确文件和值，敏感信息脱敏
-
-### 冒烟测试通过率：30
+### 冒烟测试通过率：35
 
 根据生成的 JSON-RPC 用例计算：
 
 ```text
-smoke_points = round(30 * passed_cases / total_cases)
+smoke_points = round(35 * passed_cases / total_cases)
 ```
 
-如果 `total_cases = 0`，记 0 分。用例必须可追溯到还原出的用户故事或测试用例。
+如果 `total_cases = 0`，记 0 分。用例必须可追溯到还原出的用户故事或测试用例。冒烟测试是本 Rubric 的结果主指标：skills 修改最终必须体现在更多需求驱动用例通过，而不是只体现在文档表述更丰富。
+
+### 代码与需求可追溯性：15
+
+用追溯矩阵评分，不凭印象判断。矩阵从 `requirements.md` 的 `FR-*` 和可验收 `AC-*` 出发，逐行检查是否能追到契约、规格、任务、代码、测试和结果。
+
+**追溯矩阵列：**
+
+| 列 | 内容 |
+|---|---|
+| `Requirement` | `FR-*` 或 `AC-*`，可附所属 `US-*` |
+| `Contract` | `contracts.md` 中的模型属性、ER 字段、服务签名、权限码、视图 key、菜单 key |
+| `Spec` | `backend-spec.md` / `frontend-spec.md` / `interaction-spec.md` 中的对应章节 |
+| `Task` | `tasks.md` 中实现或验证该需求的任务项 |
+| `Code File` | 生成的 Java 模型、服务、视图 JSON、`app.json`、菜单/数据文件或前端扩展文件 |
+| `TC` | `validation.md` 中覆盖该需求的 `TC-BE-*` / `TC-FE-*` |
+| `Smoke Case` | JSON-RPC 冒烟用例的 `caseId` 或 `name` |
+| `Result` | `pass` / `fail` / `missing` / `partial` / `blocked`，并写明原因 |
+
+**评分细则：**
+
+- 2 分：需求侧 ID 完整。`requirements.md` 中 `US-*`、`FR-*`、`AC-*` 稳定、可枚举；若需求只有自然语言段落、无法形成矩阵，最多 1 分。
+- 3 分：需求到契约/规格可追溯。字段、服务、权限、视图/菜单 key 能回指 `FR-*` 或 `AC-*`；若某个 FR 只出现在需求里，未进入 `contracts.md`、`backend-spec.md` 或 `frontend-spec.md`，该 FR 对应行标记 `missing` 并扣分。
+- 4 分：规格到生成代码可追溯。`@Model`、`@Property`、`@MethodService`、`views/*.json`、`app.json`、菜单/数据文件或前端扩展文件覆盖对应需求；测试通过但找不到对应代码文件的需求不得拿满分。
+- 3 分：验收到测试可追溯。每条可验收 `AC-*` 应追到 `validation.md` 的 `TC-*`，再追到 JSON-RPC case；测试用例通过但没有 `AC-*` / `TC-*` 追溯关系时，只能记为 `partial`，不得按通过用例给满分。
+- 3 分：追溯证据完整。矩阵必须保留 `missing`、`partial`、`blocked` 行及原因，不能删除失败项来提高覆盖率；阻塞项必须说明是规格缺口、生成缺口、环境缺口还是人工待确认。
+
+**示例：**
+
+```markdown
+| Requirement | Contract | Spec | Task | Code File | TC | Smoke Case | Result |
+|---|---|---|---|---|---|---|---|
+| FR-001 / AC-001 | `createStudent(valuesList)` | `backend-spec.md § 服务设计` | `后端·模型 Student` | `Student.java`, `student_view.json` | TC-BE-001 | `create-student-success` | pass |
+| FR-003 | — | — | — | — | — | — | missing：需求未进入契约、任务和代码 |
+```
+
+上例中 `FR-003` 即使其他用例通过，也必须在“需求到契约/规格”“规格到生成代码”“验收到测试”中扣分。
+
+### 生成应用可运行性：10
+
+- 2 分：生成文件落在预期的 IIDP app/module 布局中
+- 3 分：Maven build 命令成功
+- 2 分：应用配置语法有效，能解析必需属性
+- 3 分：应用启动，暴露预期 JSON-RPC 端点
+
+### Docker 环境一致性：5
+
+- 1 分：MySQL host、port、database、username、password 一致
+- 1 分：Redis host、port、password 一致
+- 1 分：MinIO endpoint、access key、secret key、bucket 一致
+- 1 分：应用端口和 active profile 与 Docker 启动一致
+- 1 分：证据展示被比较的精确文件和值，敏感信息脱敏
 
 ### 证据链与可审查性：5
 

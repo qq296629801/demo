@@ -67,10 +67,11 @@ IIDP 引擎强制 token 认证，未提供 token 时所有 JSON-RPC 调用返回
 
 - `storyId`
 - `caseId` 或用例 `name`
+- `trace`：至少包含 `us`、`fr`、`ac`、`tc` 中的一个；推荐完整填写 `US-*` / `FR-*` / `AC-*` / `TC-*`
 - JSON-RPC 2.0 request（必须包含 `params.service`，至少填写 `"search"` 等内置服务名）
 - expected HTTP status
 - expected result 或 expected error
-- 到生成需求中的用户故事、测试用例或验收标准的追溯关系
+- 到生成需求中的用户故事、功能需求、验收标准或测试用例的追溯关系；缺少 `trace` 的通过用例不能为“代码与需求可追溯性”拿满分
 
 最低服务覆盖应包含可用的 CRUD 风格行为：
 
@@ -85,10 +86,42 @@ IIDP 引擎强制 token 认证，未提供 token 时所有 JSON-RPC 调用返回
 使用 rubric 公式：
 
 ```text
-smoke_points = round(20 * passed_cases / total_cases)
+smoke_points = round(30 * passed_cases / total_cases)
 ```
 
 不要把跳过用例计为通过。如果应用无法启动，所有冒烟用例都失败。
+
+通过率只计算执行结果；追溯完整性另按 `evaluation-rubric.md` 的“代码与需求可追溯性”评分。也就是说，用例通过但缺少 `trace.ac` 或 `trace.tc` 时，冒烟测试可以按通过计数，但追溯矩阵中对应行只能标为 `partial`。
+
+推荐 JSON-RPC case 片段：
+
+```json
+{
+  "storyId": "US-001",
+  "caseId": "TC-BE-001",
+  "name": "create-student-success",
+  "trace": {
+    "us": "US-001",
+    "fr": "FR-001",
+    "ac": "AC-001",
+    "tc": "TC-BE-001"
+  },
+  "request": {
+    "id": "guid-001",
+    "jsonrpc": "2.0",
+    "method": "service",
+    "params": {
+      "model": "demo_student",
+      "service": "create",
+      "args": {
+        "valuesList": [{ "name": "张三" }]
+      }
+    }
+  },
+  "expectedHttpStatus": 200,
+  "expectedResult": true
+}
+```
 
 ## 证据要求
 
