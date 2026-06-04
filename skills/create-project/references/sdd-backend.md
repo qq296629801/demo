@@ -23,6 +23,15 @@
 | productDesc | `[中文产品线名称]` | 产品线显示名，写入 `app.json.productDesc/categoryDesc` |
 | productSequence | `[-100]` | 产品线在导航中的排序，数字越小越靠前，写入 `app.json.sequence` |
 
+> **App 全名映射规则**：上表中的 `appName` 是简称（如 `demo-system`），实际部署时使用全名：
+> - Maven 模块名：`sie-iidp-demo-{appName}`（如 `sie-iidp-demo-system`）
+> - `app.json` 的 `name` 字段：与 Maven 模块名一致，填 `sie-iidp-demo-{appName}`
+> - `apps/apps.json` 中 SDK 数组登记：`"sie-iidp-demo-{appName}"`
+> - JSON-RPC 请求的 `params.app` 参数：必须使用全名 `sie-iidp-demo-{appName}`
+> - 菜单 key 和视图 key 中的前缀：建议使用 `appName` 简称（如 `demo_system_xxx`），避免 key 过长
+>
+> **冒烟测试注意**：测试用例中的 `params.app` 必须填全名，填简称会导致引擎找不到 app 而报错。
+
 ## 2. 工程文件
 
 | 文件 | 新增/修改 | 说明 |

@@ -34,6 +34,7 @@
 |------|----------|-------------|
 | JSON-RPC 返回 `{"code":7100,"message":"token不能为空"}` | Authorization 头未传递或格式错误 | `api-filter-sql.md` § Token 获取与鉴权 |
 | 不知道怎么获取 superuser token | 从数据库查询即可 | `sdd-validation.md` § Token 获取方式（SQL：`SELECT token FROM rbac_token WHERE id = 'rbac_token_superuser'`） |
+| 数据库查出的 token 仍然返回 `{"code":7100,"message":"token失效"}` | IAM v3.0.0 要求 Token 经 DES 加密存储，种子数据的明文 JWT 不可用 | 见下方 § Token 加密格式修复 |
 | 冒烟测试所有用例都返回 token 错误 | token 过期或环境变量 `IIDP_API_TOKEN` 未设置 | `smoke-validation.md` § 认证要求 |
 | 前端页面登录后跳转失败 | httpOnly token 被拦截 | `skills/frontend/.../010.业务场景/02.第三方登录.md` |
 
@@ -43,6 +44,50 @@ mysql -u iidp -piidp123456 -h localhost iidp_demo -N -e \
   "SELECT token FROM rbac_token WHERE id = 'rbac_token_superuser' LIMIT 1"
 ```
 请求头格式：`Authorization: Bearer <token>`
+
+### Token 加密格式修复（IAM v3.0.0+）
+
+**症状**：数据库 `rbac_token` 表中的 token 可以查到，但 JSON-RPC 调用返回 `{"code":7100,"message":"token失效，请退出重新登录"}`。错误日志含 `JWTUtil -error：The token was expected to have 3 parts, but got 0.`
+
+**根因**：IAM v3.0.0 的 `PortalUtil.decryptToken` → `EncryptUtil("lambda.portal.cache.token.")` 要求 token 在 DB 中的存储格式为 **DES 加密（key=`lambda.p`）→ hex 编码**，而不是原始 JWT。种子数据中保存的原始 JWT 无法通过解密校验。
+
+**修复脚本**（Python 3，依赖 `pycryptodome`）：
+
+```bash
+pip3 install pycryptodome -q
+```
+
+```python
+import hashlib, hmac, base64, json, time
+from Crypto.Cipher import DES
+
+# 1. 生成 JWT（HS256，密钥 = 用户密码）
+password = "<user_password>"
+header = {"alg": "HS256", "typ": "JWT"}
+payload = {"userId": "superuser", "login": "superuser", "isAdmin": True, "tenantId": "root",
+           "iat": int(time.time()), "exp": int(time.time()) + 86400 * 365}
+
+def b64url(d): return base64.urlsafe_b64encode(d).rstrip(b'=').decode()
+jwt = f"{b64url(json.dumps(header).encode())}.{b64url(json.dumps(payload).encode())}"
+jwt += f".{b64url(hmac.new(password.encode(), jwt.encode(), hashlib.sha256).digest())}"
+
+# 2. DES 加密（ECB 模式，PKCS5 padding，key = "lambda.p"）
+jwt_bytes = jwt.encode()
+pad = 8 - len(jwt_bytes) % 8
+jwt_padded = jwt_bytes + bytes([pad] * pad)
+hex_token = DES.new(b"lambda.p", DES.MODE_ECB).encrypt(jwt_padded).hex()
+
+# 3. 写入数据库
+print(hex_token)
+```
+
+写回 DB：
+```bash
+mysql -u <user> -p<password> -h <host> <db> -e \
+  "UPDATE rbac_token SET token='<hex_token>' WHERE id='rbac_token_superuser'"
+```
+
+> **关键点**：JWT 的 HMAC 密钥使用用户的 **明文密码**（superuser 用户为 `"superuser"`）。如需其他用户 token，相应调整 payload 和 password。`userId="superuser"` 时 IAM 内部会自动转换为 `"rbac_user_superuser"` 并跳过过期校验。
 
 ---
 

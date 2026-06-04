@@ -375,6 +375,18 @@ private String isOutOfPrint;
 @Property(displayName = "物料属性类型", columnName = "attribute_type", length = 10)
 private Integer attributeType;
 
+// ⚠️ @Dict vs @Selection+@Option 选择规则：
+// @Dict(typeCode = "xxx") 依赖外部字典系统（sie-iidp-dict 模块）中预先存在的字典条目。
+//   如果字典系统中不存在该 typeCode，JSON-RPC 调用会直接报错「字典配置有误」。
+// @Selection(values = @Option(...)) 是内联选项，无需外部依赖，立即可用。
+//
+// 选择优先级：
+//   1. 简单枚举（如性别、启用/禁用）→ 优先用 @Selection + @Option，无需创建字典条目
+//   2. 业务字典（可动态增删的选项）→ 用 @Dict，但需确保字典条目已存在或种子数据已导入
+//   3. 跨模型选择（如选择部门）→ 用 @Selection(model = "demo_dept", properties = {"id", "name"})
+//
+// 注意：@Selection 要求字段类型为 String（如 "1"/"0"），@Dict 的字段类型需与字典条目 value 类型一致
+
 // widget：建议前端使用的渲染组件（来自 ExampleDataSource）
 // 常用值："radio-group"（单选按钮组）；省略时平台按字段类型自动选择
 @Property(displayName = "数据源类型", widget = "radio-group")
