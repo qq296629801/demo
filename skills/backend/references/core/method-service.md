@@ -520,6 +520,91 @@ public boolean savepointDemo(RecordSet rs) {
 > - Oracle 保存点名称不能含 `-`，推荐 `"SP" + IdGenerator.nextId()`；MySQL 无此限制。
 > - 若不调用 `meta.commit()`，请求结束时平台会统一提交所有未回滚的操作。
 
+### 过账模式（多模型事务）
+
+过账、审批提交、确认生效等场景涉及多个模型的联动写操作，必须在一个请求内完成。引擎在请求结束时统一提交，抛 `ModelException` 自动回滚。模板如下：
+
+```java
+@MethodService(description = "过账出库单")
+public boolean postOutbound(RecordSet rs, String orderId) {
+    // 1. 校验参数
+    if (orderId == null || orderId.isEmpty()) {
+        throw new ValidationException("单据ID不能为空");
+    }
+
+    // 2. 查询主单据
+    Map<String, Object> order = get(orderId);
+    if (order == null) {
+        throw new ValidationException("单据不存在");
+    }
+    String status = MapUtils.getString(order, "status", "");
+    if ("POSTED".equals(status)) {
+        throw new ValidationException("单据已过账，不可重复操作");
+    }
+
+    // 3. 查询明细
+    List<Map<String, Object>> items = getItems(orderId);
+
+    // 4. 逐行校验库存（所有校验通过后才写库，避免部分写）
+    for (Map<String, Object> item : items) {
+        String productId = MapUtils.getString(item, "productId");
+        int qty = MapUtils.getIntValue(item, "quantity", 0);
+        if (qty <= 0) {
+            throw new ValidationException("明细数量必须大于0");
+        }
+        // 查询当前库存
+        Map<String, Object> stock = queryOne("SELECT * FROM wms_stock WHERE product_id = ?", productId);
+        int currentQty = stock == null ? 0 : MapUtils.getIntValue(stock, "quantity", 0);
+        if (currentQty < qty) {
+            throw new ModelException("产品 [" + productId + "] 库存不足，当前库存: " + currentQty);
+        }
+    }
+
+    // 5. 批量写操作（校验通过 → 一次性执行所有写操作）
+    // 平台自动事务：任何一步失败，全部回滚
+    for (Map<String, Object> item : items) {
+        String productId = MapUtils.getString(item, "productId");
+        int qty = MapUtils.getIntValue(item, "quantity", 0);
+
+        // 5a. 扣减库存
+        DbUtils.update("UPDATE wms_stock SET quantity = quantity - ? WHERE product_id = ?", qty, productId);
+
+        // 5b. 写库存流水（审计追溯）
+        Map<String, Object> ledger = new HashMap<>();
+        ledger.put("productId", productId);
+        ledger.put("warehouseId", MapUtils.getString(order, "warehouseId"));
+        ledger.put("transactionType", "OUTBOUND");
+        ledger.put("orderId", orderId);
+        ledger.put("orderNo", MapUtils.getString(order, "orderNo"));
+        ledger.put("quantity", qty);
+        ledger.put("balanceAfter", currentQty - qty); // 之前查到的 currentQty
+        ledger.put("transactionDate", new Date());
+        ledger.put("createdBy", BaseContextHandler.get().getUid());
+        getMeta("wms_stock_ledger").create(ledger);
+    }
+
+    // 6. 更新单据状态
+    Map<String, Object> updateOrder = new HashMap<>();
+    updateOrder.put("id", orderId);
+    updateOrder.put("status", "POSTED");
+    updateOrder.put("postedBy", BaseContextHandler.get().getUid());
+    updateOrder.put("postedAt", new Date());
+    setValues(updateOrder);
+    update();
+
+    return true;
+    // 引擎请求结束统一提交；任何一步抛 ModelException 则全部回滚
+}
+```
+
+> **过账模式要点**：
+> - **先校验后写库**：所有业务校验（库存、状态、权限）完成后再一次性执行写操作，避免写到一半才发现不满足条件。
+> - **库存扣减用 SQL**：`UPDATE ... SET quantity = quantity - ?` 避免并发覆盖，优于先查再 set。
+> - **流水必须写全**：stock_ledger 必须包含变动前余额和变动后余额，不可只写变动量。
+> - **状态前置检查**：过账前必须检查 `status != POSTED`，防止重复过账。
+> - **使用 ModelException**：业务异常抛 `ModelException`（触发回滚），参数校验抛 `ValidationException`（轻量提示）。
+> - **禁止补丁式修复**：不要在过账后才发现问题、再写一个"反过账"方法来补救——所有验证在过账前完成。
+
 ---
 
 ## Redis 缓存与分布式锁

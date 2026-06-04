@@ -463,6 +463,70 @@ CascadeType 可选值：
 - `DELETE`：级联删除子表
 - `DEL_NO_PERMIT_RELATIVE`：子表有数据时禁止删除主表
 
+### 自引用 ManyToOne（树形结构）
+
+同一模型的记录存在父子层级时（分类、组织、菜单等），FK 字段指向自身模型，配合 `@ManyToOne` + `@OneToMany` 实现树形结构：
+
+```java
+// 自引用树形：FK 字段 (parentId) + ManyToOne 对象 (parent) + OneToMany 列表 (children)
+// 三者缺一不可，@JoinColumn(name) 必须与 FK 字段的数据库列名一致
+
+@Property(displayName = "上级ID")
+@Selection(model = "demo_goods_category", properties = {"id", "name"})
+private String parentId;
+
+@ManyToOne(displayName = "上级分类")
+@JoinColumn(name = "parent_id", referencedProperty = "id")
+private GoodsCategory parent;
+
+@OneToMany(model = "demo_goods_category", mappedBy = "parent")
+@Property(displayName = "子分类列表")
+private List<GoodsCategory> children;
+```
+
+> **规则**：
+> - FK 字段 `parentId` 存父节点 ID，类型为 `String`（IIDP 雪花算法）。
+> - `@JoinColumn(name)` 必须与 FK 字段对应的数据库列名完全一致（如 `parent_id`）。
+> - `referencedProperty` 必须为 `"id"`（父模型主键），不可用业务键或其他列名。
+> - `@OneToMany` 的 `model` 和 `mappedBy` 均指向自身模型，`mappedBy` 值为 `@ManyToOne` 对象字段名（如 `"parent"`）。
+> - `@OneToMany` 字段名建议为 `children`，前端树形视图依赖此约定。
+> - 如需在视图展示树形结构，视图 JSON 中设置 `type: "tree"`，`props.children` 指向 `children` 字段。
+
+### 同模型多次引用（别名 FK）
+
+同一模型需要多次引用另一个模型时（如调拨单同时关联调出仓库和调入仓库），通过**不同的 FK 列名**区分。每条引用必须有独立的 FK 字段 + ManyToOne 对象配对：
+
+```java
+// 场景：调拨单同时引用调出仓库和调入仓库（都是 Warehouse）
+// 关键：两条引用的 FK 列名必须不同（from_warehouse_id ≠ to_warehouse_id）
+
+// ---- 调出仓库 ----
+@Property(displayName = "调出仓库ID")
+@Selection(model = "wms_warehouse", properties = {"id", "name"})
+@Validate.NotBlank(message = "调出仓库不能为空")
+private String fromWarehouseId;
+
+@ManyToOne(displayName = "调出仓库")
+@JoinColumn(name = "from_warehouse_id", referencedProperty = "id")
+private Warehouse fromWarehouse;
+
+// ---- 调入仓库 ----
+@Property(displayName = "调入仓库ID")
+@Selection(model = "wms_warehouse", properties = {"id", "name"})
+@Validate.NotBlank(message = "调入仓库不能为空")
+private String toWarehouseId;
+
+@ManyToOne(displayName = "调入仓库")
+@JoinColumn(name = "to_warehouse_id", referencedProperty = "id")
+private Warehouse toWarehouse;
+```
+
+> **规则**：
+> - 每条引用必须拥有独立的 FK 列名（如 `from_warehouse_id` vs `to_warehouse_id`），否则 ORM 列冲突。
+> - ManyToOne 对象字段名建议与 FK 字段名对应：`fromWarehouseId` → `fromWarehouse`。
+> - FK 字段的 `@Selection` 指向同一目标模型，通过字段名语义区分用途。
+> - 常见场景：调拨（出/入仓库）、审批流（申请人/审批人）、物流（发货地址/收货地址）。
+
 ### ManyToMany（多对多）
 
 ```java

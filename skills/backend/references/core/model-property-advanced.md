@@ -130,7 +130,7 @@ public class ExampleClass extends BaseModel<ExampleClass> { ... }
 
 ## 树形自关联（@ManyToOne 自引用 + @OneToMany children）
 
-同一模型的记录存在父子层级时，使用自关联实现树形结构：
+同一模型的记录存在父子层级时，使用自关联实现树形结构。基本模式：FK 字段 `parentId` + `@ManyToOne` 对象 `parent` + `@OneToMany` 列表 `children`，三者缺一不可。完整示例见 `model.md` § 自引用 ManyToOne。
 
 ```java
 @StaticVar @Getter @Setter
@@ -138,7 +138,9 @@ public class ExampleClass extends BaseModel<ExampleClass> { ... }
        displayName = "企业层级", isLogicDelete = Bool.True, isAutoLog = Bool.True)
 public class ExampleOrgLevel extends BaseModel<ExampleOrgLevel> {
 
+    // FK 字段：存父节点 ID
     @Property(displayName = "上级ID", columnName = "hl_org_cate_id", length = 64)
+    @Selection(model = "example_org_level", properties = {"id", "displayName"})
     private String hlOrgCateId;
 
     // 计算字段：带出上级名称，store=false 不持久化
@@ -147,11 +149,11 @@ public class ExampleOrgLevel extends BaseModel<ExampleOrgLevel> {
 
     // 自关联：当前记录的父节点
     @ManyToOne(displayName = "上级类型")
-    @JoinColumn(name = "hl_org_cate_id", referencedProperty = "treeOrgCateId")
+    @JoinColumn(name = "hl_org_cate_id", referencedProperty = "id")
     private ExampleOrgLevel hlOrgCateIdp;
 
     // 自关联：当前记录的子节点列表
-    @OneToMany
+    @OneToMany(model = "example_org_level", mappedBy = "hlOrgCateIdp")
     private List<ExampleOrgLevel> children;
 
     // 计算字段方法
@@ -165,8 +167,9 @@ public class ExampleOrgLevel extends BaseModel<ExampleOrgLevel> {
 ```
 
 > **规则**：
-> - `@JoinColumn(name = "外键列名", referencedProperty = "父节点唯一业务键")`，`referencedProperty` 通常指向父模型的 `id` 或业务唯一键。
-> - `@OneToMany private List<T> children` 字段名必须为 `children`，视图树配置依赖此约定。
+> - `@JoinColumn(name = "外键列名", referencedProperty = "id")` — `referencedProperty` **必须为 `"id"`**（父模型主键），不可用业务键或其他列名。
+> - `@OneToMany` 必须显式写 `model` 和 `mappedBy`：`model` 为自身模型名，`mappedBy` 为 `@ManyToOne` 对象字段名。
+> - `@OneToMany private List<T> children` 字段名建议为 `children`，前端树形视图依赖此约定。
 > - 树形视图需要在视图 JSON 中配置 `type: "tree"`，`props.children` 指向 `children` 字段。
 
 ---
