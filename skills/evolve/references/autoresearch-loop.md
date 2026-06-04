@@ -6,7 +6,7 @@
 
 | Autoresearch 思路 | evolve 对应机制 |
 |---|---|
-| 固定训练环境 | 固定基准仓库和 commit SHA |
+| 固定训练环境 | 固定基准需求文档和文件 hash（存于 `.evolve/baseline-spec/manifest.json`） |
 | 一个可编辑训练文件 | 改进阶段只允许编辑 `skills/create-project/`、`skills/backend/`、`skills/frontend/` |
 | 一个验证指标 | 一个 100 分基准评分 |
 | Git 作为记忆 | 每次实验先 commit 再测量 |
@@ -33,7 +33,7 @@
 3. 将失败分类为 `route-gap`、`backend-doc-gap`、`frontend-doc-gap`、`sdd-template-gap` 或 `knowledge-gap`。
 4. 修改允许范围内的一小段内容：`skills/create-project/`、`skills/backend/` 或 `skills/frontend/`。如果是 `knowledge-gap`，只记录缺口和所需私有事实源，不修改 backend/frontend 规则。
 5. 提交改动。
-6. 使用同一个基准 commit SHA 重新运行固定基准。
+6. 使用同一份基准需求文档（相同 hash）重新运行固定基准。
 7. 用 `evaluation-rubric.md` 打分。
 8. 保留或回滚。
 9. 若 KEEP，执行 Phase 4 技能反馈回写；若发现缺少证据来源、目标文件、插入位置或验证方式，只记录为 `knowledge-gap`。
@@ -46,8 +46,9 @@
 ```markdown
 ## 第 <n> 轮：<hypothesis>
 
-- 基准仓库：https://github.com/YunaiV/ruoyi-vue-pro.git
-- 基准 SHA：<sha>
+- 基准文档：<文档标题>
+- 文档 Hash：<sha256>
+- 文档路径：.evolve/baseline-spec/
 - 运行目录：.evolve/runs/<timestamp>/
 - 实验 commit：<sha>
 - 可编辑范围已检查：only skills/create-project/, skills/backend/, skills/frontend/

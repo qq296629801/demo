@@ -33,10 +33,10 @@
 | 症状 | 可能原因 | 先读这个文件 |
 |------|----------|-------------|
 | JSON-RPC 返回 `{"code":7100,"message":"token不能为空"}` | Authorization 头未传递或格式错误 | `api-filter-sql.md` § Token 获取与鉴权 |
-| 不知道怎么获取 superuser token | 从数据库查询即可 | `sdd-validation.md` § Token 获取方式（SQL：`SELECT token FROM rbac_token WHERE id = 'rbac_token_superuser'`） |
 | 数据库查出的 token 仍然返回 `{"code":7100,"message":"token失效"}` | IAM v3.0.0 要求 Token 经 DES 加密存储，种子数据的明文 JWT 不可用 | 见下方 § Token 加密格式修复 |
-| 冒烟测试所有用例都返回 token 错误 | token 过期或环境变量 `IIDP_API_TOKEN` 未设置 | `smoke-validation.md` § 认证要求 |
-| 前端页面登录后跳转失败 | httpOnly token 被拦截 | `skills/frontend/.../010.业务场景/02.第三方登录.md` |
+| 不知道怎么获取 superuser token | 从数据库查询即可 | `skills/create-project/references/sdd-validation.md` § Token 获取方式（SQL：`SELECT token FROM rbac_token WHERE id = 'rbac_token_superuser'`） |
+| 冒烟测试所有用例都返回 token 错误 | token 过期或环境变量 `IIDP_API_TOKEN` 未设置 | `skills/evolve/references/smoke-validation.md` § 认证要求 |
+| 前端页面登录后跳转失败 | httpOnly token 被拦截 | `skills/frontend/references/iidp-frontend-dev-manual/iidpDoc/03.前端开发手册/010.业务场景/02.第三方登录.md` |
 
 **Token 快速获取命令**：
 ```bash
@@ -95,12 +95,12 @@ mysql -u <user> -p<password> -h <host> <db> -e \
 
 | 症状 | 可能原因 | 先读这个文件 |
 |------|----------|-------------|
-| 不知道如何启动完整冒烟测试 | — | `sdd-validation.md` § 冒烟测试步骤（依赖启动 → 构建 → 启动 app → 运行 smoke_test.py） |
-| `smoke_test.py` 报导入错误 | Python 依赖缺失 | `sdd-validation.md` § 冒烟测试脚本 |
-| 所有用例都失败（非 token 问题） | 应用未完全启动或请求格式错误 | `smoke-validation.md` § 失败分类（startup-gap / smoke-gap 区分） |
-| 冒烟用例部分通过部分失败 | 生成代码不完整或 Filter 表达式错误 | `smoke-validation.md` § 失败分类（generation-gap / spec-gap） |
-| JSON-RPC 返回 `result:null` 且 `error` 有内容 | 服务调用失败，查 `error.data.debug` 字段 | `api-filter-sql.md` § 响应结构；`sdd-validation.md` § 响应体结构 |
-| 不知道冒烟覆盖范围要求 | — | `smoke-validation.md` § JSON-RPC 用例要求（最低覆盖 search/create/update/delete + 1 个负向用例） |
+| 不知道如何启动完整冒烟测试 | — | `skills/create-project/references/sdd-validation.md` § 冒烟测试步骤（依赖启动 → 构建 → 启动 app → 运行 smoke_test.py） |
+| `smoke_test.py` 报导入错误 | Python 依赖缺失 | `skills/create-project/references/sdd-validation.md` § 冒烟测试脚本 |
+| 所有用例都失败（非 token 问题） | 应用未完全启动或请求格式错误 | `skills/evolve/references/smoke-validation.md` § 失败分类（startup-gap / smoke-gap 区分） |
+| 冒烟用例部分通过部分失败 | 生成代码不完整或 Filter 表达式错误 | `skills/evolve/references/smoke-validation.md` § 失败分类（generation-gap / spec-gap） |
+| JSON-RPC 返回 `result:null` 且 `error` 有内容 | 服务调用失败，查 `error.data.debug` 字段 | `api-filter-sql.md` § 响应结构；`skills/create-project/references/sdd-validation.md` § 响应体结构 |
+| 不知道冒烟覆盖范围要求 | — | `skills/evolve/references/smoke-validation.md` § JSON-RPC 用例要求（最低覆盖 search/create/update/delete + 1 个负向用例） |
 
 **冒烟测试标准启动流程**：
 ```bash
