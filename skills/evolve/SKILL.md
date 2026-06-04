@@ -1,13 +1,13 @@
 ---
 name: evolve
-description: Use when 需要通过基准实验、源码转规格、Docker 冒烟测试或样本池验证来优化 IIDP create-project、backend 或 frontend skills。
+description: Use when 需要通过需求文档驱动评测、Docker 冒烟测试或样本池验证来优化 IIDP create-project、backend 或 frontend skills。
 ---
 
 # evolve
 
 ## 概述
 
-`evolve` 是 `skills/create-project`、`skills/backend`、`skills/frontend` 的自进化评测框架。它用固定基准、从源码生成的需求文档、生成的 IIDP 应用、Docker 冒烟测试和一个 100 分评分，判断某个 skills 改动是否值得保留。
+`evolve` 是 `skills/create-project`、`skills/backend`、`skills/frontend` 的自进化评测框架。它用固定基准需求文档、生成的 IIDP 应用、Docker 冒烟测试和一个 100 分评分，判断某个 skills 改动是否值得保留。
 
 本 skill 参考 autoresearch 循环：固定环境，只修改允许修改的目标，用一个可比较指标度量，只提交提升，最终交给人工审核。**每次评分提升后，强制执行 Phase 4 技能反馈回写**，把解决过程中发现的隐性知识结构化写回技能文档。
 
