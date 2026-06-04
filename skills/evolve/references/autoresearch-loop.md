@@ -6,7 +6,7 @@
 
 | Autoresearch 思路 | evolve 对应机制 |
 |---|---|
-| 固定训练环境 | 固定基准仓库和 commit SHA |
+| 固定训练环境 | 固定基准需求文档和文件 hash（存于 `.evolve/baseline-spec/manifest.json`） |
 | 一个可编辑训练文件 | 改进阶段只允许编辑 `skills/create-project/`、`skills/backend/`、`skills/frontend/` |
 | 一个验证指标 | 一个 100 分基准评分 |
 | Git 作为记忆 | 每次实验先 commit 再测量 |
@@ -46,8 +46,9 @@
 ```markdown
 ## 第 <n> 轮：<hypothesis>
 
-- 基准仓库：https://github.com/YunaiV/ruoyi-vue-pro.git
-- 基准 SHA：<sha>
+- 基准文档：<文档标题>
+- 文档 Hash：<sha256>
+- 文档路径：.evolve/baseline-spec/
 - 运行目录：.evolve/runs/<timestamp>/
 - 实验 commit：<sha>
 - 可编辑范围已检查：only skills/create-project/, skills/backend/, skills/frontend/
