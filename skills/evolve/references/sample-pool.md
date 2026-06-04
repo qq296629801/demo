@@ -2,47 +2,44 @@
 
 ## 目的
 
-样本池用于在多种后端管理框架中暴露 `create-project`、`backend`、`frontend` 的指导缺口。它不能替代固定基准。样本结果用于指导假设，固定基准决定是否保留改动。
+样本池用于在多种行业场景的需求文档中暴露 `create-project`、`backend`、`frontend` 的指导缺口。它不能替代固定基准。样本结果用于指导改进假设，固定基准决定是否保留改动。
+
+---
 
 ## 来源
 
 样本可以来自：
 
-- 用户提供的仓库 URL。
-- 已存在的本地仓库。
-- 通过 websearch 发现的后端管理框架仓库。
+- 用户提供的需求文档（Markdown、PDF 链接或本地文件）
+- 通过 websearch 发现的开源项目需求/设计文档
+- WMS / MES / APS / ERP / CRM / OA 等行业场景的公开规格文档
 
-当用户要求 websearch 时，每轮最多搜索 50 个候选。优先选择活跃、有源码、且能代表后台/后端管理系统的仓库。
+当用户要求 websearch 时，每轮最多搜索 50 个候选文档。优先选择字段描述完整、有用户故事或验收标准、能代表真实业务场景的文档。
 
-## 候选搜索语句
+> 详细搜索词和行业场景指引见 `references/requirements-doc-guide.md` § 行业场景搜索指引。
 
-可使用类似查询：
-
-- `GitHub Spring Boot Vue admin management framework`
-- `GitHub Java backend management system Spring Boot`
-- `GitHub admin framework MyBatis Plus Vue`
-- `GitHub open source backend management platform`
-- `GitHub SaaS admin backend framework Java`
-
-只有当用户要求扩展到 Java/Spring 风格之外的技术栈时，才调整搜索词。
+---
 
 ## 过滤规则
 
 只有候选满足以下条件时才接收：
 
-- 仓库可访问。
-- 许可证可见，或用户明确允许评测。
-- 包含后端源码，而不是只有截图或生成文档。
-- 看起来确实是后端/后台/管理框架或应用。
-- 可以记录 commit SHA。
+- 文档可访问，且能获取到全文内容
+- 描述真实业务场景（非教程、Demo 或玩具示例）
+- 包含功能模块清单或用户故事
+- 包含数据模型或字段说明（让 `create-project` 能生成 `@Model`）
+- 包含验收标准或测试场景描述（让冒烟测试有来源）
+- 通过 `requirements-doc-guide.md` 质量门控（总分 ≥ 6，数据模型 ≥ 1），或可通过预处理补全至准入线
 
 出现以下情况时拒绝并记录原因：
 
-- 无法克隆或检查。
-- 没有清晰源码树。
-- 与后端管理系统无关。
-- 是缺少有效历史的镜像。
-- 缺少清晰许可证，且用户未授权使用。
+- 文档不可访问或内容获取失败
+- 只有截图、架构图或高层描述，无字段/流程/规则细节
+- 与后台管理/业务系统无关（游戏、纯前端、移动端文档）
+- 经预处理仍无法达到数据模型 ≥ 1 分
+- 涉及保密或版权不明确的内容（且用户未明确允许）
+
+---
 
 ## 样本记录
 
@@ -51,17 +48,20 @@
 ```markdown
 ### 样本：<name>
 
-- URL: <repo-url>
-- Commit SHA: <sha>
-- License: <license 或 unknown>
-- Stack: <框架/语言说明>
+- Doc URL: <文档链接或本地路径>
+- Doc Hash: <sha256>
+- Source: <来源说明>
+- Business Domain: <WMS / MES / APS / ERP / CRM / OA / 其他>
+- Quality Score: <总分>/10（见 requirements-doc-guide.md 质量门控）
 - Accepted: yes/no
 - Filter reason: <接收或拒绝原因>
-- code-index result: <规格质量摘要>
+- Preprocessed: yes/no（是否经过 AI 补全）
 - create-project result: <生成摘要>
 - Docker/smoke result: <通过/失败摘要>
 - Suspected skills gap: <`route-gap` / `backend-doc-gap` / `frontend-doc-gap` / `sdd-template-gap` / `knowledge-gap` + 一句话说明>
 ```
+
+---
 
 ## 使用样本结果
 
@@ -76,4 +76,4 @@
    - `knowledge-gap`：只记录缺口和所需证据，不修改 backend/frontend 规则。
 4. 保留改动前必须运行固定基准。
 
-不得编辑样本仓库或生成的 IIDP 应用来让样本分数通过。
+不得修改需求文档内容或生成的 IIDP 应用代码来让样本分数通过。
