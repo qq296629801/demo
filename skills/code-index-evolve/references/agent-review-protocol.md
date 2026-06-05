@@ -10,17 +10,27 @@
 ```
 code-index-evolve（协调员）
     │
-    ├── agents/testing/testing-reality-checker.md      →  审查 hla.md（架构声明真实性）
-    ├── agents/testing/testing-api-tester.md           →  审查 api.md（API 规范完整性）
-    ├── agents/product/product-manager.md              →  审查 prd.md（业务文档规范性）
+    ├── ③a 核心文档评审
+    │   ├── agents/testing/testing-reality-checker.md      →  审查 hla.md（架构声明真实性）
+    │   ├── agents/testing/testing-api-tester.md           →  审查 api.md（API 规范完整性）
+    │   └── agents/product/product-manager.md              →  审查 prd.md（业务文档规范性）
     │
-    ├── agents/security/security-appsec-engineer.md    →  审查 api.md（安全质量）
-    ├── agents/security/security-architect.md          →  审查 hla.md（安全架构设计）
-    ├── agents/security/security-compliance-auditor.md →  审查 database.md + prd.md（合规）
-    └── agents/testing/testing-performance-benchmarker.md → 审查 srs.md + hla.md（性能规格）
+    ├── ③b 安全与合规审查
+    │   ├── agents/security/security-appsec-engineer.md    →  审查 api.md（安全质量）
+    │   ├── agents/security/security-architect.md          →  审查 hla.md（安全架构设计）
+    │   └── agents/security/security-compliance-auditor.md →  审查 database.md + prd.md（合规）
+    │
+    ├── ③c 工程质量评审
+    │   ├── agents/engineering/engineering-backend-architect.md  →  审查 database.md + api.md（工程规范）
+    │   ├── agents/engineering/engineering-software-architect.md →  审查 hla.md（架构决策质量）
+    │   ├── agents/engineering/engineering-technical-writer.md   →  审查所有文档（可读性/一致性）
+    │   └── agents/engineering/engineering-frontend-developer.md →  审查 ui/ + srs.md（前端规格，条件性）
+    │
+    └── ④ 性能规格完整性
+        └── agents/testing/testing-performance-benchmarker.md → 审查 srs.md + hla.md（性能指标）
 ```
 
-七个评审**并行执行**（互不依赖），各自产出评审报告，由协调员汇总计入评分 ③a/③b/④。
+十一个评审**并行执行**（互不依赖），各自产出评审报告，由协调员汇总计入评分 ③a/③b/③c/④。
 
 ---
 
@@ -362,6 +372,188 @@ Product Manager 按以下检查点逐项评审：
 
 ---
 
+## Agent 8：engineering-backend-architect → 审查 database.md + api.md（工程规范）
+
+**角色定位（来自 agents/engineering/engineering-backend-architect.md）：**
+后端架构师，专注可扩展系统设计、数据库架构、API 开发和云基础设施。
+核心原则：可观测性是非协商项，API 必须定义超时/重试/幂等语义。
+
+### 输入材料
+
+```markdown
+## 评审对象
+{database.md 完整内容}
+{api.md 完整内容（或前 3 个接口章节）}
+
+## 对应源码
+{主要 Entity/DO 类源码（含字段、索引注解）}
+{Controller 源码（含超时/重试相关注解或配置，如有）}
+```
+
+### 评审标准（5 分制）
+
+| 检查点 | 分值 | 通过条件 | 失败示例 |
+|---|---|---|---|
+| 数据库索引策略 | 2 | database.md 的表结构中有索引字段说明，或注明"无复合查询无需额外索引" | 表有 10+ 字段但无任何索引说明 |
+| API 幂等性与容错语义 | 2 | 写操作接口（POST/PUT/DELETE）有幂等性说明 + 超时或重试建议 | 创建接口无幂等键说明，无超时 SLA |
+| 可观测性基础 | 1 | hla.md 或 srs.md 中有结构化日志 / 分布式追踪 / SLO 中至少一项说明 | 两份文档均无任何监控/追踪说明 |
+
+**评审输出格式：**
+```markdown
+## database.md + api.md Backend Architect 评审报告
+
+**评审结论**：PASS / NEEDS WORK / FAIL
+
+**检查点结果**：
+- [ ] 数据库索引策略：{分数}/2 — {指出缺少索引说明的表名}
+- [ ] API 幂等性与容错语义：{分数}/2 — {指出缺少幂等说明的写操作接口}
+- [ ] 可观测性基础：{分数}/1 — {具体说明}
+
+**总分**：{N}/5
+
+**主要问题（需在 code-index skill 中修复）**：
+1. {问题描述} → 失败分类：{gap 类型}
+```
+
+---
+
+## Agent 9：engineering-software-architect → 审查 hla.md（架构决策质量）
+
+**角色定位（来自 agents/engineering/engineering-software-architect.md）：**
+软件架构师，通过 DDD、ADR 和权衡分析设计可维护且与业务域对齐的系统。
+核心原则："说出你放弃了什么"——每个架构决策必须说明为什么选择当前方案。
+
+### 输入材料
+
+```markdown
+## 评审对象
+{hla.md 完整内容}
+
+## 上下文
+- 模块名称：{MODULE_NAME}
+- 主要实体：{ENTITY_NAME}
+- 技术栈：{TECH_STACK}
+```
+
+### 评审标准（4 分制）
+
+| 检查点 | 分值 | 通过条件 | 失败示例 |
+|---|---|---|---|
+| 架构决策有 rationale | 2 | 关键架构选择（框架/分层/通信模式）有"为什么这样选"的说明，不只列结果 | 只写"使用 Spring Boot + MyBatis"，无任何选型理由 |
+| 模块边界与依赖方向 | 2 | 模块间依赖关系在架构图中清晰标注，且依赖方向符合"域策略不依赖基础设施"原则 | 架构图中模块间有双向箭头，或 Service 直接依赖 Controller |
+
+**评审输出格式：**
+```markdown
+## hla.md Software Architect 评审报告
+
+**评审结论**：PASS / NEEDS WORK / FAIL
+
+**检查点结果**：
+- [ ] 架构决策有 rationale：{分数}/2 — {引用缺少 rationale 的具体决策点}
+- [ ] 模块边界与依赖方向：{分数}/2 — {引用架构图中的问题节点/箭头}
+
+**总分**：{N}/4
+
+**主要问题（需在 code-index skill 中修复）**：
+1. {问题描述} → 失败分类：{gap 类型}
+```
+
+---
+
+## Agent 10：engineering-technical-writer → 审查所有文档（可读性与一致性）
+
+**角色定位（来自 agents/engineering/engineering-technical-writer.md）：**
+技术文档专家，让开发者实际读完并用得上文档。
+核心原则："坏文档等同于产品缺陷"——代码示例必须可运行，术语必须一致。
+
+### 输入材料
+
+```markdown
+## 评审对象
+{overview.md 完整内容}
+{api.md 中 2-3 个接口章节（含请求/响应示例）}
+
+## 辅助文档（用于跨文档一致性检查）
+- 在 api.md / hla.md / srs.md 中出现的核心术语列表（如：模块名、实体名、接口名）
+```
+
+### 评审标准（3 分制）
+
+| 检查点 | 分值 | 通过条件 | 失败示例 |
+|---|---|---|---|
+| 示例格式可信 | 1 | api.md 请求/响应示例的字段名与源码字段名一致，JSON 格式合法 | 示例中有 `"studentId"` 但源码字段是 `"studentNo"` |
+| 术语跨文档一致 | 1 | 同一概念在 overview.md / api.md / srs.md 中使用相同名称（不混用中英文或别名） | overview.md 写"学生管理"，api.md 写"学员信息" |
+| 快速上手路径存在 | 1 | overview.md 或 srs.md 有"如何开始使用此模块"的明确入口说明 | overview.md 只有功能列表，无任何使用路径引导 |
+
+**评审输出格式：**
+```markdown
+## 文档 Technical Writer 评审报告
+
+**评审结论**：PASS / NEEDS WORK / FAIL
+
+**检查点结果**：
+- [ ] 示例格式可信：{分数}/1 — {列出不一致的字段名对比}
+- [ ] 术语跨文档一致：{分数}/1 — {列出不一致的术语对}
+- [ ] 快速上手路径存在：{分数}/1 — {引用或说明缺失}
+
+**总分**：{N}/3
+
+**主要问题（需在 code-index skill 中修复）**：
+1. {问题描述} → 失败分类：{gap 类型}
+```
+
+---
+
+## Agent 11：engineering-frontend-developer → 审查 ui/ + srs.md（前端规格）
+
+**角色定位（来自 agents/engineering/engineering-frontend-developer.md）：**
+前端开发专家，构建响应式、无障碍、高性能的 Web 应用。
+核心原则：无障碍合规和 Core Web Vitals 是默认要求，不是可选项。
+
+> **条件性评审**：仅当 Codebook 存在 `ui/` 目录或 `srs.md` 中有前端相关需求时执行。
+> 若项目为纯后端 API / 无前端输出，此 Agent 评审自动跳过，记为 N/A（不计入分母）。
+
+### 输入材料
+
+```markdown
+## 评审对象
+{ui/ 目录下所有文件内容（若存在）}
+{srs.md 中的非功能性需求章节（重点：前端性能、无障碍、响应式）}
+
+## 上下文
+- 项目是否有前端：{是/否}
+- 目标用户设备：{PC / Mobile / 两者}
+```
+
+### 评审标准（3 分制，条件性）
+
+| 检查点 | 分值 | 通过条件 | 失败示例 |
+|---|---|---|---|
+| Core Web Vitals 目标 | 1 | srs.md 或 ui/ 中有 LCP/FID（INP）/CLS 具体目标值，或说明"无性能约束" | 有前端页面但无任何加载性能说明 |
+| 无障碍合规声明 | 1 | ui/ 或 srs.md 有 WCAG 2.1 AA（或更高）合规说明，包括键盘导航和屏幕阅读器支持 | 有 UI 原型但无无障碍说明 |
+| 响应式设计规范 | 1 | ui/ 说明了断点策略（移动 / 平板 / 桌面）和移动优先设计原则 | UI 原型只有桌面版布局，无响应式说明 |
+
+**评审输出格式：**
+```markdown
+## ui/ + srs.md Frontend Developer 评审报告
+
+**评审状态**：执行 / N/A（纯后端项目）
+
+**评审结论**：PASS / NEEDS WORK / FAIL
+
+**检查点结果**：
+- [ ] Core Web Vitals 目标：{分数}/1 — {引用或说明缺失}
+- [ ] 无障碍合规声明：{分数}/1 — {引用或说明缺失}
+- [ ] 响应式设计规范：{分数}/1 — {引用或说明缺失}
+
+**总分**：{N}/3（或 N/A）
+
+**主要问题（需在 code-index skill 中修复）**：
+1. {问题描述} → 失败分类：{gap 类型}
+```
+
+---
+
 ## 多模块评审处理规则
 
 当 Codebook 包含多个模块时：
@@ -375,21 +567,31 @@ Product Manager 按以下检查点逐项评审：
 ```markdown
 ## Agent 评审汇总
 
-### ③a 核心文档评审（15分）
+### ③a 核心文档评审（12分）
 
-| 模块 | Reality Checker /hla (7) | API Tester /api (5) | Product Manager /prd (3) | 小计 |
+| 模块 | Reality Checker /hla (5) | API Tester /api (4) | Product Manager /prd (3) | 小计 |
 |---|---|---|---|---|
-| {module1} | {n}/7 | {n}/5 | {n}/3 | {n}/15 |
-| {module2} | {n}/7 | {n}/5 | {n}/3 | {n}/15 |
-| **平均** | {avg}/7 | {avg}/5 | {avg}/3 | **{avg}/15** |
+| {module1} | {n}/5 | {n}/4 | {n}/3 | {n}/12 |
+| {module2} | {n}/5 | {n}/4 | {n}/3 | {n}/12 |
+| **平均** | {avg}/5 | {avg}/4 | {avg}/3 | **{avg}/12** |
 
-### ③b 安全与合规审查（10分）
+### ③b 安全与合规审查（8分）
 
-| 模块 | AppSec /api (4) | Sec Architect /hla (3) | Compliance /db+prd (3) | 小计 |
+| 模块 | AppSec /api (3) | Sec Architect /hla (3) | Compliance /db+prd (2) | 小计 |
 |---|---|---|---|---|
-| {module1} | {n}/4 | {n}/3 | {n}/3 | {n}/10 |
-| {module2} | {n}/4 | {n}/3 | {n}/3 | {n}/10 |
-| **平均** | {avg}/4 | {avg}/3 | {avg}/3 | **{avg}/10** |
+| {module1} | {n}/3 | {n}/3 | {n}/2 | {n}/8 |
+| {module2} | {n}/3 | {n}/3 | {n}/2 | {n}/8 |
+| **平均** | {avg}/3 | {avg}/3 | {avg}/2 | **{avg}/8** |
+
+### ③c 工程质量评审（15分）
+
+| 模块 | Backend Arch /db+api (5) | SW Architect /hla (4) | Tech Writer /all (3) | Frontend Dev /ui+srs (3) | 小计 |
+|---|---|---|---|---|---|
+| {module1} | {n}/5 | {n}/4 | {n}/3 | {n}/3 或 N/A | {n}/15 |
+| {module2} | {n}/5 | {n}/4 | {n}/3 | {n}/3 或 N/A | {n}/15 |
+| **平均** | {avg}/5 | {avg}/4 | {avg}/3 | {avg}/3 或 N/A | **{avg}/15** |
+
+> 注：Frontend Developer 评审为条件性，纯后端项目记 N/A，其余三项满分折算为 12 分。
 
 ### ④ 性能规格完整性（5分）
 
@@ -404,6 +606,7 @@ Product Manager 按以下检查点逐项评审：
 - {模块} prd.md：{最严重问题} → 失败分类：{gap 类型}
 - {模块} database.md：{最严重问题} → 失败分类：{gap 类型}
 - {模块} srs.md：{最严重问题} → 失败分类：{gap 类型}
+- {模块} ui/：{最严重问题} → 失败分类：{gap 类型}
 ```
 
 ---

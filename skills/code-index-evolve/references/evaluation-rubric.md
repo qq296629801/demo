@@ -10,10 +10,11 @@
 
 | 维度 | 分值 | 衡量内容 |
 |---|---:|---|
-| 接口文档完整性 | 30 | api.md 接口数 vs ground truth；实体/模块覆盖率 |
-| 可追溯性与无幻觉 | 20 | 文档声明能否回溯到源码；无虚构字段/错误码 |
-| ③a 核心文档评审 | 15 | reality-checker(hla) + api-tester(api) + product-manager(prd) |
-| ③b 安全与合规审查 | 10 | appsec(api安全) + sec-architect(hla安全架构) + compliance(db+prd合规) |
+| 接口文档完整性 | 25 | api.md 接口数 vs ground truth；实体/模块覆盖率 |
+| 可追溯性与无幻觉 | 15 | 文档声明能否回溯到源码；无虚构字段/错误码 |
+| ③a 核心文档评审 | 12 | reality-checker(hla) + api-tester(api) + product-manager(prd) |
+| ③b 安全与合规审查 | 8 | appsec(api安全) + sec-architect(hla安全架构) + compliance(db+prd合规) |
+| ③c 工程质量评审 | 15 | backend-architect(db+api) + sw-architect(hla) + tech-writer(all) + frontend-dev(ui+srs) |
 | ④ 性能规格完整性 | 5 | performance-benchmarker 对 srs.md + hla.md 的性能指标评审 |
 | 变量采集完整性 | 10 | 生成文档中无残留 `{{...}}` 占位符 |
 | 文件完整性 | 10 | .progress.md 全 [x]；所有必须输出文件存在 |
@@ -51,41 +52,41 @@ find modules/ -name "api.md" -exec grep -l "^### " {} \; | wc -l  # 应 > 0
 
 ## 维度细则
 
-### ① 接口文档完整性：30 分
+### ① 接口文档完整性：25 分
 
 衡量生成 Codebook 对源码中接口的覆盖程度。使用 `baseline.json` 中的 ground truth。
 
 **计算方式：**
 
 ```
-# API 覆盖率（12分）
+# API 覆盖率（10分）
 actual_api = 所有模块 api.md 中独立接口章节数（grep "^### " 计数）
 gt_api     = baseline.json.groundTruth.totalApiCount
-api_score  = round(12 × min(actual_api / gt_api, 1.0))
+api_score  = round(10 × min(actual_api / gt_api, 1.0))
 
-# 实体覆盖率（8分）
+# 实体覆盖率（7分）
 actual_entity = 所有模块 database.md 中表格数（grep "^### " 或 "^## 表" 计数）
 gt_entity     = baseline.json.groundTruth.totalEntityCount
-entity_score  = round(8 × min(actual_entity / gt_entity, 1.0))
+entity_score  = round(7 × min(actual_entity / gt_entity, 1.0))
 
-# 模块划分准确率（6分）
+# 模块划分准确率（5分）
 actual_modules = codebook/modules/ 下子目录名称集合
 gt_modules     = baseline.json.groundTruth.modules
 match_rate     = |actual_modules ∩ gt_modules| / |gt_modules|
-module_score   = round(6 × match_rate)
+module_score   = round(5 × match_rate)
 
-# SRS 完整性（4分）
+# SRS 完整性（3分）
 对每个模块：srs.md 中功能需求条目数是否 == api.md 接口章节数
-  全部匹配 → 4 分；一半匹配 → 2 分；均不匹配 → 0 分
+  全部匹配 → 3 分；一半匹配 → 1.5 分；均不匹配 → 0 分
 ```
 
 **扣分示例：**
-- ground truth 47 个接口，api.md 只有 31 个 → api_score = round(12 × 31/47) = 8 分
-- ground truth 3 个模块，只生成 2 个 → module_score = round(6 × 2/3) = 4 分
+- ground truth 47 个接口，api.md 只有 31 个 → api_score = round(10 × 31/47) = 7 分
+- ground truth 3 个模块，只生成 2 个 → module_score = round(5 × 2/3) = 3 分
 
 ---
 
-### ② 可追溯性与无幻觉：20 分
+### ② 可追溯性与无幻觉：15 分
 
 衡量生成文档是否基于真实源码事实，没有凭空推断的字段、接口或错误码。
 
@@ -108,10 +109,10 @@ module_score   = round(6 × match_rate)
 
 **评分细则：**
 
-- 10 个字段验证（每字段 1 分，共 10 分）：
-  - MATCH（字段存在于源码）→ 1 分
+- 10 个字段验证（每字段 0.5 分，共 5 分）：
+  - MATCH（字段存在于源码）→ 0.5 分
   - MISMATCH（字段不在源码中）→ 0 分
-  - 来源文件找不到 → 0.5 分（可能是 codegraph 索引问题，不全扣）
+  - 来源文件找不到 → 0.25 分（可能是 codegraph 索引问题，不全扣）
 
 - 5 个错误码验证（每错误码 0.5 分，共 2.5 分）：
   - 编号和常量名完全一致 → 0.5 分
@@ -122,7 +123,7 @@ module_score   = round(6 × match_rate)
   - api.md 中所有错误码均能在源码中找到 → 7.5 分
   - 每有 1 个虚构错误码扣 1.5 分，最低 0 分
 
-> 注：三项合计 10 + 2.5 + 7.5 = 20 分。
+> 注：三项合计 5 + 2.5 + 7.5 = 15 分。
 
 **示例追溯矩阵：**
 
@@ -134,25 +135,25 @@ module_score   = round(6 × match_rate)
 
 ---
 
-### ③a 核心文档评审：15 分
+### ③a 核心文档评审：12 分
 
 通过三个专家 agent 对核心 Codebook 文档进行结构化评审。详细评审方式见
-`references/agent-review-protocol.md`。
+`references/agent-review-protocol.md`（Agent 1–3）。
 
 **评分分配：**
 
 | Agent | 审查文档 | 满分 |
 |---|---|---|
-| `testing-reality-checker` | 每个模块的 `hla.md` | 7 |
-| `testing-api-tester` | 每个模块的 `api.md` | 5 |
+| `testing-reality-checker` | 每个模块的 `hla.md` | 5 |
+| `testing-api-tester` | 每个模块的 `api.md` | 4 |
 | `product-manager` | 每个模块的 `prd.md` | 3 |
 
 **多模块处理：** 对每个模块分别评审，取平均分后按满分折算。
-例如：3 个模块的 reality-checker 评分分别为 5/7、6/7、4/7 → 平均 5/7 → 最终得 5 分。
+例如：3 个模块的 reality-checker 评分分别为 4/5、5/5、3/5 → 平均 4/5 → 最终得 4 分。
 
 ---
 
-### ③b 安全与合规审查：10 分
+### ③b 安全与合规审查：8 分
 
 通过三个安全专家 agent 审查 API 安全性、架构安全设计和数据合规。详细评审标准见
 `references/agent-review-protocol.md`（Agent 4–6）。
@@ -161,14 +162,36 @@ module_score   = round(6 × match_rate)
 
 | Agent | 审查文档 | 满分 |
 |---|---|---|
-| `security-appsec-engineer` | 每个模块的 `api.md`（安全质量） | 4 |
+| `security-appsec-engineer` | 每个模块的 `api.md`（安全质量） | 3 |
 | `security-architect` | 每个模块的 `hla.md`（安全架构） | 3 |
-| `security-compliance-auditor` | 每个模块的 `database.md` + `prd.md`（合规） | 3 |
+| `security-compliance-auditor` | 每个模块的 `database.md` + `prd.md`（合规） | 2 |
 
 **多模块处理：** 同 ③a，各模块独立评审取平均。
 
 **门禁级联：** 若某模块缺少 database.md，合规检查点"敏感表标注"和"审计日志字段"
 记为"无法验证（0.5分/项）"，不直接判 0 分。
+
+---
+
+### ③c 工程质量评审：15 分
+
+通过四个工程专家 agent 从系统设计、架构决策、文档可读性和前端规格维度评审。
+详细评审标准见 `references/agent-review-protocol.md`（Agent 8–11）。
+
+**评分分配：**
+
+| Agent | 审查文档 | 满分 |
+|---|---|---|
+| `engineering-backend-architect` | 每个模块的 `database.md` + `api.md`（工程规范） | 5 |
+| `engineering-software-architect` | 每个模块的 `hla.md`（架构决策质量） | 4 |
+| `engineering-technical-writer` | 所有模块文档（可读性/术语一致性） | 3 |
+| `engineering-frontend-developer` | `ui/` + `srs.md`（前端规格，**条件性**） | 3 |
+
+**Frontend Developer 条件规则：**
+- 项目有 `ui/` 目录或 `srs.md` 中有前端需求 → 正常评审，满分 3 分
+- 纯后端项目（无 `ui/`，无前端需求） → 记 N/A，其余三项满分折算为 12 分（×15/12）
+
+**多模块处理：** 同 ③a，各模块独立评审取平均。
 
 ---
 
