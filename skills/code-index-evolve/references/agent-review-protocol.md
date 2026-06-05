@@ -10,12 +10,17 @@
 ```
 code-index-evolve（协调员）
     │
-    ├── agents/testing/testing-reality-checker.md  →  审查 hla.md（架构声明真实性）
-    ├── agents/testing/testing-api-tester.md       →  审查 api.md（API 规范完整性）
-    └── agents/product/product-manager.md          →  审查 prd.md（业务文档规范性）
+    ├── agents/testing/testing-reality-checker.md      →  审查 hla.md（架构声明真实性）
+    ├── agents/testing/testing-api-tester.md           →  审查 api.md（API 规范完整性）
+    ├── agents/product/product-manager.md              →  审查 prd.md（业务文档规范性）
+    │
+    ├── agents/security/security-appsec-engineer.md    →  审查 api.md（安全质量）
+    ├── agents/security/security-architect.md          →  审查 hla.md（安全架构设计）
+    ├── agents/security/security-compliance-auditor.md →  审查 database.md + prd.md（合规）
+    └── agents/testing/testing-performance-benchmarker.md → 审查 srs.md + hla.md（性能规格）
 ```
 
-三个评审**并行执行**（互不依赖），各自产出评审报告，由协调员汇总计入总分 ③。
+七个评审**并行执行**（互不依赖），各自产出评审报告，由协调员汇总计入评分 ③a/③b/④。
 
 ---
 
@@ -173,6 +178,190 @@ Product Manager 按以下检查点逐项评审：
 
 ---
 
+## Agent 4：security-appsec-engineer → 审查 api.md（安全质量）
+
+**角色定位（来自 agents/security/security-appsec-engineer.md）：**
+应用安全工程师，通过威胁建模和安全代码审查在 SDLC 中嵌入安全防控。
+核心原则：安全字段必须来自源码注解，敏感数据必须有显式处理说明。
+
+### 输入材料
+
+```markdown
+## 评审对象
+{api.md 完整内容（或前 3 个接口章节）}
+
+## 对应源码
+{Controller 源码（含 @PreAuthorize / @RequiresPermissions 注解）}
+{ReqVO / RespVO 源码（含字段类型和注解）}
+{error-codes.md 全部内容}
+```
+
+### 评审标准（8 分制）
+
+| 检查点 | 分值 | 通过条件 | 失败示例 |
+|---|---|---|---|
+| 权限矩阵完整 | 2 | 每个接口有权限码（来自注解）+ 可访问角色说明 | 接口无权限码，或权限码与注解不符 |
+| 敏感字段标注 | 2 | PII/密码/Token 字段有脱敏说明或 [SENSITIVE] 标注 | password 字段直接出现在 Response 示例中无任何说明 |
+| 认证方式规范 | 2 | 每个接口章节有认证方式说明（Bearer JWT / 公开接口标注 `[公开]`）| 接口无任何认证说明 |
+| 错误不泄露内部信息 | 2 | error-codes 章节无含堆栈路径/SQL/类名的错误消息模板 | 错误消息包含 "NullPointerException at com.xxx" |
+
+**评审输出格式：**
+```markdown
+## api.md AppSec Engineer 评审报告
+
+**评审结论**：PASS / NEEDS WORK / FAIL
+
+**检查点结果**：
+- [ ] 权限矩阵完整：{分数}/2 — {指出哪些接口缺少权限码，引用注解原文}
+- [ ] 敏感字段标注：{分数}/2 — {列出出现的敏感字段及处理状态}
+- [ ] 认证方式规范：{分数}/2 — {具体说明}
+- [ ] 错误不泄露内部信息：{分数}/2 — {列出可疑错误消息}
+
+**总分**：{N}/8
+
+**主要问题（需在 code-index skill 中修复）**：
+1. {问题描述} → 失败分类：{gap 类型}
+```
+
+---
+
+## Agent 5：security-architect → 审查 hla.md（安全架构设计）
+
+**角色定位（来自 agents/security/security-architect.md）：**
+安全架构师，专注系统级信任边界分析和纵深防御设计。
+核心原则：每一层防护声明必须有对应的源码或配置证据。
+
+### 输入材料
+
+```markdown
+## 评审对象
+{hla.md 完整内容}
+
+## 对应源码
+{application.yml / application-prod.yml 安全配置片段}
+{SecurityConfig / WebSecurityConfigurerAdapter 源码（如有）}
+{涉及加密/密钥管理的常量类或配置类（如有）}
+```
+
+### 评审标准（6 分制）
+
+| 检查点 | 分值 | 通过条件 | 失败示例 |
+|---|---|---|---|
+| 信任边界可见 | 2 | 架构图或说明中标注了跨越信任边界的组件间通信（内网/外网/第三方） | 架构图中内外网组件混排，无任何边界标注 |
+| 纵深防御分层 | 2 | 安全架构说明含认证层 + 授权层 + 输入校验层（来自源码注解或配置验证） | 只写"系统使用 JWT 认证"，无授权和校验层说明 |
+| 敏感数据加密说明 | 2 | 密码/Token/私钥的存储和传输有加密方案说明（来自配置或源码常量验证） | 写了"密码加密存储"但源码无对应加密工具类 |
+
+**评审输出格式：**
+```markdown
+## hla.md Security Architect 评审报告
+
+**评审结论**：PASS / NEEDS WORK / FAIL
+
+**检查点结果**：
+- [ ] 信任边界可见：{分数}/2 — {引用架构图中的相关节点，或说明缺失}
+- [ ] 纵深防御分层：{分数}/2 — {列出已有和缺失的防护层}
+- [ ] 敏感数据加密说明：{分数}/2 — {引用源码/配置证据，或说明无法验证}
+
+**总分**：{N}/6
+
+**主要问题（需在 code-index skill 中修复）**：
+1. {问题描述} → 失败分类：{gap 类型}
+```
+
+---
+
+## Agent 6：security-compliance-auditor → 审查 database.md + prd.md（合规）
+
+**角色定位（来自 agents/security/security-compliance-auditor.md）：**
+技术合规审计专家，通过控制评估和证据收集确保系统满足数据保护要求。
+核心原则：数据合规要求必须在设计阶段明确，不能留到实现阶段。
+
+### 输入材料
+
+```markdown
+## 评审对象
+{database.md 完整内容}
+{prd.md 完整内容}
+
+## 上下文
+- 模块名称：{MODULE_NAME}
+- 主要实体：{ENTITY_NAME}
+- 是否涉及用户个人信息：{是/否/未知}
+```
+
+### 评审标准（6 分制）
+
+| 检查点 | 分值 | 通过条件 | 失败示例 |
+|---|---|---|---|
+| 敏感表标注 | 2 | database.md 中存储 PII/密码/手机/身份证的表有 `[敏感]` 标注 | user 表含 phone/id_card 字段，但无任何敏感标注 |
+| 审计日志字段 | 2 | 涉及增删改的表有 creator / updater / create_time / update_time / deleted（或等价字段） | 核心业务表缺少 create_time / update_time 字段 |
+| 数据合规说明 | 2 | prd.md 中有数据收集范围说明（收集什么、保留期限、谁可访问）| prd.md 无任何数据生命周期说明 |
+
+**评审输出格式：**
+```markdown
+## database.md + prd.md Compliance Auditor 评审报告
+
+**评审结论**：PASS / NEEDS WORK / FAIL
+
+**检查点结果**：
+- [ ] 敏感表标注：{分数}/2 — {列出含敏感字段但缺少标注的表名}
+- [ ] 审计日志字段：{分数}/2 — {列出缺少审计字段的表名}
+- [ ] 数据合规说明：{分数}/2 — {引用 prd.md 中的相关段落，或说明缺失}
+
+**总分**：{N}/6
+
+**主要问题（需在 code-index skill 中修复）**：
+1. {问题描述} → 失败分类：{gap 类型}
+```
+
+---
+
+## Agent 7：testing-performance-benchmarker → 审查 srs.md + hla.md（性能规格）
+
+**角色定位（来自 agents/testing/testing-performance-benchmarker.md）：**
+性能测试和优化专家，确保性能 SLA 在规格阶段明确量化。
+核心原则：没有 P95 响应时间目标的性能需求等于没有性能需求。
+
+### 输入材料
+
+```markdown
+## 评审对象
+{srs.md 完整内容（重点关注非功能性需求章节）}
+{hla.md 完整内容（重点关注缓存/扩展性/监控章节）}
+
+## 对应源码（可选，用于验证缓存声明）
+{Redis / @Cacheable 相关类片段（如 hla.md 声明了缓存）}
+```
+
+### 评审标准（5 分制）
+
+| 检查点 | 分值 | 通过条件 | 失败示例 |
+|---|---|---|---|
+| 性能指标量化 | 2 | srs.md 非功能需求中有 P95 响应时间目标 + 吞吐量或并发用户数 | 只写"系统响应要快"，无具体数字 |
+| 扩展性说明 | 1 | hla.md 有水平或垂直扩展策略说明 | hla.md 无任何扩展性说明 |
+| 缓存设计有依据 | 1 | 若 hla.md 声明使用缓存，则源码有 @Cacheable / Redis 相关类；若无缓存声明则此项自动通过 | 声称"使用 Redis 缓存热点数据"但源码无任何 Redis 配置 |
+| 监控基线 | 1 | srs.md 或 hla.md 有监控/告警/降级策略说明 | 两份文档均无任何监控相关内容 |
+
+**评审输出格式：**
+```markdown
+## srs.md + hla.md Performance Benchmarker 评审报告
+
+**评审结论**：PASS / NEEDS WORK / FAIL
+
+**检查点结果**：
+- [ ] 性能指标量化：{分数}/2 — {引用或说明缺失的具体指标}
+- [ ] 扩展性说明：{分数}/1 — {具体说明}
+- [ ] 缓存设计有依据：{分数}/1 — {引用源码证据，或说明无缓存声明（自动通过）}
+- [ ] 监控基线：{分数}/1 — {具体说明}
+
+**总分**：{N}/5
+
+**主要问题（需在 code-index skill 中修复）**：
+1. {问题描述} → 失败分类：{gap 类型}
+```
+
+---
+
 ## 多模块评审处理规则
 
 当 Codebook 包含多个模块时：
@@ -186,16 +375,35 @@ Product Manager 按以下检查点逐项评审：
 ```markdown
 ## Agent 评审汇总
 
-| 模块 | Reality Checker (hla) | API Tester (api) | Product Manager (prd) | 模块总分 |
+### ③a 核心文档评审（15分）
+
+| 模块 | Reality Checker /hla (7) | API Tester /api (5) | Product Manager /prd (3) | 小计 |
 |---|---|---|---|---|
-| {module1} | {n}/10 | {n}/8 | {n}/7 | {n}/25 |
-| {module2} | {n}/10 | {n}/8 | {n}/7 | {n}/25 |
-| **平均** | {avg}/10 | {avg}/8 | {avg}/7 | **{avg}/25** |
+| {module1} | {n}/7 | {n}/5 | {n}/3 | {n}/15 |
+| {module2} | {n}/7 | {n}/5 | {n}/3 | {n}/15 |
+| **平均** | {avg}/7 | {avg}/5 | {avg}/3 | **{avg}/15** |
+
+### ③b 安全与合规审查（10分）
+
+| 模块 | AppSec /api (4) | Sec Architect /hla (3) | Compliance /db+prd (3) | 小计 |
+|---|---|---|---|---|
+| {module1} | {n}/4 | {n}/3 | {n}/3 | {n}/10 |
+| {module2} | {n}/4 | {n}/3 | {n}/3 | {n}/10 |
+| **平均** | {avg}/4 | {avg}/3 | {avg}/3 | **{avg}/10** |
+
+### ④ 性能规格完整性（5分）
+
+| 模块 | Performance Benchmarker /srs+hla (5) |
+|---|---|
+| {module1} | {n}/5 |
+| **平均** | {avg}/5 |
 
 **主要失败模式**：
 - {模块} hla.md：{最严重问题} → 失败分类：{gap 类型}
 - {模块} api.md：{最严重问题} → 失败分类：{gap 类型}
 - {模块} prd.md：{最严重问题} → 失败分类：{gap 类型}
+- {模块} database.md：{最严重问题} → 失败分类：{gap 类型}
+- {模块} srs.md：{最严重问题} → 失败分类：{gap 类型}
 ```
 
 ---
