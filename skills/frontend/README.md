@@ -7,6 +7,7 @@
 | 路径 | 职责 |
 |---|---|
 | `SKILL.md` | 前端总入口，只负责意图识别、路由和强制协议加载 |
+| `commands/iidp-frontend-test.md` | 手动触发的前端代码验证命令，负责静态检查、启动、Playwright、评分和 Skill 反馈 |
 | `references/iidp-frontend-codegen-protocol.md` | 前端代码生成唯一强制协议，维护门禁、实现分支和合规扫描 |
 | `references/iidp-frontend-project-locator.md` | 前端工程发现、扩展应用定位、现有模式读取流程 |
 | `references/iidp-frontend-spec-doc/SKILL.md` | 业务需求到 IIDP 前端规格文档 |
