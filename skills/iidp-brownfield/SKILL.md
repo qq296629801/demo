@@ -329,13 +329,13 @@ specs/features/<feature>/validation.md
 - 调用 `skills/backend/SKILL.md`。
 - 遵循 backend skill 的完整流程：模型 → 服务 → 控制器 → 权限 → 菜单 → 数据种子。
 
-#### 10.3 前端实现 —— 必须通过 `iidp-frontend` skill，不可绕过
+#### 10.3 前端实现 —— 必须通过 `iidp-frontend` 和 codegen protocol
 
-> **核心约束：生成任何前端代码、文件、配置前，必须使用 `Skill` 工具调用 `iidp-frontend` skill（仓库入口：`skills/frontend/SKILL.md`）。不允许仅读取 frontend SKILL.md 后就直接写前端文件——这会跳过 iidp-frontend skill 的强制前置门禁、组件规则和子技能路由，属于流程违规。**
+> **核心约束：生成任何前端代码、文件、配置前，必须先加载并执行 `skills/frontend/SKILL.md` 的路由流程，然后执行 `skills/frontend/references/iidp-frontend-codegen-protocol.md`。不允许仅读取 frontend SKILL.md 后就直接写前端文件。**
 
-**前置步骤：调用 `iidp-frontend` skill**
+**前置步骤：加载 `iidp-frontend` skill**
 
-1. 使用 `Skill` 工具调用 `iidp-frontend` skill（skill 名：`iidp-frontend`；路径：`skills/frontend/SKILL.md`）。
+1. 读取并执行 `skills/frontend/SKILL.md`（skill 名：`iidp-frontend`）的路由流程。
 2. `iidp-frontend` skill 加载后，会强制执行 **工程存在性检查**（前置门禁）：
    - 扫描工作区中的 IIDP 前端工程（识别标志：`package.json` 含 `init:tech` 脚本、`apps/` 目录存在、`config/apps.json` 存在、`build/webpack.dev.js` 存在；满足 ≥3 项视为候选）。
    - **0 个候选工程 → 必须停止前端代码生成**：告知用户未发现 IIDP 前端工程，询问是否需要创建工程。在用户明确确认前，禁止创建任何前端文件或目录。
@@ -351,40 +351,19 @@ specs/features/<feature>/validation.md
 | 需要新建前端应用（新增 App 场景）                          | `iidp-frontend-init`（由 spec-code 内部调用） | 通过脚手架 `tech app <appName>` 创建应用，**禁止手动 mkdir 或复制目录**     |
 | 查阅框架机制、组件属性、扩展协议                           | `iidp-frontend-dev-manual`                    | 框架文档事实来源，其他子技能均依赖它                                        |
 
-**实现时必须遵守的 iidp-frontend skill 核心原则：**
+**统一代码生成协议：**
 
-- 传统管理后台页面（树+搜索+表格+表单+子表）优先使用 IIDP 标准模板与在线视图，前端不新增代码。
-- 需要前端介入时，优先级：hook → 扩展视图 → 自定义 Vue2 组件。
-- **完全替换标准模板页面时，禁止 `type: 'page'`，必须用 `replace` 替换主表格页节点。**
-- **API 请求统一走 IIDP 数据源或 `window.Tech.httpMeta`**，禁止自行引入 axios、fetch 等请求库或手写 HTTP 封装。
-- 不确定的接口、节点 id、模型名、数据源名、权限码必须保留为"待确认"，不编造平台事实。
-- 代码注释和 `console.log` 统一使用中文。
-- 变量声明禁止 `var`，统一 `const`（不重新赋值）/ `let`（需重新赋值）。
-- 禁止重复代码：同一模式出现 3 次以上，抽取为带参数的工具函数或工厂函数。
-- 按需加载配置：规格文档含 `product` 时配置 `effectPaths.includeRegExp` 为 `^/<product>/`，无 `product` 时不修改默认配置。
-- Element UI 已全局引入，自定义 Vue2 组件中不要单独引入 Element UI。
-- **🚫 严禁手搓前端目录：创建前端工程必须用 `tech project <projectName>`，创建扩展应用必须用 `tech app <appName>`。禁止 `mkdir` 手动创建 `apps/<appName>/` 目录结构，禁止复制已有 app 目录、复制 `apps/demo`、Git 下载或离线 ZIP 作为主创建路径。**
+在写入任何 `apps/<appName>/views`、`apps/<appName>/common`、`apps/component` 或 `apps/<appName>/config` 文件前，必须执行：
 
-**前端代码生成硬性检查清单：**
+```text
+skills/frontend/references/iidp-frontend-codegen-protocol.md
+```
 
-在写入任何 `apps/<appName>/views`、`apps/<appName>/common`、`apps/component` 或 `apps/<appName>/config` 文件前，必须完成以下检查；任一项缺失则停止生成并补读对应规则：
+该协议统一承载实现分支判断、工程门禁、selector 来源、组件规则、hook/扩展格式、自定义组件边界、禁止项和实现后合规扫描。brownfield 不再维护独立规则副本，避免与 frontend 子技能产生分叉。
 
-1. **组件规则**：生成或修改任何 IIDP 组件节点前，必须先读取 `skills/frontend/references/iidp-frontend-extension-dev/COMPONENT_RULES.md`。
-   - `button` 文本用 `value`，不要写 `text`。
-   - 表格操作列按钮事件用 `bind_on_clickOptionBtn`，不要和普通按钮的 `bind_on_click` 混用。
-   - 未被 `COMPONENT_RULES.md` 覆盖的组件，必须再查 `iidp-frontend-dev-manual`；仍无文档时进入待确认，不要套 Element UI/HTML 通用属性。
-   - 文档未显式支持但 Element UI 支持的属性放入 `ATTRS`；Element UI 原生事件放入 `ONS`。
-2. **扩展格式**：写扩展视图前，必须读取 `skills/frontend/references/iidp-frontend-extension-dev/SKILL.md` 的"扩展开发协议"。
-   - 扩展对象必须包含稳定的全局唯一 key、`selector`、`type` 和必要的 `view`/`hook`/`beforeOperate`。
-   - `selector` 必须来自用户、`frontend-spec.md`、标准模板 ID 规则库或已确认事实；禁止自行拼接节点 id。
-   - `type` 只能使用 `before`、`after`、`append`、`unshift`、`merge`、`replace`、`delete`、`custom` 等扩展协议支持值。
-   - hook 必须写成 `selector` + `type: "merge"` + `hook` 结构，禁止直接用节点 id 当对象 key。
-3. **自定义组件边界**：涉及 Vue2 自定义组件时，必须遵守 `custom-vue-component` 规则。
-   - Vue 组件 `name` 必须稳定且以 `tech-` 开头。
-   - `apps/<appName>/common/comps.js` 只负责 import/export 注册组件；扩展视图 JS 禁止直接 import `.vue`。
-   - 扩展视图中的 `type` 必须等于组件 `name` 去掉 `tech-` 前缀后的 kebab-case 值，不是 `comps.js` 的 export 变量名。
-   - 多个组件按页面或业务模块放入子目录，禁止全部平铺在 `apps/component` 根目录。
-4. **写入前自检**：生成结果必须回查 `frontend-spec.md` §9 实现分支；标准模板/在线视图分支不得生成前端代码。需要前端代码时，检查 `selector`、`ds_config.name`、`bind_`、`bind_two_`、`bind_on_`、`commands`、`hook`、`vm.super` 和组件属性均符合 `iidp-frontend-extension-dev` 与 `COMPONENT_RULES.md`。
+**brownfield 不维护前端速查清单。**
+
+为避免规则分叉，本 skill 只负责把 brownfield 流程路由到 `iidp-frontend` 和 `iidp-frontend-codegen-protocol`。所有前端分支判断、组件规则、扩展格式、自定义组件边界、请求方式、禁止项和写入后合规扫描，均以 `skills/frontend/references/iidp-frontend-codegen-protocol.md` 为唯一执行标准。
 
 ### Step 11：同步规格和最终回校验
 
@@ -394,11 +373,13 @@ specs/features/<feature>/validation.md
 /sdd-sync
 ```
 
-然后重新运行 code-index，得到新的：
+然后必须重新运行 code-index，得到新的：
 
 ```text
 codebook/baseline-spec/
 ```
+
+新的 `codebook/baseline-spec/` 是下一次 brownfield 新需求的现状基线；不得只同步规格而跳过 code-index 刷新，否则下一次需求会基于旧事实产生断层。
 
 最终比较：
 

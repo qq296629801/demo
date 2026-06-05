@@ -1,6 +1,6 @@
 # IIDP Component Rules
 
-本文件只记录 IIDP 组件的最小可用协议和易错点。生成或修改组件节点前，按以下优先级查找组件规则：
+本文件只记录 IIDP 组件的最小可用协议和易错点。生成或修改组件节点前，先读取 [COMPONENT_RULES_COVERAGE.md](COMPONENT_RULES_COVERAGE.md) 确认目标组件是否已覆盖，再按以下优先级查找组件规则：
 
 1. **本文件已覆盖的组件** → 直接按这里写，不要套用 Element UI 或通用前端属性。
 2. **本文件未覆盖的组件** → 先到 IIDP 开发文档（通过 [iidp-frontend-dev-manual](../iidp-frontend-dev-manual/SKILL.md)）中查找对应组件的属性和用法。
@@ -344,7 +344,7 @@ export default {
 - 在 `common/comps.js` 中 import 并 export 后，才能在视图配置中通过组件 `type` 使用。
 - **视图中的 `type` 使用组件 `name` 去掉 `tech-` 前缀后的值，不是 `comps.js` 中 import/export 的变量名。** 例如组件声明 `name: 'tech-switch-custom'`，视图中 `type` 应为 `'switch-custom'`，而不是 `comps.js` 中的 `customVueComp`。
 - `comps.js` 中的 import 变量名仅用于注册，不参与视图 `type` 的命名。
-- **组件内调用接口使用全局方法 `window.Tech.httpMeta`**，不要单独引入 axios 或其他请求库。调用格式必须遵循元模型后端传参规范（参考 [API接口参数说明](../../backend/references/complete/api-params.md)）：
+- **组件内调用接口使用全局方法 `window.Tech.httpMeta`**，不要单独引入 axios 或其他请求库。调用格式必须遵循元模型后端传参规范（参考 [API接口参数说明](../../../backend/references/complete/api-params.md)）：
   ```js
   const res = await window.Tech.httpMeta({
     data: {

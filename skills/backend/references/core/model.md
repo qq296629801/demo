@@ -20,7 +20,7 @@ import com.sie.snest.sdk.annotation.meta.MethodService;
 import com.sie.snest.engine.model.Bool;
 
 // ===== 属性注解类型（必须引入）=====
-import com.sie.snest.sdk.DataType;
+import com.sie.snest.sdk.DataType;            // 正确路径！反例：com.sie.snest.sdk.annotation.meta.DataType（不存在，编译报错）
 
 // ===== 校验注解（按需）=====
 import com.sie.snest.sdk.annotation.validate.Validate;
@@ -332,6 +332,17 @@ private String bookName;
 @Validate.Unique(properties = {"isbn", "edition"}, message = "ISBN:${isbn}已存在")
 private String isbn;
 ```
+
+> **重要**：`@Validate.Unique` 需要配合数据库唯一索引才能生效。仅在字段上标注注解不会阻止数据库层面的重复插入。必须在 `@Model` 的 `indexes` 中声明对应的唯一索引：
+>
+> ```java
+> @Model(tableName = "xxx", name = "xxx",
+>        indexes = {
+>            @Index(name = "IDX_UNI_ISBN_EDITION", columnList = {"isbn", "edition"}, unique = true)
+>        })
+> ```
+>
+> 常见错误：只写 `@Validate.Unique` 而不建唯一索引 → 重复数据仍可插入成功。
 
 ---
 

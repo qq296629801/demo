@@ -48,8 +48,10 @@ $ARGUMENTS
    | 后端·登记收尾 | apps/apps.json |
    | 测试·后端服务 | TDD 模式时移至对应实现块之前 |
    | 前端·实现分支判断 | 读 frontend-spec.md §9 |
+   | 前端·代码生成协议门禁 | 读 iidp-frontend-codegen-protocol.md，执行实现前门禁 |
    | 前端·工程基础 | 仅全新前端时执行 |
    | 前端·页面 N | 按页面/模型逐个展开 |
+   | 前端·合规扫描 | 执行 codegen protocol 实现后合规扫描 |
    | 前端·收尾 | lint、节点控制台验证 |
    | 测试·前端验收场景 | TC-FE-xx 逐条 |
    | 验证 | 构建、静态检查 |

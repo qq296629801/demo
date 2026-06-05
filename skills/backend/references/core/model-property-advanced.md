@@ -153,7 +153,7 @@ public class ExampleOrgLevel extends BaseModel<ExampleOrgLevel> {
     private ExampleOrgLevel hlOrgCateIdp;
 
     // 自关联：当前记录的子节点列表
-    @OneToMany(model = "example_org_level", mappedBy = "hlOrgCateIdp")
+    @OneToMany
     private List<ExampleOrgLevel> children;
 
     // 计算字段方法
@@ -168,7 +168,7 @@ public class ExampleOrgLevel extends BaseModel<ExampleOrgLevel> {
 
 > **规则**：
 > - `@JoinColumn(name = "外键列名", referencedProperty = "id")` — `referencedProperty` **必须为 `"id"`**（父模型主键），不可用业务键或其他列名。
-> - `@OneToMany` 必须显式写 `model` 和 `mappedBy`：`model` 为自身模型名，`mappedBy` 为 `@ManyToOne` 对象字段名。
+> - `@OneToMany` **无参数**（平台自动推断 model、mappedBy、cascade），不得手动指定 model/mappedBy/cascade 参数。
 > - `@OneToMany private List<T> children` 字段名建议为 `children`，前端树形视图依赖此约定。
 > - 树形视图需要在视图 JSON 中配置 `type: "tree"`，`props.children` 指向 `children` 字段。
 
@@ -265,6 +265,12 @@ OneToMany：
 ```
 
 > `[1, "abc201", {...}]`：更新 id=abc201 的子记录；`[0, 0, {...}]`：新建子记录；`[2, "abc202"]`：删除 id=abc202 的子记录。
+
+> **已知限制**：JSON-RPC `create` 服务**不支持**通过 `@OneToMany` 嵌套创建子记录（即上述 `[0, 0, {...}]` 写法在 create 中不生效）。尝试在 `create` 的 `args` 中携带子表数据会导致 `ClassCastException: java.util.LinkedHashMap cannot be cast to java.util.List`。
+>
+> **替代方案**：先调用 `create` 创建父记录（不带子表字段），然后分别调用 `create` 创建子记录并关联父 ID。`update` 服务中的 OneToMany 指令集（新增/更新/删除子记录）不受影响，可正常使用。
+>
+> **前端提交**：通过前端表单的子表组件提交（非 JSON-RPC 通道）时，`create` 支持嵌套保存子记录，此限制仅针对 JSON-RPC 直接调用。
 
 ### ManyToMany 指令集 JSON-RPC 示例
 

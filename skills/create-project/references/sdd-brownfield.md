@@ -458,7 +458,7 @@ specs/features/<feature>/patch-diff.md
 /sdd-sync
 ```
 
-然后重新运行 code-index，得到新的 `codebook/baseline-spec/`。
+然后必须重新运行 code-index，得到新的 `codebook/baseline-spec/`。新的 baseline 是下一次 brownfield 新需求的现状输入；不得只同步规格而跳过 code-index 刷新，否则下一次需求会基于旧事实产生断层。
 
 最终 diff：
 

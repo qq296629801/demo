@@ -69,9 +69,9 @@
 
 ---
 
-### Agent 3：前端规格对齐（Frontend Alignment）
+### Agent 3：前端规格与代码生成协议对齐（Frontend Alignment）
 
-> **视角**：对照 `skills/frontend/SKILL.md` 检查前端规格
+> **视角**：对照 `skills/frontend/SKILL.md` 和 `skills/frontend/references/iidp-frontend-codegen-protocol.md` 检查前端规格与前端代码生成结果
 
 检查范围：
 
@@ -82,6 +82,7 @@
 - 扩展视图：`selector` 命中方式是否明确，`ds_config` 的 `type/name/autoRequest/options` 是否完整
 - 完全替换标准模板页面是否使用 `replace`（不得使用 `type: 'page'`）
 - `effectPaths.includeRegExp` 是否无 `/iidp/` 前缀
+- 若已有前端代码改动，是否通过 codegen protocol 的实现后合规扫描
 
 输出格式：同上（高/中/低三档）
 
@@ -174,7 +175,7 @@
 并行启动以下 5 个子 Agent（使用 Agent 工具，独立上下文，不共享中间结果）：
 1. 规格内部一致性 Agent — 只读规格文件，按 sdd-review.md Agent 1 检查范围输出发现报告，不修改任何文件。
 2. 后端规格对齐 Agent — 读 skills/backend/references/core/ 和当前规格，按 Agent 2 检查范围输出，不修改。
-3. 前端规格对齐 Agent — 读 skills/frontend/SKILL.md 和当前规格，按 Agent 3 检查范围输出，不修改。
+3. 前端规格对齐 Agent — 读 skills/frontend/SKILL.md、iidp-frontend-codegen-protocol.md 和当前规格/前端 diff，按 Agent 3 检查范围输出，不修改。
 4. 安全与权限边界 Agent — 只读规格，按 Agent 4 检查范围输出，不修改。
 5. AI 可操作性 Agent — 只读规格，按 Agent 5 检查范围输出，不修改。
 

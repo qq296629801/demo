@@ -8,7 +8,7 @@ Step 1.5a（backend-spec.md 生成后）立即执行 AC 提取，将 `requiremen
 
 ### AC → TC 提取 Prompt
 
-读取 `requirements.md` 中每条验收标准（AC），按后端服务测试（`TC-BE-xx`）和前端运行验收（`TC-FE-xx`）分别输出到 `validation.md` 的测试用例规格节。前端验收只确认工程能完成技术初始化并成功启动，不扩展为页面级交互验收。
+读取 `requirements.md` 中每条验收标准（AC），按后端服务测试（`TC-BE-xx`）和前端验收（`TC-FE-xx`）分别输出到 `validation.md` 的测试用例规格节。前端验收必须包含 IIDP 前端合规门禁；工程启动只作为运行状态验收，不能替代合规检查。
 
 ```
 TC-BE-<编号>  <后端服务用例名称>
@@ -19,8 +19,8 @@ TC-BE-<编号>  <后端服务用例名称>
 
 TC-FE-<编号>  <前端运行验收名称>
 前置条件：<前端工程路径 / Node 环境 / 依赖安装状态>
-操作步骤：运行 npm run init:tech；再运行 npm run start
-期望结果：init:tech 成功完成；start 成功启动 dev server，无阻塞性报错
+操作步骤：先执行前端合规门禁；通过后运行 npm run init:tech；再运行 npm run start
+期望结果：合规扫描无失败项；init:tech 成功完成；start 成功启动 dev server，无阻塞性报错
 覆盖 AC：<对应 AC 编号>
 ```
 
@@ -50,7 +50,35 @@ TC-FE-<编号>  <前端运行验收名称>
 - `*Test.json` 顶层结构必须是 `{ "methodName": [ {...} ] }`，每个元素包含 `displayName`、`args`、`expected`
 - 测试类必须标注 `@IIDPTest`，测试方法必须标注 `@DDTest`
 - `expected` 字段不能为空对象 `{}`
-- 如本 feature 涉及前端工程，`frontend-spec.md` §9 应明确实现分支；运行验收不检查页面节点、权限显隐或交互细节
+- 如本 feature 涉及前端工程，`frontend-spec.md` §9 应明确实现分支，并执行 `skills/frontend/references/iidp-frontend-codegen-protocol.md` 的合规扫描
+
+---
+
+## IIDP 前端合规门禁
+
+前端验证前必须先执行 `skills/frontend/references/iidp-frontend-codegen-protocol.md` 的“实现后合规扫描”。
+
+### 触发条件
+
+满足以下任一条件时执行：
+
+- `frontend-spec.md` §9 标记“需要前端代码”。
+- tasks.md 中存在前端工程、前端扩展、hook、数据源、组件或按需加载配置任务。
+- 本次改动包含 `apps/<appName>/views`、`apps/<appName>/common`、`apps/<appName>/config` 或 `apps/component`。
+
+### 通过标准
+
+- 实现分支与实际改动一致。
+- 合规扫描无失败项。
+- 无法自动确认的节点 id 或运行时行为已写入验收报告的“需人工确认”，但不得包含已知违规项。
+
+### 失败处理
+
+合规门禁失败时，不继续判定前端运行验收通过。
+
+- 规格问题：修正 `frontend-spec.md`、`contracts.md` 或待确认事项。
+- 实现问题：修正前端代码，再重新执行合规扫描。
+- 平台事实缺失：保持“待确认”，不要把推测写成代码。
 
 ---
 
@@ -124,9 +152,9 @@ class ExampleTest {
 
 ---
 
-## 前端验证（工程启动验收）
+## 前端验证（合规门禁 + 工程启动验收）
 
-前端验证只确认前端工程能按 IIDP 技术初始化并启动本地开发服务。除非用户另行要求，不执行页面级交互验收、节点控制台验证、lint 或 build。
+前端验证先执行 IIDP 前端合规门禁，再确认前端工程能按 IIDP 技术初始化并启动本地开发服务。除非用户另行要求，`npm run start` 只作为运行状态验收，不替代合规门禁。
 
 ### 触发条件
 
@@ -156,8 +184,8 @@ npm run start
 ```markdown
 TC-FE-001  前端工程初始化与启动
 前置条件：进入前端工程根目录；Node 版本和依赖满足项目要求
-操作步骤：运行 npm run init:tech；完成后运行 npm run start
-期望结果：init:tech 退出码为 0；start 输出本地访问地址且无阻塞性报错
+操作步骤：先执行 `iidp-frontend-codegen-protocol.md` 的实现后合规扫描；通过后运行 npm run init:tech；完成后运行 npm run start
+期望结果：合规扫描无失败项；init:tech 退出码为 0；start 输出本地访问地址且无阻塞性报错
 覆盖 AC：前端可运行
 ```
 
@@ -420,5 +448,6 @@ python tests/functional/smoke_test.py
 | 静态数量检查 | 模型数、服务方法数、测试方法数均与规格一致 |
 | 静态格式检查 | 无注解缺失、无空 expected、JSON 结构合规 |
 | 单元测试 | `mvn test` 全绿；Jacoco 行覆盖率 ≥ 90% |
-| 前端运行验收 | `npm run init:tech` 成功；`npm run start` 成功启动 dev server |
+| 前端合规门禁 | `iidp-frontend-codegen-protocol.md` 合规扫描无失败项 |
+| 前端运行验收 | 合规门禁通过后，`npm run init:tech` 成功；`npm run start` 成功启动 dev server |
 | 功能冒烟测试 | 所有容器 healthy；`smoke_test.py` 退出码 0 |

@@ -34,7 +34,7 @@
 
 ### 前端合规
 
-来源：`skills/frontend/references/iidp-frontend-extension-dev/SKILL.md`
+来源：`skills/frontend/references/iidp-frontend-codegen-protocol.md`
 
 | 检查项 | grep 方式 |
 |---|---|

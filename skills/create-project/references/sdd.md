@@ -60,7 +60,7 @@ agents/
 │   │       ├── requirements.md
 │   │       ├── contracts.md          # API 级契约（Step 1.3a 生成，先于规格书）
 │   │       ├── backend-spec.md       # 后端技术落地规格（模型、服务、视图、菜单、权限细节）
-│   │       ├── frontend-spec.md      # 前端技术落地规格（仅需要前端代码时生成）
+│   │       ├── frontend-spec.md      # 前端技术落地规格（每个 feature 必须生成，§9 记录实现分支）
 │   │       ├── interaction-spec.md   # 前端交互规格（含复杂状态/响应式/可访问性时生成）
 │   │       ├── plan.md
 │   │       ├── tasks.md

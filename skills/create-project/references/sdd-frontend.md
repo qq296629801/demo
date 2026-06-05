@@ -53,6 +53,7 @@
 | [sdd-contracts.md](sdd-contracts.md)                                                        | 前后端契约：JSON-RPC、Filter、节点属性 | 生成数据源、服务参数、权限码时参考             |
 | [sdd-validation.md](sdd-validation.md)                                                      | 实现验证、失败处理、复盘               | 交付前运行验证清单                             |
 | [iidp-frontend-standard-ids](../../frontend/references/iidp-frontend-standard-ids/SKILL.md) | 标准模板节点 ID 命名规则               | 推导节点 id 时参考                             |
+| [iidp-frontend-codegen-protocol](../../frontend/references/iidp-frontend-codegen-protocol.md) | 前端代码生成强制协议                   | 进入实现和验收前必须执行                       |
 
 ---
 
@@ -230,6 +231,8 @@ page: [菜单或页面 key]
 | 删除 | grid 行 | `{model_name}:delete` | 确认弹窗→删除 | `delete` | `ids` | 刷新列表 | 显示平台错误 |
 
 ## 9. IIDP 实现分支 [核心]
+
+> **实现阶段强制要求**：只要本节判定需要前端代码，`/sdd-implement` 必须先执行 [`iidp-frontend-codegen-protocol`](../../frontend/references/iidp-frontend-codegen-protocol.md) 的实现前门禁；实现后必须执行该协议的合规扫描。标准模板/在线视图分支不得生成前端代码。
 
 ### 决策路径
 
@@ -425,6 +428,7 @@ page: [页面 key]
 > 实现阶段验证详见 [sdd-validation.md](sdd-validation.md)。
 
 - [ ] 标准模板或在线视图能完成主流程，未被误写为自定义页面
+- [ ] 需要前端代码的页面已标注必须执行 `iidp-frontend-codegen-protocol`
 - [ ] 完全替换标准模板页面时使用了 `replace`，未使用 `type: 'page'`
 - [ ] 所有 API 请求通过 IIDP 数据源或 `window.Tech.httpMeta`，未自行引入请求库
 - [ ] `effectPageIds` 未自动添加，已提醒用户确认

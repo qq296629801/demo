@@ -25,6 +25,10 @@ $ARGUMENTS
 
 1. 确认 `tasks.md` 所有 `- [ ]` 已勾选为 `- [x]`；若有未完成任务，提示先运行 `/sdd-implement`。
 2. 从 `CLAUDE.md` 读取活动功能目录。
+3. 若存在 `codebook/baseline-spec/` 或 `specs/baseline/`，按 brownfield 验收处理：
+   - 必须确认 `/sdd-sync` 已在最新代码变更后重新运行 code-index。
+   - 必须存在当前功能的 `final-diff.md`。
+   - 若 `final-diff.md` 缺失、显示阻塞项，或 codebook baseline 明显早于本次代码变更，验收阻塞，提示先运行 `/sdd-sync` 完成 brownfield 基线刷新。
 
 ## 执行步骤
 
@@ -43,12 +47,20 @@ $ARGUMENTS
 
 - 实现分支判断：每个页面的 `frontend-spec.md §9` 已明确标注。
 - 标准模板页：前端无需启动验证时，在报告中标注跳过原因。
+- 前端合规门禁：需要前端代码或存在前端改动时，执行 `skills/frontend/references/iidp-frontend-codegen-protocol.md` 的实现后合规扫描；任一失败项均判定前端验收失败。
 - 前端运行：在前端工程根目录依次运行 `npm run init:tech`、`npm run start`。
 - 启动结果：`init:tech` 退出码为 0；`start` 输出本地访问地址且无阻塞性报错。
 
 ### 测试覆盖率更新
 
 读取 `validation.md` 测试用例规格节，将已执行的 TC-ID 状态更新为 `✅ 通过` / `❌ 失败` / `⏸ 阻塞`。
+
+### Brownfield 基线验收
+
+- `codebook/baseline-spec/` 已由最新代码重新生成。
+- `specs/baseline/` 已从新 baseline 刷新。
+- 当前功能目录存在 `final-diff.md`，且 target-spec 与新 baseline 无阻塞差异。
+- 若下一次新需求继续进入 brownfield 流程，应以刷新后的 `codebook/baseline-spec/` 和 `specs/baseline/` 作为现状输入。
 
 ### 输出格式
 

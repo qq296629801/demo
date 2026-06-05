@@ -230,7 +230,7 @@ specs/
 - 每个扩展新增节点必须有 `type`，稳定业务节点建议有唯一 `id`，子节点放在 `items`。
 - 布局承载优先使用 `container`、`row`、`form-container`；表格使用 `table`，表单使用 `form`，按钮使用 `button`。
 - 显隐优先使用 `display` 或 `bind_display`；交互事件优先使用真实存在的 `bind_on_事件名`。
-- 组件属性不确定时先查 `skills/frontend/references/iidp-frontend-extension-dev/COMPONENT_RULES.md`，不要猜属性名。
+- 组件属性不确定时先查 `skills/frontend/references/iidp-frontend-extension-dev/COMPONENT_RULES_COVERAGE.md` 和 `COMPONENT_RULES.md`，未覆盖再查 dev-manual，不要猜属性名。
 
 ## 响应式、容器与 iframe 约束
 - 标准后台页面以平台容器自适应为主，避免用固定宽高破坏主框架、Tab、弹窗或抽屉布局。

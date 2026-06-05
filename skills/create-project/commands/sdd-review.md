@@ -44,7 +44,7 @@ $ARGUMENTS
 |---|---|---|
 | 1. 规格内部一致性 | 规格文件之间的矛盾与漏洞 | 所有 specs/ 文件 |
 | 2. 后端规格对齐 | 对照 backend skills 检查注解/服务/权限 | `backend-spec.md` + `skills/backend/references/core/` |
-| 3. 前端规格对齐 | 对照 frontend skills 检查节点/分支/扩展 | `frontend-spec.md` + `skills/frontend/SKILL.md` |
+| 3. 前端规格对齐 | 对照 frontend skills 和 codegen protocol 检查节点/分支/扩展/合规门禁 | `frontend-spec.md` + `skills/frontend/SKILL.md` + `skills/frontend/references/iidp-frontend-codegen-protocol.md` |
 | 4. 安全与权限边界 | 权限旁路、多租户、敏感字段、SQL 注入 | `backend-spec.md`、`contracts.md` |
 | 5. AI 可操作性 | 任务可执行性、待确认阻塞、矛盾指令 | `tasks.md`、`validation.md` |
 

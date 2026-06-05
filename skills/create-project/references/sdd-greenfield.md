@@ -174,7 +174,7 @@ C) 调整契约表
 
 **执行**：
 - 后端规格：读取 `references/sdd-backend.md`，产出 `backend-spec.md`
-- 前端规格：读取 `references/sdd-frontend.md`，判断实现分支后产出 `frontend-spec.md`（仅需要前端代码时）
+- 前端规格：读取 `references/sdd-frontend.md`，每个 feature 都产出 `frontend-spec.md`，并在 §9 判断实现分支；标准模板/在线视图无需前端代码时也要记录原因。
 - 交互规格：含复杂状态机/响应式/可访问性时，读取 `references/sdd-frontend-interaction.md`，产出 `interaction-spec.md`
 
 **步骤 4 产出摘要**：
@@ -189,8 +189,9 @@ C) 调整契约表
 - 视图：[数量] 个，菜单：[数量] 个
 
 ### 前端规格概览
-- 实现分支：标准模板 / 扩展视图 / 自定义 Vue2 组件
-- 是否生成 frontend-spec.md：[是 / 否]（原因：）
+- frontend-spec.md：已生成
+- 实现分支：标准模板 / 在线视图 / hook / 扩展视图 / 自定义 Vue2 组件
+- 是否需要前端代码：[是 / 否]（原因：）
 
 ### 待确认项
 - [列出 backend-spec 中标注「待确认」的项]
@@ -297,7 +298,7 @@ specs/
         ├── requirements.md             ← 步骤 3
         ├── contracts.md                ← 步骤 3
         ├── backend-spec.md             ← 步骤 4
-        ├── frontend-spec.md            ← 步骤 4（需要前端代码时）
+        ├── frontend-spec.md            ← 步骤 4（每个 feature 必须生成，§9 记录实现分支）
         ├── interaction-spec.md         ← 步骤 4（含复杂状态/响应式时）
         ├── plan.md                     ← 步骤 4（含技术决策）
         ├── tasks.md                    ← 步骤 5
@@ -333,7 +334,7 @@ specs/
 
 关键注意：
 - 步骤 2 宪法阶段只规划单个 App，integration-map.md 保持最小结构
-- 步骤 3 的 contracts.md 需明确前端是否需要扩展视图（影响步骤 4 是否生成 frontend-spec.md）
+- 步骤 3 的 contracts.md 需明确前端实现分支（影响步骤 4 的 frontend-spec.md §9 和后续是否写前端代码）
 - 步骤 6 按 `backend/SKILL.md` Step 1–10 顺序执行：命名 → 模型 → 视图 → 菜单 → 数据
 
 ### 场景 2：搭建多 App 平台

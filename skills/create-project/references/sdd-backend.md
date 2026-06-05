@@ -57,7 +57,7 @@
 | `[dateField]` | `Date` | `displayName="[中文名]", dataType=DataType.DATE, dateFormat="yyyy-MM-dd"` | 否 | — | 否 | 仅日期；含时间改用 `dataType=DataType.DATE_TIME, dateFormat="yyyy-MM-dd HH:mm:ss"` |
 | `[entityId]` | `String` | `@Selection(model="[model_name]", properties={"id","[displayField]"})` + `@Property(displayName="[中文名]")` + `@Validate.NotBlank(message="[中文名]不能为空")` | 是 | `@Validate.NotBlank` | 是 | FK ID 字段，与下方 ManyToOne 成对出现，存库 |
 | `[entity]` | `[EntityClass]` | `@ManyToOne(displayName="[中文名]", cascade=CascadeType.DEL_SET_NULL)` + `@JoinColumn(name="[col_id]", referencedProperty="id")` | — | — | — | ORM 关联对象，不存库，与上方 FK ID 字段成对，`@JoinColumn(name)` 与 FK 字段的数据库列名一致 |
-| `[children]` | `List<[ChildClass]>` | `@OneToMany(model="[child_model_name]", mappedBy="[fk_field_in_child]", cascade=CascadeType.ALL)` | — | — | — | 子表集合，不存库；级联删除子表时用 `CascadeType.ALL`，仅级联查询用 `CascadeType.NONE` |
+| `[children]` | `List<[ChildClass]>` | `@OneToMany` | — | — | — | 子表集合，不存库；**@OneToMany 无参数**（平台自动推断 model、mappedBy、cascade），不得手动指定 |
 | `[tags]` | `List<[TagClass]>` | `@ManyToMany(model="[tag_model_name]")` + `@JoinTable(name="[join_table_name]", joinColumn="[this_fk]", inverseJoinColumn="[other_fk]")` | — | — | — | 多对多关联，详细参数必须读取 `model-property-advanced.md` §ManyToMany；中间表 `[join_table_name]` 由平台维护，无需手动建表 |
 
 > **生成任何模型字段前必须先读取以下文件**：

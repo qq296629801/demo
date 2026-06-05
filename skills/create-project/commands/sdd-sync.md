@@ -4,7 +4,7 @@ handoffs:
   - label: 运行验收 Validate
     command: sdd-validate
     prompt: 规格同步完成，开始验收
-    send: false
+    send: true
 ---
 
 # /sdd-sync
@@ -13,6 +13,8 @@ handoffs:
 
 当 AI 直接对代码做了修改（未走 `/sdd-implement` 流程），规格书可能与代码产生漂移。
 本命令通过分析 git diff，将变更精准映射到对应规格章节，做最小外科式更新，避免手工维护规格书。
+
+在 IIDP brownfield 场景中，本命令还负责刷新 code-index 基线：新需求实现完成后必须重新运行 code-index，更新 `codebook/baseline-spec/`，再刷新 `specs/baseline/` 投影，避免下一次需求继续使用旧现状。
 
 ## 用户输入
 
@@ -38,7 +40,8 @@ $ARGUMENTS
    > 若拉取 origin 比对失败（无网络或首次分支），降级为仅使用 `git diff HEAD --name-only` + 队列文件，并提示用户："无法比对远端，已 commit 的变更可能未被感知，建议手动传入功能目录参数确认范围。"
 3. 过滤：排除 `specs/` 目录内文件、非代码文件（保留 `.java`、`.json`、`.vue`、`.js`、`.ts`、`.xml`）。
 4. 若过滤后列表为空 → 输出"未检测到代码变更，规格书已同步"，退出。
-5. 若 `git diff HEAD` 总行数 > 500 → 先输出变更摘要，暂停等用户确认再继续。
+5. 识别是否为 brownfield 场景：存在 `codebook/baseline-spec/`、`specs/baseline/`、`specs/iidp-stack.md` 或当前功能目录存在 `target-spec.md` 且引用 baseline 时，视为 brownfield。
+6. 若 `git diff HEAD` 总行数 > 500 → 先输出变更摘要，暂停等用户确认再继续。
 
 ## 文件 → 规格章节映射
 
@@ -108,7 +111,25 @@ $ARGUMENTS
 
 5. **输出变更摘要**：列出每个被更新的规格文件、章节、具体变更项（表格形式），并标注变更类型（新增/修改/待确认删除）。
 
-6. **清空队列**：若 `.spec-sync-queue.txt` 存在，清空其内容（`> .spec-sync-queue.txt`）。
+6. **brownfield 基线刷新**：若前置步骤判定为 brownfield，必须执行以下步骤；任一失败都不得进入 `/sdd-validate`：
+
+   a. 按 `skills/code-index/SKILL.md` 对当前 IIDP 项目重新运行 code-index，更新：
+
+   ```text
+   codebook/baseline-spec/
+   ```
+
+   b. 从新的 `codebook/baseline-spec/` 刷新 `specs/baseline/` 投影，并同步 `specs/iidp-stack.md`、`specs/integration-map.md`、`specs/unresolved.md` 中的现状摘要。
+
+   c. 将当前功能的 `target-spec.md` 与新的 `codebook/baseline-spec/` 比较，生成或更新：
+
+   ```text
+   specs/features/<feature>/final-diff.md
+   ```
+
+   d. 若 `final-diff.md` 显示 target-spec 与新 baseline 不一致，标记为阻塞：列出未落地项、多余改动和仍需确认项，提示补任务、修正规格或记录决策。
+
+7. **清空队列**：若 `.spec-sync-queue.txt` 存在，清空其内容（`> .spec-sync-queue.txt`）。
 
 ## 输出格式
 
@@ -121,11 +142,21 @@ $ARGUMENTS
 | example_area_view.json | backend-spec.md | §5 视图与菜单 | 新增 tbar 按钮 `exportExcel`，更新按钮配置行 |
 
 已清空 .spec-sync-queue.txt
+
+## Brownfield 基线刷新
+
+| 项目 | 状态 | 说明 |
+|---|---|---|
+| code-index 重跑 | ✅/❌/⏸ | 新 `codebook/baseline-spec/` 是否生成 |
+| specs/baseline 投影 | ✅/❌/⏸ | 是否已从新 baseline 刷新 |
+| final-diff | ✅/❌/⏸ | `target-spec.md` 与新 baseline 是否一致 |
 ```
 
 ## 完成标志
 
 - 所有受影响规格章节已按最小变更原则更新。
 - 输出变更摘要表。
+- brownfield 场景下，`codebook/baseline-spec/` 已基于最新代码刷新，`specs/baseline/` 已同步，`final-diff.md` 已生成且无阻塞项。
 - `.spec-sync-queue.txt` 已清空（若存在）。
 - **不批量重写规格**，不声明未实际完成的更新。
+- 无阻塞项时自动交接 `/sdd-validate`；存在 `final-diff.md` 阻塞项、code-index 失败或 baseline 刷新失败时停止，不进入验收。
