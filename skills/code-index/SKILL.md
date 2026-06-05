@@ -2,7 +2,8 @@
 name: code-index
 description: |
   把存量代码（任意语言/框架）转成完整功能规格书（Codebook）。整合 codegraph 框架，
-  以 codegraph_search、codegraph_callers、codegraph_trace 三条命令为核心，
+  以 codegraph_search、codegraph_callers、codegraph_callees 三条核心 MCP 命令为主力
+  （skill 将 codegraph_callees + codegraph_impact 封装为 codegraph_trace 调用链追踪语义），
   自动解析代码语义图谱，再通过 LLM Prompt 模板生成 SRS、PRD、HLA、API 文档、
   用户故事、流程图（Mermaid/SVG）、UI 静态页面、数据库结构等；识别到 IIDP 时还必须
   额外生成可被 brownfield 增量改造消费的 baseline-spec 结构化基线规格。
@@ -635,6 +636,46 @@ for each 模块 in 模块列表：
     - trace-map.json 必须能把 capability/model/view/service/frontendExtend 回连到源码文件。
     - unresolved.json 必须集中收录无法确认的 app/model/service/nodeId/权限/字段/运行时节点。
 ```
+
+**Phase D'：输出质量自查（Phase D 全部文件生成后，提交前执行）**
+
+```
+【质量核查 Checklist — 每项必须过，不过则修正后重查】
+
+□ 1. 接口数一致性
+     srs.md 中的功能需求条目数 == ENDPOINT_LIST 长度？
+     api.md 中的接口章节数    == ENDPOINT_LIST 长度？
+     flowcharts/ 下 .mmd 文件数 >= ENDPOINT_LIST 中写操作（POST/PUT/DELETE/PATCH）数？
+     如不一致 → 补充缺失条目，禁止合并或跳过。
+
+□ 2. 无凭空推断
+     检查 srs.md / prd.md / api.md 中是否出现未经代码确认的功能、字段或业务规则。
+     标准：所有"功能描述"必须能在 ENDPOINT_LIST 或源码中找到对应入口；
+           所有"字段"必须来自 VO/Entity 源码；所有"错误码"必须来自 ErrorCodeConstants。
+     如有不确定处 → 将该内容改为 [需确认] 标注，不得删除。
+
+□ 3. 变量填充完整性
+     检查 Prompt 输出中是否残留未替换的 {{...}} 占位符。
+     如有 → 说明该变量采集步骤被跳过，回到 Phase C 补充采集后重新生成该文档。
+
+□ 4. 文件完整性
+     codebook/.progress.md 中所有 [ ] 条目是否已全部标为 [x]？
+     如有 [ ] 残留且非刻意跳过 → 回到对应 Phase 步骤补充生成。
+
+□ 5. 数据表对账（仅有 Entity 层时执行）
+     database.md 中列出的表数 == Phase C 中 Read 到的 @TableName/@Table 数？
+     如有缺失 → 补充漏掉的 Entity，重新生成 database.md 对应章节。
+
+□ 6. IIDP 额外核查（仅 IIDP 项目）
+     baseline-spec/unresolved.json 是否已生成？
+     P0 级 unresolved 条目是否在 codebook/overview.md 中注明了待确认事项？
+     trace-map.json 中的 specId 是否与 artifact-map.json 全部一一对应？
+
+自查通过后，在 codebook/overview.md 末尾追加：
+> 生成完成：{时间戳}，覆盖 {N} 个模块，{M} 张数据表，{P} 个 API 接口，质量自查已通过
+```
+
+---
 
 ### 4.3 语义归类
 
